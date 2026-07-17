@@ -1,0 +1,13 @@
+dist/
+node_modules/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+.astro/
+.netlify
+
+# Pipeline working directories (TRD.md §3 / CLAUDE.md rule 5)
+temp_data/
+content-staging/
