@@ -1,0 +1,213 @@
+"""Owns all SQLite and JSON/GeoJSON generation (TRD.md §5).
+
+Regeneration is always a full rebuild from `_published` frontmatter — the
+published MDX directory is the source of truth, and `directory.db` is
+disposable. Frontmatter field names mirror SCHEMA.md §2/§3 exactly.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sqlite3
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+from admin.config import (
+    AMENITY_KEYS,
+    DB_PATH,
+    PUBLISHED_DIR,
+    VENUES_GEOJSON_PATH,
+    VENUES_JSON_PATH,
+)
+
+REQUIRED_FIELDS = ("name", "state", "suburb", "latitude", "longitude", "summary", "amenities")
+
+SCHEMA_SQL = """
+CREATE TABLE venues (
+  slug TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  state TEXT NOT NULL,
+  suburb TEXT NOT NULL,
+  latitude REAL NOT NULL,
+  longitude REAL NOT NULL,
+  status TEXT NOT NULL DEFAULT 'unclaimed',
+  summary TEXT NOT NULL,
+  has_image INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE amenities (
+  slug TEXT PRIMARY KEY REFERENCES venues(slug) ON DELETE CASCADE,
+  magnesium_pool INTEGER NOT NULL,
+  infrared_sauna INTEGER NOT NULL,
+  traditional_sauna INTEGER NOT NULL,
+  cold_plunge INTEGER NOT NULL,
+  led_therapy INTEGER NOT NULL
+);
+"""
+
+
+def parse_frontmatter(path: Path) -> dict[str, Any]:
+    text = path.read_text(encoding="utf-8")
+    slug = path.stem
+    if not text.startswith("---"):
+        raise ValueError(f"{slug}: missing frontmatter delimiter")
+    _, frontmatter_yaml, _body = text.split("---", 2)
+    data = yaml.safe_load(frontmatter_yaml) or {}
+    for field in REQUIRED_FIELDS:
+        if field not in data:
+            raise ValueError(f"{slug}: missing required field '{field}'")
+    missing_amenities = [key for key in AMENITY_KEYS if key not in data["amenities"]]
+    if missing_amenities:
+        raise ValueError(f"{slug}: amenities missing keys {missing_amenities}")
+    return data
+
+
+def iter_published(published_dir: Path):
+    for path in sorted(published_dir.glob("*.mdx")):
+        yield path.stem, parse_frontmatter(path)
+
+
+def create_schema(conn: sqlite3.Connection) -> None:
+    conn.executescript(SCHEMA_SQL)
+
+
+def upsert_venue(conn: sqlite3.Connection, slug: str, data: dict[str, Any]) -> None:
+    conn.execute(
+        """
+        INSERT INTO venues (slug, name, state, suburb, latitude, longitude, status, summary, has_image)
+        VALUES (:slug, :name, :state, :suburb, :latitude, :longitude, :status, :summary, :has_image)
+        ON CONFLICT(slug) DO UPDATE SET
+          name = excluded.name, state = excluded.state, suburb = excluded.suburb,
+          latitude = excluded.latitude, longitude = excluded.longitude,
+          status = excluded.status, summary = excluded.summary, has_image = excluded.has_image
+        """,
+        {
+            "slug": slug,
+            "name": data["name"],
+            "state": data["state"],
+            "suburb": data["suburb"],
+            "latitude": data["latitude"],
+            "longitude": data["longitude"],
+            "status": data.get("status", "unclaimed"),
+            "summary": data["summary"],
+            "has_image": 1 if data.get("image") else 0,
+        },
+    )
+    amenities = data["amenities"]
+    conn.execute(
+        """
+        INSERT INTO amenities (slug, magnesium_pool, infrared_sauna, traditional_sauna, cold_plunge, led_therapy)
+        VALUES (:slug, :magnesium_pool, :infrared_sauna, :traditional_sauna, :cold_plunge, :led_therapy)
+        ON CONFLICT(slug) DO UPDATE SET
+          magnesium_pool = excluded.magnesium_pool, infrared_sauna = excluded.infrared_sauna,
+          traditional_sauna = excluded.traditional_sauna, cold_plunge = excluded.cold_plunge,
+          led_therapy = excluded.led_therapy
+        """,
+        {
+            "slug": slug,
+            **{key: 1 if amenities[key] else 0 for key in AMENITY_KEYS},
+        },
+    )
+
+
+def fetch_all_venues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        """
+        SELECT v.slug, v.name, v.state, v.suburb, v.latitude, v.longitude,
+               v.status, v.summary, v.has_image,
+               a.magnesium_pool, a.infrared_sauna, a.traditional_sauna, a.cold_plunge, a.led_therapy
+        FROM venues v JOIN amenities a ON a.slug = v.slug
+        ORDER BY v.slug
+        """
+    ).fetchall()
+    venues = []
+    for slug, name, state, suburb, latitude, longitude, status, summary, has_image, mg, ir, sa, cp, led in rows:
+        venues.append(
+            {
+                "slug": slug,
+                "name": name,
+                "state": state,
+                "suburb": suburb,
+                "latitude": latitude,
+                "longitude": longitude,
+                "status": status,
+                "summary": summary,
+                "has_image": bool(has_image),
+                "amenities": {
+                    "magnesium_pool": bool(mg),
+                    "infrared_sauna": bool(ir),
+                    "traditional_sauna": bool(sa),
+                    "cold_plunge": bool(cp),
+                    "led_therapy": bool(led),
+                },
+            }
+        )
+    return venues
+
+
+def write_venues_json(venues: list[dict[str, Any]], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(venues, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def write_venues_geojson(venues: list[dict[str, Any]], path: Path) -> None:
+    geojson = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": {"type": "Point", "coordinates": [v["longitude"], v["latitude"]]},
+                "properties": {
+                    "slug": v["slug"],
+                    "name": v["name"],
+                    "state": v["state"],
+                    "suburb": v["suburb"],
+                    "status": v["status"],
+                    "summary": v["summary"],
+                    "has_image": v["has_image"],
+                    "amenities": v["amenities"],
+                },
+            }
+            for v in venues
+        ],
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(geojson, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def rebuild(
+    published_dir: Path = PUBLISHED_DIR,
+    db_path: Path = DB_PATH,
+    json_path: Path = VENUES_JSON_PATH,
+    geojson_path: Path = VENUES_GEOJSON_PATH,
+) -> int:
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    db_path.unlink(missing_ok=True)
+    conn = sqlite3.connect(db_path)
+    try:
+        create_schema(conn)
+        for slug, data in iter_published(published_dir):
+            upsert_venue(conn, slug, data)
+        conn.commit()
+        venues = fetch_all_venues(conn)
+    finally:
+        conn.close()
+    write_venues_json(venues, json_path)
+    write_venues_geojson(venues, geojson_path)
+    return len(venues)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Rebuild directory.db + venues.json/geojson from _published MDX frontmatter."
+    )
+    parser.add_argument("--rebuild", action="store_true", required=True)
+    parser.parse_args()
+    count = rebuild()
+    print(f"Rebuilt {count} venue(s) -> {DB_PATH}, {VENUES_JSON_PATH}, {VENUES_GEOJSON_PATH}")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,31 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          144.9885,
+          -37.7965
+        ]
+      },
+      "properties": {
+        "slug": "sense-of-self",
+        "name": "Sense of Self",
+        "state": "VIC",
+        "suburb": "Collingwood",
+        "status": "unclaimed",
+        "summary": "A converted Easey Street warehouse holding a 39-degree mineral bath, an 80-degree Finnish sauna, a cold plunge and a hammam.",
+        "has_image": false,
+        "amenities": {
+          "magnesium_pool": true,
+          "infrared_sauna": false,
+          "traditional_sauna": true,
+          "cold_plunge": true,
+          "led_therapy": false
+        }
+      }
+    }
+  ]
+}
