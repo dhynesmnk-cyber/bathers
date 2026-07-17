@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+/* Fonts self-hosted per TRD §4.4 (zero runtime fetching except map tiles) */
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 300 600;
+  font-display: swap;
+  src: url("/fonts/fraunces-variable.woff2") format("woff2-variations"),
+       url("/fonts/fraunces-variable.woff2") format("woff2");
+  font-variation-settings: "SOFT" 60;
+}
+
+@font-face {
+  font-family: "Newsreader";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("/fonts/newsreader-variable.woff2") format("woff2-variations"),
+       url("/fonts/newsreader-variable.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Newsreader";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/newsreader-400italic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-mono-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-mono-500.woff2") format("woff2");
+}
+
+@theme {
+  --color-paper: #191614;
+  --color-paper-raised: #211d1a;
+  --color-ink: #e8e2d6;
+  --color-ink-faded: #a89f8f;
+  --color-thermal: #7fb5a4;
+  --color-oxide: #b4633a;
+
+  --font-display: "Fraunces", serif;
+  --font-body: "Newsreader", serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+:root {
+  color-scheme: dark;
+  --paper: #191614;
+  --paper-raised: #211d1a;
+  --ink: #e8e2d6;
+  --ink-faded: #a89f8f;
+  --thermal: #7fb5a4;
+  --oxide: #b4633a;
+}
+
+* {
+  border-radius: 0;
+}
+
+html {
+  background: var(--paper);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.65;
+}
+
+a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--ink-faded);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  transition: text-decoration-color 0.15s ease;
+}
+
+a:hover,
+a:focus-visible {
+  text-decoration-color: var(--thermal);
+}
+
+:focus-visible {
+  outline: 1px solid var(--thermal);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+.reading-spine {
+  max-width: 65ch;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}

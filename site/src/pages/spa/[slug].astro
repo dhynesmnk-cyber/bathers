@@ -1,0 +1,43 @@
+---
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Notation from "../../components/Notation.astro";
+import Pull from "../../components/Pull.astro";
+import TippedPhoto from "../../components/TippedPhoto.astro";
+
+export async function getStaticPaths() {
+  const venues = await getCollection("spas");
+  return venues.map((venue) => ({
+    params: { slug: venue.id },
+    props: { venue },
+  }));
+}
+
+const { venue } = Astro.props;
+const { data } = venue;
+const { Content } = await render(venue);
+---
+
+<BaseLayout title={`${data.name} — Bathers'`} description={data.summary}>
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <article>
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
+        {data.name}
+      </h1>
+      <div class="mt-2 mb-12">
+        <Notation latitude={data.latitude} longitude={data.longitude} state={data.state} amenities={data.amenities} />
+      </div>
+
+      <div class="reading-spine">
+        <Content components={{ Pull, TippedPhoto }} />
+      </div>
+
+      <div class="mono mt-16 pt-6" style="border-top: 1px solid rgba(168,159,143,0.25); background: var(--paper-raised); padding: 1.5rem;">
+        <p>{data.address}</p>
+        <p class="mt-4">
+          <a href={`mailto:claim@bathers.example?subject=Claim ${data.name}`}>Claim this listing</a>
+        </p>
+      </div>
+    </article>
+  </main>
+</BaseLayout>

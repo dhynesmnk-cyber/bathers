@@ -1,0 +1,35 @@
+---
+interface Props {
+  slug: string;
+  src: string;
+  alt: string;
+  caption: string;
+  sourceUrl: string;
+}
+
+const { slug, src, alt, caption, sourceUrl } = Astro.props;
+
+// Deterministic rotation in [-1.2deg, 1.2deg], derived from the slug so it's
+// stable per venue rather than random per render.
+function hashSlug(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) | 0;
+  }
+  return hash;
+}
+
+const hash = hashSlug(slug);
+const rotation = ((Math.abs(hash) % 240) / 100 - 1.2).toFixed(2);
+---
+
+<figure class="my-12 flex flex-col items-start" style={`transform: rotate(${rotation}deg);`}>
+  <div class="p-1 pb-8" style="background: var(--paper-raised); border: 1px solid rgba(168,159,143,0.25);">
+    <img src={src} alt={alt} class="block max-w-full" loading="lazy" />
+  </div>
+  <figcaption class="mono mt-2 text-[var(--ink-faded)]">
+    {caption}
+    {" — "}
+    <a href={sourceUrl}>image source</a>
+  </figcaption>
+</figure>

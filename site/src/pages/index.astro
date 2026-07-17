@@ -1,0 +1,65 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import VenueEntry from "../components/VenueEntry.astro";
+import { SITE_NAME, SITE_TAGLINE, STATES } from "../config";
+
+const venues = await getCollection("spas");
+
+const byState = STATES.map((state) => ({
+  state,
+  venues: venues.filter((v) => v.data.state === state),
+})).filter((group) => group.venues.length > 0);
+---
+
+<BaseLayout
+  title={`${SITE_NAME} — Australian day spas and bathhouses`}
+  description={SITE_TAGLINE}
+>
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <header class="mb-16">
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
+        {SITE_NAME}
+      </h1>
+      <p class="mono mt-2 text-[var(--ink-faded)]">{SITE_TAGLINE}</p>
+    </header>
+
+    <section class="reading-spine mb-24">
+      <p class="mb-4">
+        This is a record of places built around heat, cold, and water — the
+        Finnish saunas, magnesium baths and cold plunges scattered across
+        Australian cities and coastlines. Each entry is drafted from the
+        venue's own account of itself, then checked and corrected by hand
+        before it appears here.
+      </p>
+      <p>
+        Nothing here is a first-hand review. It is a directory in the field
+        guide sense: what is present, at what temperature, and for how long.
+      </p>
+    </section>
+
+    <section aria-labelledby="contents-heading">
+      <div class="mono mb-8 flex items-center gap-4 text-[var(--ink-faded)]">
+        <span>CONTENTS</span>
+        <span class="h-px flex-1" style="background: rgba(168,159,143,0.25);"></span>
+      </div>
+      {
+        byState.map((group) => (
+          <div class="mb-12">
+            <h2 class="mono mb-2 text-[var(--ink-faded)]">{group.state}</h2>
+            {group.venues.map((venue) => (
+              <VenueEntry
+                name={venue.data.name}
+                slug={venue.id}
+                suburb={venue.data.suburb}
+                state={venue.data.state}
+                summary={venue.data.summary}
+                amenities={venue.data.amenities}
+              />
+            ))}
+          </div>
+        ))
+      }
+    </section>
+  </main>
+</BaseLayout>
