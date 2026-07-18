@@ -23,6 +23,7 @@ FOREWORDS_JSON_PATH = ROOT / "site" / "src" / "data" / "forewords.json"
 TEMP_DATA_DIR = ROOT / "temp_data"
 IMAGES_DIR = TEMP_DATA_DIR / "images"
 FAILED_DIR = TEMP_DATA_DIR / "failed"
+PLACES_DIR = TEMP_DATA_DIR / "places"
 
 PROMPTS_DIR = ROOT / "PROMPTS"
 
@@ -51,6 +52,7 @@ MODEL_GATEKEEPER = _ENV.get("MODEL_GATEKEEPER", "claude-haiku-4-5")
 ADMIN_PORT = int(_ENV.get("ADMIN_PORT", "8787"))
 GEOCODER = _ENV.get("GEOCODER", "")
 GEOCODER_USER_AGENT = _ENV.get("GEOCODER_USER_AGENT", "")
+GOOGLE_PLACES_API_KEY = _ENV.get("GOOGLE_PLACES_API_KEY", "")
 
 AMENITY_KEYS = (
     "magnesium_pool",

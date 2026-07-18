@@ -370,6 +370,26 @@ textarea.text-input {
   flex: 1;
 }
 
+.places-check {
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre-line;
+  border: 1px solid rgba(168, 159, 143, 0.35);
+  border-radius: 2px;
+  padding: 0.4rem 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.places-check-found {
+  color: var(--ink-faded);
+  border-color: var(--thermal);
+}
+
+.places-check-missing {
+  color: var(--oxide);
+  border-color: var(--oxide);
+}
+
 .field-errors {
   color: var(--oxide);
   font-size: 12px;
@@ -518,4 +538,69 @@ textarea.text-input {
   font-family: inherit;
   font-size: inherit;
   padding: 0;
+}
+
+/* Help panel — right-hand drawer, hand-rolled per DESIGN.md §8 (no modal
+   library, no box-shadow, radius ≤4px). */
+
+.help-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(380px, 100%);
+  height: 100%;
+  background: var(--paper-raised);
+  border-left: 1px solid rgba(168, 159, 143, 0.25);
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+  z-index: 10;
+}
+
+.help-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.help-panel-header .pane-heading {
+  margin: 0;
+}
+
+.help-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(168, 159, 143, 0.25);
+}
+
+.help-section:last-child {
+  border-bottom: none;
+}
+
+.help-section p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.help-chip-list,
+.help-shortcut-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  font-size: 13px;
+  line-height: 2;
+}
+
+.help-chip-list .status-chip {
+  margin-right: 0.5rem;
+}
+
+.help-shortcut-list .key-hint {
+  color: var(--thermal);
+  margin-left: 0;
+  margin-right: 0.5rem;
+  min-width: 2.5rem;
+  display: inline-block;
 }

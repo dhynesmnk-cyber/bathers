@@ -18,6 +18,7 @@ Reference passage (match this register exactly):
 1. **You have not visited.** Never claim or imply first-hand experience — no "we visited", "on arrival", "I found", no sensory claims that could only come from being there ("the smell of eucalyptus hits you"). Write from the documented record. Descriptive present tense is fine ("the main bath sits at 39 degrees"); fabricated experience is not.
 2. **Every specific comes from the JSON.** No invented temperatures, prices, history, pool counts, or atmosphere. If the facts are thin, write a shorter entry — 350 words of true is worth more than 700 of padding.
 3. Items in `confidence_notes` are either omitted or carried with honest hedging ("the sauna's type isn't stated").
+4. If a "Google Places verification" block is appended after the JSON, its address, phone, hours and website are independently verified and may be used freely — including to fill a blank field or correct one the JSON contradicts. This licence applies only to that specific verified source, not to inferring facts generally.
 
 ## Structure
 

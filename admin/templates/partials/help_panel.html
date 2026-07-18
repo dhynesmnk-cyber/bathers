@@ -1,0 +1,73 @@
+<div id="help-panel" class="help-panel" hidden aria-labelledby="help-heading">
+  <div class="help-panel-header">
+    <h2 id="help-heading" class="mono pane-heading">HELP</h2>
+    <button id="help-close-btn" type="button" class="btn btn-plain">Close <span class="mono key-hint">Esc</span></button>
+  </div>
+
+  <section class="help-section">
+    <h3 class="mono pane-heading">Harvest</h3>
+    <p>
+      Paste a venue's URL and click <em>Fetch venue</em>. One job runs at a
+      time — the button disables while it's working, but the field stays
+      live so you can prepare the next URL. The log shows every pipeline
+      stage as it happens: fetch, extract, Harvester, Architect, Gatekeeper —
+      never a spinner. Oxide lines are failures; faded lines are warnings.
+      If extraction comes back thin (usually a JS-rendered site), a
+      <em>Retry with Playwright</em> button appears.
+    </p>
+  </section>
+
+  <section class="help-section">
+    <h3 class="mono pane-heading">Review queue</h3>
+    <p>
+      Everything staged, newest first. Use ↑ / ↓ to move through the list.
+      Status chips:
+    </p>
+    <ul class="help-chip-list">
+      <li><span class="status-chip status-DRAFTED">DRAFTED</span> ready for review.</li>
+      <li><span class="status-chip status-IMG-PENDING">IMG PENDING</span> candidate images are waiting on a publish decision.</li>
+      <li><span class="status-chip status-FLAGGED">FLAGGED</span> something needs a look — a validation error, prose under 300 words, or no Google listing found.</li>
+    </ul>
+  </section>
+
+  <section class="help-section">
+    <h3 class="mono pane-heading">Review pane</h3>
+    <p>
+      Left is the rendered preview, built with the same styles the live
+      site uses. Right is the editor. Edits save automatically about 600
+      milliseconds after you stop typing — watch for the "saved HH:MM:SS"
+      line underneath, no save button needed. The coordinate thumbnail's pin
+      turns oxide if the point falls outside Australia. The Mg / IR / SA /
+      CP / LED chips are the amenity toggles — click to flip them. Any field
+      outlined oxide has failed validation and is blocking approval; the
+      message underneath explains why.
+    </p>
+  </section>
+
+  <section class="help-section">
+    <h3 class="mono pane-heading">Actions &amp; shortcuts</h3>
+    <ul class="help-shortcut-list mono">
+      <li><span class="key-hint">↑ / ↓</span> move through the queue</li>
+      <li><span class="key-hint">A</span> approve</li>
+      <li><span class="key-hint">R</span> reject (asks for a one-line reason)</li>
+      <li><span class="key-hint">Esc</span> cancel reject / close this panel</li>
+      <li><span class="key-hint">?</span> toggle this panel</li>
+    </ul>
+    <p>
+      Approving is undoable for a few seconds via the banner in the header.
+      Rejecting always asks for a reason and keeps the file rather than
+      deleting it.
+    </p>
+  </section>
+
+  <section class="help-section">
+    <h3 class="mono pane-heading">Deploy</h3>
+    <p>
+      The footer strip only ever touches published venue files, the SQLite
+      database, and the generated JSON/GeoJSON. If anything else is staged
+      in git — a stray file under <code>temp_data</code> or
+      <code>content-staging</code>, say — deploy refuses and lists exactly
+      what's wrong.
+    </p>
+  </section>
+</div>

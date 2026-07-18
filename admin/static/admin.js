@@ -21,12 +21,17 @@
   const previewFrame = el("preview-frame");
   const fieldName = el("field-name");
   const fieldState = el("field-state");
+  const fieldSuburb = el("field-suburb");
+  const fieldAddress = el("field-address");
   const fieldLat = el("field-latitude");
   const fieldLng = el("field-longitude");
+  const fieldWebsite = el("field-website");
   const fieldSummary = el("field-summary");
+  const fieldSourceUrl = el("field-source-url");
   const fieldErrorsEl = el("field-errors");
   const saveStatusEl = el("save-status");
   const coordPin = el("coord-pin");
+  const placesCheckEl = el("places-check");
   const actionButtons = el("action-buttons");
   const approveBtn = el("approve-btn");
   const rejectBtn = el("reject-btn");
@@ -35,6 +40,9 @@
   const rejectCancel = el("reject-cancel");
   const undoBanner = el("undo-banner");
   const undoBtn = el("undo-btn");
+  const helpToggleBtn = el("help-toggle-btn");
+  const helpPanel = el("help-panel");
+  const helpCloseBtn = el("help-close-btn");
   const harvestForm = el("harvest-form");
   const harvestUrl = el("harvest-url");
   const harvestSubmit = el("harvest-submit");
@@ -137,9 +145,13 @@
     const fm = entry.frontmatter || {};
     fieldName.value = fm.name || "";
     fieldState.value = fm.state || "";
+    fieldSuburb.value = fm.suburb || "";
+    fieldAddress.value = fm.address || "";
     fieldLat.value = fm.latitude ?? "";
     fieldLng.value = fm.longitude ?? "";
+    fieldWebsite.value = fm.website || "";
     fieldSummary.value = fm.summary || "";
+    fieldSourceUrl.value = fm.source_url || "";
     const amenities = fm.amenities || {};
     document.querySelectorAll(".toggle-chip").forEach((btn) => {
       btn.classList.toggle("active", !!amenities[btn.dataset.amenity]);
@@ -147,6 +159,37 @@
     updateCoordPin(fm.latitude, fm.longitude);
     renderFieldErrors(entry.errors || []);
     renderImageSection(entry);
+    renderPlacesCheck(entry.places_check);
+  }
+
+  // ---- Google Places check (read-only — never feeds queuePatch, so it can
+  // never silently overwrite the human-editable address/website fields) ----
+
+  function renderPlacesCheck(check) {
+    placesCheckEl.innerHTML = "";
+    if (!check || check.skipped) {
+      placesCheckEl.hidden = true;
+      return;
+    }
+    placesCheckEl.hidden = false;
+    if (!check.found) {
+      placesCheckEl.classList.add("places-check-missing");
+      placesCheckEl.classList.remove("places-check-found");
+      placesCheckEl.textContent = check.error
+        ? `Google Places check inconclusive — ${check.error}`
+        : "No Google Places listing found for this venue.";
+      return;
+    }
+    placesCheckEl.classList.add("places-check-found");
+    placesCheckEl.classList.remove("places-check-missing");
+    const lines = [
+      "Verified on Google Places:",
+      check.formatted_address,
+      check.phone,
+      check.website,
+      ...(check.hours || []),
+    ].filter(Boolean);
+    placesCheckEl.textContent = lines.join("\n");
   }
 
   // ---- Images (UX.md §4 — publishing is a separate deliberate action) ----
@@ -242,7 +285,17 @@
     coordPin.style.fill = outOfBounds ? "var(--oxide)" : "var(--thermal)";
   }
 
-  const FIELD_INPUT_MAP = { name: fieldName, state: fieldState, latitude: fieldLat, longitude: fieldLng, summary: fieldSummary };
+  const FIELD_INPUT_MAP = {
+    name: fieldName,
+    state: fieldState,
+    suburb: fieldSuburb,
+    address: fieldAddress,
+    latitude: fieldLat,
+    longitude: fieldLng,
+    website: fieldWebsite,
+    summary: fieldSummary,
+    source_url: fieldSourceUrl,
+  };
 
   function renderFieldErrors(errors) {
     Object.values(FIELD_INPUT_MAP).forEach((input) => input.classList.remove("field-invalid"));
@@ -278,7 +331,7 @@
     renderFieldErrors(currentEntry.errors || []);
     const idx = queue.findIndex((q) => q.slug === selectedSlug);
     if (idx !== -1) {
-      queue[idx] = { ...queue[idx], name: currentEntry.name, state: currentEntry.state, amenities: currentEntry.amenities, status: currentEntry.status, errors: currentEntry.errors };
+      queue[idx] = { ...queue[idx], name: currentEntry.name, state: currentEntry.state, suburb: currentEntry.suburb, amenities: currentEntry.amenities, status: currentEntry.status, errors: currentEntry.errors };
       renderQueue();
     }
     const now = new Date();
@@ -288,7 +341,11 @@
 
   fieldName.addEventListener("input", () => queuePatch("name", fieldName.value));
   fieldState.addEventListener("change", () => queuePatch("state", fieldState.value));
+  fieldSuburb.addEventListener("input", () => queuePatch("suburb", fieldSuburb.value));
+  fieldAddress.addEventListener("input", () => queuePatch("address", fieldAddress.value));
+  fieldWebsite.addEventListener("input", () => queuePatch("website", fieldWebsite.value));
   fieldSummary.addEventListener("input", () => queuePatch("summary", fieldSummary.value));
+  fieldSourceUrl.addEventListener("input", () => queuePatch("source_url", fieldSourceUrl.value));
   fieldLat.addEventListener("input", () => {
     const v = fieldLat.value === "" ? null : Number(fieldLat.value);
     updateCoordPin(v, fieldLng.value === "" ? null : Number(fieldLng.value));
@@ -556,6 +613,17 @@
 
   fetchDeployStatus();
 
+  // ---- Help panel ----
+
+  function toggleHelpPanel() {
+    helpPanel.hidden = !helpPanel.hidden;
+  }
+
+  helpToggleBtn.addEventListener("click", toggleHelpPanel);
+  helpCloseBtn.addEventListener("click", () => {
+    helpPanel.hidden = true;
+  });
+
   // ---- Keyboard shortcuts ----
 
   document.addEventListener("keydown", (event) => {
@@ -577,6 +645,12 @@
       return;
     }
 
+    if (event.key === "?") {
+      event.preventDefault();
+      toggleHelpPanel();
+      return;
+    }
+
     if (!selectedSlug || !rejectForm.hidden) return;
 
     if (event.key === "a" || event.key === "A") {
@@ -589,8 +663,11 @@
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !rejectForm.hidden) {
+    if (event.key !== "Escape") return;
+    if (!rejectForm.hidden) {
       hideRejectForm();
+    } else if (!helpPanel.hidden) {
+      helpPanel.hidden = true;
     }
   });
 

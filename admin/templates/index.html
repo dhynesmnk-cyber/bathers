@@ -12,6 +12,7 @@
       <p id="undo-banner" class="mono undo-banner" hidden>
         Approved — <button type="button" id="undo-btn" class="link-btn">undo?</button>
       </p>
+      <button id="help-toggle-btn" type="button" class="btn btn-plain">Help <span class="mono key-hint">?</span></button>
     </header>
 
     <main class="hub-grid">
@@ -66,6 +67,16 @@
               </label>
               <div class="field-row">
                 <label class="field">
+                  <span class="mono field-label">Suburb</span>
+                  <input id="field-suburb" class="text-input" type="text" data-field="suburb" />
+                </label>
+                <label class="field">
+                  <span class="mono field-label">Address</span>
+                  <input id="field-address" class="text-input" type="text" data-field="address" />
+                </label>
+              </div>
+              <div class="field-row">
+                <label class="field">
                   <span class="mono field-label">Latitude</span>
                   <input id="field-latitude" class="text-input mono" type="number" step="any" data-field="latitude" />
                 </label>
@@ -92,9 +103,21 @@
                 <button type="button" class="toggle-chip" data-amenity="led_therapy">LED</button>
               </fieldset>
 
+              <div id="places-check" class="places-check" hidden></div>
+
+              <label class="field">
+                <span class="mono field-label">Website</span>
+                <input id="field-website" class="text-input mono" type="url" data-field="website" />
+              </label>
+
               <label class="field">
                 <span class="mono field-label">Summary</span>
                 <textarea id="field-summary" class="text-input" data-field="summary" rows="3"></textarea>
+              </label>
+
+              <label class="field">
+                <span class="mono field-label">Source URL</span>
+                <input id="field-source-url" class="text-input mono" type="url" data-field="source_url" />
               </label>
 
               <div id="image-section" class="field">
@@ -146,6 +169,8 @@
         </div>
       </div>
     </footer>
+
+    {% include "partials/help_panel.html" %}
 
     <script src="/static/admin.js"></script>
   </body>

@@ -19,7 +19,7 @@ from starlette.requests import Request
 
 from admin.config import IMAGES_DIR, SITE_DIST_DIR, SITE_FONTS_DIR, STAGING_DIR
 from admin.mdx_preview import render_body_html
-from admin.pipeline import deploy, images, orchestrator, staging
+from admin.pipeline import deploy, images, orchestrator, places, staging
 from admin.pipeline.staging import UndoExpired, ValidationFailed
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -59,6 +59,7 @@ def _entry_summary(entry: staging.StagingEntry) -> dict[str, Any]:
 
 def _entry_detail(entry: staging.StagingEntry) -> dict[str, Any]:
     candidates = images.list_candidates(entry.slug)
+    places_check = places.load_check(entry.slug)
     return {
         **_entry_summary(entry),
         "frontmatter": entry.frontmatter,
@@ -67,6 +68,7 @@ def _entry_detail(entry: staging.StagingEntry) -> dict[str, Any]:
             {"index": c.index, "url": f"/api/queue/{entry.slug}/images/{c.index}/file", "source_url": c.source_url}
             for c in candidates
         ],
+        "places_check": asdict(places_check) if places_check else None,
     }
 
 

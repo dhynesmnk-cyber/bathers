@@ -43,4 +43,4 @@ export function amenityFromUrlSlug(segment: string): (typeof AMENITY_KEYS)[numbe
 }
 
 export const SITE_NAME = "Bathers'";
-export const SITE_TAGLINE = "A field guide to Australian day spas and bathhouses.";
+export const SITE_TAGLINE = "Notes on heat, cold and water at Australian day spas and bathhouses.";

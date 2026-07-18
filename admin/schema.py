@@ -130,8 +130,13 @@ def count_prose_words(body: str) -> int:
     return len(stripped.split())
 
 
-def staging_status(errors: list[FieldError], word_count: int, has_pending_images: bool = False) -> str:
-    if errors or word_count < MIN_PROSE_WORDS:
+def staging_status(
+    errors: list[FieldError],
+    word_count: int,
+    has_pending_images: bool = False,
+    places_flagged: bool = False,
+) -> str:
+    if errors or word_count < MIN_PROSE_WORDS or places_flagged:
         return "FLAGGED"
     if has_pending_images:
         return "IMG PENDING"

@@ -16,7 +16,7 @@ from typing import Any
 import yaml
 
 from admin.config import PUBLISHED_DIR, REJECTED_DIR, STAGING_DIR
-from admin.pipeline import data_store, forewords, images
+from admin.pipeline import data_store, forewords, images, places
 from admin.schema import FieldError, count_prose_words, staging_status, validate_frontmatter
 
 FRONTMATTER_FIELD_ORDER = (
@@ -93,7 +93,14 @@ def _entry_from_path(path: Path) -> StagingEntry:
     errors = validate_frontmatter(data)
     word_count = count_prose_words(body)
     has_pending_images = bool(images.list_candidates(slug)) and not data.get("image")
-    status = staging_status(errors, word_count, has_pending_images)
+    places_check = places.load_check(slug)
+    places_flagged = (
+        places_check is not None
+        and not places_check.skipped
+        and not places_check.found
+        and places_check.error is None
+    )
+    status = staging_status(errors, word_count, has_pending_images, places_flagged)
     return StagingEntry(
         slug=slug,
         frontmatter=data,

@@ -9,11 +9,11 @@ from __future__ import annotations
 import datetime
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Iterator
 
 from admin.config import AMENITY_KEYS, FAILED_DIR, MODEL_ARCHITECT, MODEL_GATEKEEPER, MODEL_HARVESTER, PUBLISHED_DIR, ROOT, STAGING_DIR
-from admin.pipeline import agents, geocode, harvest, images
+from admin.pipeline import agents, geocode, harvest, images, places
 from admin.pipeline.staging import render_mdx, split_frontmatter
 
 HARVESTER_REQUIRED_KEYS = (
@@ -184,7 +184,29 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False) -> Iterator[Log
             log(f"geocoded address → {coords[0]:.4f}, {coords[1]:.4f}")
         yield from drain()
 
-    architect_input = json.dumps(harvester_data, indent=2)
+    places_result = places.check_listing(name, harvester_data.get("suburb"), harvester_data.get("state"))
+    places.save_check(slug, places_result)
+    if places_result.skipped:
+        log("Google Places check skipped — GOOGLE_PLACES_API_KEY not set")
+    elif places_result.error:
+        log(f"Google Places check inconclusive — {places_result.error}", "warn")
+    elif places_result.found:
+        log(f"checking Google Places... found: {places_result.formatted_address}")
+    else:
+        log("checking Google Places... NO LISTING FOUND, flagging for review", "warn")
+    yield from drain()
+
+    # Appended as a separate labelled block rather than merged into the
+    # Harvester JSON contract (SCHEMA.md's "one contract, four consumers"
+    # rule) — both the Architect and Gatekeeper need to see it, since the
+    # Gatekeeper's fact audit only trusts what's in its own prompt input.
+    places_block = (
+        f"\n\n---\nGoogle Places verification (authoritative if present):\n{json.dumps(asdict(places_result), indent=2)}"
+        if not places_result.skipped
+        else ""
+    )
+
+    architect_input = json.dumps(harvester_data, indent=2) + places_block
     try:
         (architect_fm, architect_body), _usage = agents.call_agent(
             model=MODEL_ARCHITECT,
@@ -207,7 +229,10 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False) -> Iterator[Log
     yield from drain()
 
     architect_mdx = render_mdx(architect_fm, architect_body)
-    gatekeeper_input = f"{architect_mdx}\n\n---\nHarvester JSON (for the fact audit):\n{json.dumps(harvester_data, indent=2)}"
+    gatekeeper_input = (
+        f"{architect_mdx}\n\n---\nHarvester JSON (for the fact audit):\n{json.dumps(harvester_data, indent=2)}"
+        + places_block
+    )
     try:
         (gate_fm, gate_body), _usage = agents.call_agent(
             model=MODEL_GATEKEEPER,
