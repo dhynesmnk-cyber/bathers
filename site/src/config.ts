@@ -19,8 +19,28 @@ export const AMENITY_NOTATION: Record<(typeof AMENITY_KEYS)[number], { short: st
 
 export const STATES = ["VIC", "NSW", "QLD", "SA", "WA", "TAS", "NT", "ACT"] as const;
 
+export const STATE_NAMES: Record<(typeof STATES)[number], string> = {
+  VIC: "Victoria",
+  NSW: "New South Wales",
+  QLD: "Queensland",
+  SA: "South Australia",
+  WA: "Western Australia",
+  TAS: "Tasmania",
+  NT: "Northern Territory",
+  ACT: "Australian Capital Territory",
+};
+
 export const AU_LATITUDE_BOUNDS = { min: -44.0, max: -9.0 } as const;
 export const AU_LONGITUDE_BOUNDS = { min: 112.0, max: 154.0 } as const;
+
+// Amenity keys are snake_case (SCHEMA.md §1); URL path segments use kebab-case.
+export function amenityUrlSlug(key: (typeof AMENITY_KEYS)[number]): string {
+  return key.replace(/_/g, "-");
+}
+
+export function amenityFromUrlSlug(segment: string): (typeof AMENITY_KEYS)[number] | undefined {
+  return AMENITY_KEYS.find((key) => amenityUrlSlug(key) === segment);
+}
 
 export const SITE_NAME = "Bathers'";
 export const SITE_TAGLINE = "A field guide to Australian day spas and bathhouses.";

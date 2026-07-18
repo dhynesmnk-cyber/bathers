@@ -18,6 +18,7 @@ REJECTED_DIR = ROOT / "content-staging" / "_rejected"
 DB_PATH = ROOT / "data" / "directory.db"
 VENUES_JSON_PATH = ROOT / "site" / "src" / "data" / "venues.json"
 VENUES_GEOJSON_PATH = ROOT / "site" / "public" / "venues.geojson"
+FOREWORDS_JSON_PATH = ROOT / "site" / "src" / "data" / "forewords.json"
 
 TEMP_DATA_DIR = ROOT / "temp_data"
 IMAGES_DIR = TEMP_DATA_DIR / "images"
@@ -60,3 +61,22 @@ AMENITY_KEYS = (
 )
 
 STATES = ("VIC", "NSW", "QLD", "SA", "WA", "TAS", "NT", "ACT")
+
+STATE_NAMES = {
+    "VIC": "Victoria",
+    "NSW": "New South Wales",
+    "QLD": "Queensland",
+    "SA": "South Australia",
+    "WA": "Western Australia",
+    "TAS": "Tasmania",
+    "NT": "Northern Territory",
+    "ACT": "Australian Capital Territory",
+}
+
+AMENITY_FULL_NAMES = {
+    "magnesium_pool": "magnesium pool",
+    "infrared_sauna": "infrared sauna",
+    "traditional_sauna": "traditional sauna",
+    "cold_plunge": "cold plunge",
+    "led_therapy": "LED light therapy",
+}
