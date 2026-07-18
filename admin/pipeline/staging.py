@@ -16,7 +16,7 @@ from typing import Any
 import yaml
 
 from admin.config import PUBLISHED_DIR, REJECTED_DIR, STAGING_DIR
-from admin.pipeline import data_store, images
+from admin.pipeline import data_store, forewords, images
 from admin.schema import FieldError, count_prose_words, staging_status, validate_frontmatter
 
 FRONTMATTER_FIELD_ORDER = (
@@ -170,6 +170,7 @@ def approve(slug: str) -> int:
     dest.write_text(staged_text, encoding="utf-8")
     src.unlink()
     count = data_store.rebuild()
+    forewords.ensure_forewords()  # UX.md §2.3 — generated once, on first venue in a new state/amenity combo
 
     _UNDO_STORE[slug] = _UndoRecord(
         staged_text=staged_text,

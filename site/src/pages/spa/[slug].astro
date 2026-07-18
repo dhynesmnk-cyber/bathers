@@ -4,6 +4,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Notation from "../../components/Notation.astro";
 import Pull from "../../components/Pull.astro";
 import TippedPhoto from "../../components/TippedPhoto.astro";
+import { STATE_NAMES } from "../../config";
 
 export async function getStaticPaths() {
   const venues = await getCollection("spas");
@@ -34,6 +35,9 @@ const { Content } = await render(venue);
 
       <div class="mono mt-16 pt-6" style="border-top: 1px solid rgba(168,159,143,0.25); background: var(--paper-raised); padding: 1.5rem;">
         <p>{data.address}</p>
+        <p class="mt-4">
+          <a href={`/${data.state.toLowerCase()}/`}>More bathhouses in {STATE_NAMES[data.state]}</a>
+        </p>
         <p class="mt-4">
           <a href={`mailto:claim@bathers.example?subject=Claim ${data.name}`}>Claim this listing</a>
         </p>

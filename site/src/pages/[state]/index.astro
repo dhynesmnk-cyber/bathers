@@ -1,0 +1,76 @@
+---
+// Programmatic state page (UX.md §2.3, TRD.md §4.2). Generated only for
+// states with >=1 published venue.
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import VenueEntry from "../../components/VenueEntry.astro";
+import { AMENITY_KEYS, AMENITY_NOTATION, STATE_NAMES, STATES, amenityUrlSlug } from "../../config";
+import forewords from "../../data/forewords.json";
+
+export async function getStaticPaths() {
+  const venues = await getCollection("spas");
+  const states = STATES.filter((state) => venues.some((v) => v.data.state === state));
+  return states.map((state) => ({
+    params: { state: state.toLowerCase() },
+    props: { state, venues: venues.filter((v) => v.data.state === state) },
+  }));
+}
+
+const { state, venues } = Astro.props;
+const presentAmenities = AMENITY_KEYS.filter((key) => venues.some((v) => v.data.amenities[key]));
+const foreword: string = (forewords as Record<string, { state?: string }>)[state]?.state ?? "";
+const notation = presentAmenities.map((key) => AMENITY_NOTATION[key].short).join(" · ");
+const pageTitle = `Bathhouses of ${STATE_NAMES[state]}${notation ? ` — ${notation}` : ""}`;
+---
+
+<BaseLayout
+  title={`${pageTitle} — Bathers'`}
+  description={foreword || pageTitle}
+  canonicalPath={`/${state.toLowerCase()}/`}
+>
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <header class="mb-16">
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
+        Bathhouses of {STATE_NAMES[state]}
+      </h1>
+      {notation && <p class="mono mt-2 text-[var(--ink-faded)]">{notation}</p>}
+    </header>
+
+    {
+      foreword && (
+        <section class="reading-spine mb-16">
+          <p>{foreword}</p>
+        </section>
+      )
+    }
+
+    {
+      presentAmenities.length > 0 && (
+        <nav class="mono mb-16 flex flex-wrap gap-x-4 gap-y-2 text-[var(--ink-faded)]" aria-label="Filter by amenity">
+          {presentAmenities.map((key) => (
+            <a href={`/${state.toLowerCase()}/${amenityUrlSlug(key)}/`}>{AMENITY_NOTATION[key].full}</a>
+          ))}
+        </nav>
+      )
+    }
+
+    <section aria-labelledby="contents-heading">
+      <div class="mono mb-8 flex items-center gap-4 text-[var(--ink-faded)]">
+        <span>CONTENTS</span>
+        <span class="h-px flex-1" style="background: rgba(168,159,143,0.25);"></span>
+      </div>
+      {
+        venues.map((venue) => (
+          <VenueEntry
+            name={venue.data.name}
+            slug={venue.id}
+            suburb={venue.data.suburb}
+            state={venue.data.state}
+            summary={venue.data.summary}
+            amenities={venue.data.amenities}
+          />
+        ))
+      }
+    </section>
+  </main>
+</BaseLayout>
