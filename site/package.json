@@ -10,9 +10,11 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "5.18.2",
     "@astrojs/mdx": "4.3.14",
-    "tailwindcss": "4.3.3",
-    "@tailwindcss/vite": "4.3.3"
+    "@tailwindcss/vite": "4.3.3",
+    "astro": "5.18.2",
+    "leaflet": "^1.9.4",
+    "leaflet.markercluster": "^1.5.3",
+    "tailwindcss": "4.3.3"
   }
 }

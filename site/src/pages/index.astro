@@ -1,8 +1,9 @@
 ---
 import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import Map from "../components/Map.astro";
 import VenueEntry from "../components/VenueEntry.astro";
-import { SITE_NAME, SITE_TAGLINE, STATES } from "../config";
+import { SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES } from "../config";
 
 const venues = await getCollection("spas");
 
@@ -10,6 +11,16 @@ const byState = STATES.map((state) => ({
   state,
   venues: venues.filter((v) => v.data.state === state),
 })).filter((group) => group.venues.length > 0);
+
+const markers = venues.map((v) => ({
+  slug: v.id,
+  name: v.data.name,
+  suburb: v.data.suburb,
+  state: v.data.state,
+  latitude: v.data.latitude,
+  longitude: v.data.longitude,
+  amenities: v.data.amenities,
+}));
 ---
 
 <BaseLayout
@@ -38,6 +49,8 @@ const byState = STATES.map((state) => ({
       </p>
     </section>
 
+    <Map venues={markers} />
+
     <section aria-labelledby="contents-heading">
       <div class="mono mb-8 flex items-center gap-4 text-[var(--ink-faded)]">
         <span>CONTENTS</span>
@@ -46,7 +59,9 @@ const byState = STATES.map((state) => ({
       {
         byState.map((group) => (
           <div class="mb-12">
-            <h2 class="mono mb-2 text-[var(--ink-faded)]">{group.state}</h2>
+            <h2 class="mono mb-2 text-[var(--ink-faded)]">
+              <a href={`/${group.state.toLowerCase()}/`}>{STATE_NAMES[group.state]}</a>
+            </h2>
             {group.venues.map((venue) => (
               <VenueEntry
                 name={venue.data.name}

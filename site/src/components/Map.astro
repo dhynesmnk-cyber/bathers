@@ -1,0 +1,345 @@
+---
+// Leaflet map chapter (UX.md §2.1, DESIGN.md §5). Marker data is embedded at
+// build time as JSON — the public site performs zero runtime data fetching
+// except map tiles (TRD.md §4.4), so this never fetches venues.geojson.
+import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+import { AMENITY_KEYS, type AMENITY_NOTATION } from "../config";
+
+interface VenueMarker {
+  slug: string;
+  name: string;
+  suburb: string;
+  state: string;
+  latitude: number;
+  longitude: number;
+  amenities: Record<(typeof AMENITY_KEYS)[number], boolean>;
+}
+
+interface Props {
+  venues: VenueMarker[];
+}
+
+const { venues } = Astro.props;
+---
+
+<section class="map-chapter" aria-labelledby="map-heading">
+  <div class="mono section-opener flex items-center gap-4 text-[var(--ink-faded)]">
+    <span id="map-heading">MAP</span>
+    <span class="h-px flex-1" style="background: rgba(168,159,143,0.25);"></span>
+  </div>
+
+  <div id="amenity-filters" class="mono filter-bar" hidden></div>
+
+  <div id="map-container" class="map-container" style="display: none;" aria-label="Map of venues"></div>
+
+  <noscript>
+    <p class="mono" style="color: var(--ink-faded);">Map requires JavaScript — the full index is below.</p>
+  </noscript>
+
+  <script type="application/json" id="venue-marker-data" set:html={JSON.stringify(venues)} />
+</section>
+
+<script>
+  import L from "leaflet";
+  import "leaflet.markercluster";
+
+  interface VenueMarker {
+    slug: string;
+    name: string;
+    suburb: string;
+    state: string;
+    latitude: number;
+    longitude: number;
+    amenities: Record<string, boolean>;
+  }
+
+  const AMENITY_KEYS = ["magnesium_pool", "infrared_sauna", "traditional_sauna", "cold_plunge", "led_therapy"];
+  const AMENITY_SHORT: Record<string, string> = {
+    magnesium_pool: "Mg",
+    infrared_sauna: "IR",
+    traditional_sauna: "SA",
+    cold_plunge: "CP",
+    led_therapy: "LED",
+  };
+  const AMENITY_FULL: Record<string, string> = {
+    magnesium_pool: "magnesium pool",
+    infrared_sauna: "infrared sauna",
+    traditional_sauna: "traditional sauna",
+    cold_plunge: "cold plunge",
+    led_therapy: "LED therapy",
+  };
+
+  const dataEl = document.getElementById("venue-marker-data");
+  const venues: VenueMarker[] = dataEl ? JSON.parse(dataEl.textContent || "[]") : [];
+
+  const mapContainer = document.getElementById("map-container") as HTMLDivElement | null;
+  const filterBar = document.getElementById("amenity-filters") as HTMLDivElement | null;
+  if (!mapContainer || !filterBar) {
+    // Malformed page — never throw and break the rest of a static page's JS.
+  } else {
+    // ---- Filter state (read from URL first so a shared link reproduces the view) ----
+
+    function readActiveFromUrl(): Set<string> {
+      const params = new URLSearchParams(location.search);
+      const raw = params.get("amenities");
+      if (!raw) return new Set();
+      return new Set(raw.split(",").filter((k) => AMENITY_KEYS.includes(k)));
+    }
+
+    function writeActiveToUrl(active: Set<string>) {
+      const params = new URLSearchParams(location.search);
+      if (active.size === 0) {
+        params.delete("amenities");
+      } else {
+        params.set("amenities", Array.from(active).join(","));
+      }
+      const query = params.toString();
+      history.replaceState(null, "", query ? `?${query}` : location.pathname);
+    }
+
+    let active = readActiveFromUrl();
+
+    function matches(v: VenueMarker): boolean {
+      for (const key of active) {
+        if (!v.amenities[key]) return false;
+      }
+      return true;
+    }
+
+    // ---- Filter bar (text toggles, DESIGN.md §5 — inline mono, no checkboxes) ----
+
+    const buttons: Record<string, HTMLButtonElement> = {};
+    for (const key of AMENITY_KEYS) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "filter-toggle";
+      btn.textContent = AMENITY_FULL[key];
+      btn.setAttribute("aria-pressed", active.has(key) ? "true" : "false");
+      btn.classList.toggle("active", active.has(key));
+      btn.addEventListener("click", () => {
+        if (active.has(key)) active.delete(key);
+        else active.add(key);
+        btn.classList.toggle("active", active.has(key));
+        btn.setAttribute("aria-pressed", active.has(key) ? "true" : "false");
+        writeActiveToUrl(active);
+        applyFilter();
+      });
+      buttons[key] = btn;
+      filterBar.appendChild(btn);
+    }
+    filterBar.hidden = false;
+
+    // ---- Map ----
+
+    mapContainer.style.display = "";
+    const map = L.map(mapContainer, { scrollWheelZoom: false });
+    map.setView([-25.0, 133.0], 4);
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: "abcd",
+      maxZoom: 19,
+    }).addTo(map);
+
+    function venueIcon(isActive: boolean) {
+      return L.divIcon({
+        className: `venue-marker-icon${isActive ? " active" : ""}`,
+        html: "<span></span>",
+        iconSize: [14, 14],
+      });
+    }
+
+    const markerBySlug = new Map<string, L.Marker>();
+    let activeSlug: string | null = null;
+
+    const cluster = (L as any).markerClusterGroup({
+      iconCreateFunction(c: any) {
+        return L.divIcon({
+          className: "venue-cluster-icon",
+          html: `<span>${c.getChildCount()}</span>`,
+          iconSize: [28, 28],
+        });
+      },
+    });
+
+    let entryHighlightTimer: number | undefined;
+
+    function setActiveMarker(slug: string | null) {
+      if (activeSlug && markerBySlug.has(activeSlug)) {
+        markerBySlug.get(activeSlug)!.setIcon(venueIcon(false));
+      }
+      activeSlug = slug;
+      if (slug && markerBySlug.has(slug)) {
+        markerBySlug.get(slug)!.setIcon(venueIcon(true));
+      }
+    }
+
+    for (const v of venues) {
+      const marker = L.marker([v.latitude, v.longitude], { icon: venueIcon(false) });
+      marker.on("click", () => {
+        setActiveMarker(v.slug);
+        const entry = document.getElementById(`venue-${v.slug}`);
+        if (!entry) return;
+        entry.scrollIntoView({ behavior: "smooth", block: "center" });
+        document.querySelectorAll(".venue-entry-active").forEach((n) => n.classList.remove("venue-entry-active"));
+        entry.classList.add("venue-entry-active");
+        window.clearTimeout(entryHighlightTimer);
+        entryHighlightTimer = window.setTimeout(() => entry.classList.remove("venue-entry-active"), 2500);
+      });
+      markerBySlug.set(v.slug, marker);
+    }
+
+    function applyFilter() {
+      cluster.clearLayers();
+      const visibleSlugs = new Set<string>();
+      for (const v of venues) {
+        if (!matches(v)) continue;
+        visibleSlugs.add(v.slug);
+        cluster.addLayer(markerBySlug.get(v.slug)!);
+      }
+      document.querySelectorAll("[data-venue-slug]").forEach((el) => {
+        const slug = (el as HTMLElement).dataset.venueSlug!;
+        (el as HTMLElement).hidden = !visibleSlugs.has(slug);
+      });
+    }
+
+    map.addLayer(cluster);
+    applyFilter();
+
+    if (venues.length > 0) {
+      const bounds = L.latLngBounds(venues.map((v) => [v.latitude, v.longitude] as [number, number]));
+      map.fitBounds(bounds, { padding: [24, 24], maxZoom: 10 });
+    }
+  }
+</script>
+
+<style>
+  .map-chapter {
+    margin-bottom: 6rem;
+  }
+
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin: 1.5rem 0;
+    color: var(--ink-faded);
+  }
+
+  :global(.filter-toggle) {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    color: var(--ink-faded);
+    cursor: pointer;
+    text-underline-offset: 3px;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 1px;
+  }
+
+  :global(.filter-toggle:hover),
+  :global(.filter-toggle:focus-visible) {
+    color: var(--ink);
+  }
+
+  :global(.filter-toggle.active) {
+    color: var(--ink);
+    text-decoration-color: var(--thermal);
+  }
+
+  .map-container {
+    height: min(60vh, 420px);
+    border: 1px solid rgba(168, 159, 143, 0.25);
+  }
+
+  :global(.leaflet-tile-pane) {
+    filter: sepia(0.35) hue-rotate(-15deg) saturate(0.7) brightness(0.75) contrast(1.05);
+  }
+
+  :global(.leaflet-container) {
+    background: var(--paper);
+  }
+
+  :global(.leaflet-control-attribution) {
+    background: rgba(25, 22, 20, 0.75) !important;
+    color: var(--ink-faded) !important;
+    font-family: var(--font-mono);
+    font-size: 10px !important;
+  }
+
+  :global(.leaflet-control-attribution a) {
+    color: var(--ink-faded) !important;
+  }
+
+  /* Leaflet 1.9+ injects a small flag icon before its own attribution link —
+     the public site has no icons anywhere (DESIGN.md §5). */
+  :global(.leaflet-attribution-flag) {
+    display: none !important;
+  }
+
+  /* Leaflet's default CSS carries box-shadows, gradients and >2px radii on
+     controls/popups/clusters — all banned on the public site (DESIGN.md §2,
+     §4). Neutralise rather than rely on Leaflet's stylesheet. */
+  :global(.leaflet-bar),
+  :global(.leaflet-control-layers),
+  :global(.leaflet-popup-tip),
+  :global(.leaflet-popup-content-wrapper),
+  :global(.leaflet-tooltip) {
+    box-shadow: none !important;
+    border-radius: 2px !important;
+  }
+
+  :global(.leaflet-bar a),
+  :global(.leaflet-bar a:first-child),
+  :global(.leaflet-bar a:last-child) {
+    border-radius: 0 !important;
+  }
+
+  :global(.leaflet-control-zoom a) {
+    background: var(--paper-raised) !important;
+    color: var(--ink) !important;
+    border-color: rgba(168, 159, 143, 0.25) !important;
+  }
+
+  :global(.leaflet-control-zoom a:focus) {
+    background: var(--paper-raised) !important;
+  }
+
+  :global(.venue-marker-icon span) {
+    display: block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--thermal);
+    background: transparent;
+  }
+
+  :global(.venue-marker-icon.active span) {
+    background: var(--thermal);
+  }
+
+  :global(.venue-cluster-icon span) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--thermal);
+    background: var(--paper-raised);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  :global(.venue-entry-active) {
+    background: var(--paper-raised);
+    transition: background-color 0.3s ease;
+  }
+</style>

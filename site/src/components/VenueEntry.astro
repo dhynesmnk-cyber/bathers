@@ -14,7 +14,12 @@ interface Props {
 const { name, slug, suburb, state, summary, amenities } = Astro.props;
 ---
 
-<article class="py-6" style="border-top: 1px solid rgba(168,159,143,0.25);">
+<article
+  id={`venue-${slug}`}
+  data-venue-slug={slug}
+  class="py-6"
+  style="border-top: 1px solid rgba(168,159,143,0.25); scroll-margin-top: 2rem;"
+>
   <a href={`/spa/${slug}/`}>
     <h3 class="font-display text-3xl font-light text-[var(--ink)]">{name}</h3>
   </a>
