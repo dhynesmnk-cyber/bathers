@@ -95,7 +95,7 @@ def _finalize_frontmatter(gate_fm: dict, harvester_data: dict, coords: tuple[flo
         # rarely appears as a fact within it — but we already fetched this
         # page from `url`, the same assumption already made for source_url.
         final["website"] = url
-    final["drafted"] = datetime.date.today().isoformat()
+    final["drafted"] = datetime.date.today()
     final.setdefault("status", "unclaimed")
     # Amenities are the Harvester's finding, not the Architect/Gatekeeper's —
     # enforce that rather than trusting it survived two rewrite passes intact.
