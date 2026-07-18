@@ -1,0 +1,416 @@
+/* Admin chrome only — DESIGN.md §8: same palette + mono face as the public
+   site, but plainer ("the workbench, not the pamphlet"). Radius up to 4px
+   and focus rings are allowed here where the public site forbids them.
+   Tokens/fonts are declared standalone (not imported from site/) because
+   Python/FastAPI can't reach into the Astro/Tailwind build — same pattern
+   as admin/config.py duplicating site/src/config.ts's constants. */
+
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 300 600;
+  font-display: swap;
+  src: url("/fonts/fraunces-variable.woff2") format("woff2-variations"),
+       url("/fonts/fraunces-variable.woff2") format("woff2");
+  font-variation-settings: "SOFT" 60;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-mono-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-mono-500.woff2") format("woff2");
+}
+
+:root {
+  --paper: #191614;
+  --paper-raised: #211d1a;
+  --ink: #e8e2d6;
+  --ink-faded: #a89f8f;
+  --thermal: #7fb5a4;
+  --oxide: #b4633a;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Author rules like `.reject-form { display: flex }` below otherwise beat
+   the UA [hidden] default, since origin outranks source order at equal
+   specificity — this keeps hidden authoritative regardless of what display
+   value a component sets. */
+[hidden] {
+  display: none !important;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mono {
+  font-family: "IBM Plex Mono", monospace;
+  letter-spacing: 0.03em;
+}
+
+:focus-visible {
+  outline: 1px solid var(--thermal);
+  outline-offset: 2px;
+}
+
+.hub-header {
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid rgba(168, 159, 143, 0.25);
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.eyebrow {
+  color: var(--ink-faded);
+  letter-spacing: 0.1em;
+  font-size: 12px;
+}
+
+.hub-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 280px 340px 1fr;
+  min-height: 0;
+}
+
+.pane {
+  border-right: 1px solid rgba(168, 159, 143, 0.25);
+  padding: 1rem;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.review-pane {
+  border-right: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.pane-heading {
+  color: var(--ink-faded);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  margin: 0 0 0.75rem;
+}
+
+.empty-state {
+  color: var(--ink-faded);
+  font-size: 13px;
+}
+
+/* Harvest */
+
+.harvest-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.harvest-log {
+  background: var(--paper);
+  border: 1px solid rgba(168, 159, 143, 0.25);
+  border-radius: 2px;
+  padding: 0.5rem;
+  font-size: 12px;
+  line-height: 1.6;
+  height: calc(100% - 4rem);
+  overflow-y: auto;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.harvest-log .line-info { color: var(--ink); }
+.harvest-log .line-error { color: var(--oxide); }
+.harvest-log .line-ok { color: var(--thermal); }
+
+/* Queue */
+
+.queue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.queue-item {
+  border-top: 1px solid rgba(168, 159, 143, 0.25);
+  padding: 0.6rem 0.4rem;
+  cursor: pointer;
+}
+
+.queue-item:last-child {
+  border-bottom: 1px solid rgba(168, 159, 143, 0.25);
+}
+
+.queue-item.selected {
+  background: var(--paper-raised);
+}
+
+.queue-item-name {
+  font-family: "Fraunces", serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.queue-item-meta {
+  color: var(--ink-faded);
+  font-size: 11px;
+  margin-top: 0.2rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.status-chip {
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 2px;
+  border: 1px solid rgba(168, 159, 143, 0.4);
+}
+
+.status-chip.status-DRAFTED {
+  color: var(--thermal);
+  border-color: var(--thermal);
+}
+
+.status-chip.status-FLAGGED {
+  color: var(--oxide);
+  border-color: var(--oxide);
+}
+
+/* Review pane */
+
+.review-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.review-preview {
+  border: 1px solid rgba(168, 159, 143, 0.25);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.preview-frame {
+  width: 100%;
+  height: 100%;
+  min-height: 480px;
+  border: none;
+  background: var(--paper);
+}
+
+.review-editor {
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.field {
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.field-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.field-row .field {
+  flex: 1;
+}
+
+.field-label {
+  display: block;
+  color: var(--ink-faded);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.text-input {
+  width: 100%;
+  background: var(--paper-raised);
+  color: var(--ink);
+  border: 1px solid rgba(168, 159, 143, 0.35);
+  border-radius: 2px;
+  padding: 0.4rem 0.5rem;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.text-input.field-invalid {
+  border-color: var(--oxide);
+}
+
+textarea.text-input {
+  resize: vertical;
+}
+
+.coord-thumb {
+  width: 100%;
+  max-width: 220px;
+  margin-bottom: 0.75rem;
+}
+
+.coord-box {
+  fill: var(--paper-raised);
+  stroke: rgba(168, 159, 143, 0.4);
+}
+
+.coord-label {
+  fill: var(--ink-faded);
+  font-size: 8px;
+}
+
+.coord-pin {
+  fill: var(--thermal);
+}
+
+.amenity-toggles {
+  border: none;
+  padding: 0;
+  margin: 0 0 0.75rem;
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.toggle-chip {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--ink-faded);
+  border: 1px solid rgba(168, 159, 143, 0.4);
+  border-radius: 2px;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+}
+
+.toggle-chip.active {
+  color: var(--paper);
+  background: var(--thermal);
+  border-color: var(--thermal);
+}
+
+.field-errors {
+  color: var(--oxide);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.save-status {
+  color: var(--ink-faded);
+  font-size: 11px;
+}
+
+/* Actions */
+
+.review-actions {
+  flex: none;
+  border-top: 1px solid rgba(168, 159, 143, 0.25);
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+}
+
+.btn-thermal {
+  background: var(--thermal);
+  color: var(--paper);
+}
+
+.btn-oxide {
+  background: transparent;
+  color: var(--oxide);
+  border-color: var(--oxide);
+}
+
+.btn-plain {
+  background: transparent;
+  color: var(--ink-faded);
+  border-color: rgba(168, 159, 143, 0.4);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.key-hint {
+  color: rgba(0, 0, 0, 0.5);
+  margin-left: 0.3rem;
+}
+
+.btn-oxide .key-hint,
+.btn-plain .key-hint {
+  color: var(--ink-faded);
+}
+
+.reject-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.reject-form .text-input {
+  flex: 1;
+}
+
+.undo-banner {
+  color: var(--thermal);
+  margin: 0;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--thermal);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0;
+}

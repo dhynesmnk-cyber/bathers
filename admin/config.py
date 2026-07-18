@@ -6,6 +6,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
+SITE_DIR = ROOT / "site"
+SITE_DIST_DIR = SITE_DIR / "dist"
+SITE_FONTS_DIR = SITE_DIR / "public" / "fonts"
+
 PUBLISHED_DIR = ROOT / "site" / "src" / "content" / "spas" / "_published"
 STAGING_DIR = ROOT / "content-staging" / "_staging"
 REJECTED_DIR = ROOT / "content-staging" / "_rejected"

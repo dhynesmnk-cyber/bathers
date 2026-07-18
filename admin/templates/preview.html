@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ data.get("name") or "Untitled draft" }} — preview</title>
+    {% if css_href %}
+    <link rel="stylesheet" href="{{ css_href }}" />
+    {% endif %}
+    <style>
+      /* Fallback only fires if site/dist hasn't been built yet — see admin/app.py::_site_css_href. */
+      {% if not css_href %}
+      body { background: #191614; color: #e8e2d6; font-family: monospace; padding: 2rem; }
+      {% endif %}
+    </style>
+  </head>
+  <body>
+    <svg
+      aria-hidden="true"
+      class="pointer-events-none fixed inset-0 z-50 h-full w-full opacity-[0.03] mix-blend-overlay"
+    >
+      <filter id="grain">
+        <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch" />
+      </filter>
+      <rect width="100%" height="100%" filter="url(#grain)" />
+    </svg>
+
+    {% if not css_href %}
+    <p>Public site styles unavailable — run <code>cd site &amp;&amp; npm run build</code> once, then reload this preview.</p>
+    {% endif %}
+
+    <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+      <article>
+        <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
+          {{ data.get("name") or "(untitled)" }}
+        </h1>
+        <div class="mt-2 mb-12">
+          <p class="mono flex flex-wrap items-center gap-x-2 text-[var(--ink-faded)]">
+            {% if data.get("latitude") is not none and data.get("longitude") is not none %}
+            <span>{{ "%.4f"|format(data.get("latitude")|abs) }}° S, {{ "%.4f"|format(data.get("longitude")) }}° E</span>
+            <span aria-hidden="true">·</span>
+            {% endif %}
+            <span>{{ data.get("state") or "(state)" }}</span>
+            {% set notation = {"magnesium_pool": "Magnesium pool", "infrared_sauna": "Infrared sauna", "traditional_sauna": "Traditional sauna", "cold_plunge": "Cold plunge", "led_therapy": "LED light therapy"} %}
+            {% set short = {"magnesium_pool": "Mg", "infrared_sauna": "IR", "traditional_sauna": "SA", "cold_plunge": "CP", "led_therapy": "LED"} %}
+            {% for key, full in notation.items() %}
+              {% if data.get("amenities", {}).get(key) %}
+              <span aria-hidden="true">·</span>
+              <span tabindex="0" class="notation-item relative cursor-default text-[var(--ink)]">
+                <b class="short font-medium">{{ short[key] }}</b><i class="full"> {{ full }}</i>
+              </span>
+              {% endif %}
+            {% endfor %}
+          </p>
+        </div>
+
+        <div class="reading-spine">
+          {{ body_html | safe }}
+        </div>
+
+        <div class="mono mt-16 pt-6" style="border-top: 1px solid rgba(168,159,143,0.25); background: var(--paper-raised); padding: 1.5rem;">
+          <p>{{ data.get("address") or "(address)" }}</p>
+          <p class="mt-4">
+            <a href="mailto:claim@bathers.example">Claim this listing</a>
+          </p>
+        </div>
+      </article>
+    </main>
+
+    <style>
+      .notation-item .full { display: none; font-family: var(--font-body); }
+      .notation-item:hover .full, .notation-item:focus-within .full { display: inline; }
+    </style>
+  </body>
+</html>

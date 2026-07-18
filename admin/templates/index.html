@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bathers' — Admin</title>
+    <link rel="stylesheet" href="/static/admin.css" />
+  </head>
+  <body>
+    <header class="hub-header">
+      <span class="mono eyebrow">BATHERS' — ADMIN</span>
+      <p id="undo-banner" class="mono undo-banner" hidden>
+        Approved — <button type="button" id="undo-btn" class="link-btn">undo?</button>
+      </p>
+    </header>
+
+    <main class="hub-grid">
+      <section class="pane harvest-pane" aria-labelledby="harvest-heading">
+        <h2 id="harvest-heading" class="mono pane-heading">HARVEST</h2>
+        <form id="harvest-form" class="harvest-form">
+          <input
+            id="harvest-url"
+            class="mono text-input"
+            type="url"
+            name="url"
+            placeholder="https://venue-site.example/"
+            required
+          />
+          <button id="harvest-submit" type="submit" class="btn btn-thermal">Fetch venue</button>
+        </form>
+        <pre id="harvest-log" class="mono harvest-log" aria-live="polite"></pre>
+      </section>
+
+      <section class="pane queue-pane" aria-labelledby="queue-heading">
+        <h2 id="queue-heading" class="mono pane-heading">REVIEW QUEUE</h2>
+        <ul id="queue-list" class="queue-list" role="listbox" aria-label="Staged drafts"></ul>
+        <p id="queue-empty" class="mono empty-state" hidden>No drafts staged. Harvest a venue URL to begin.</p>
+      </section>
+
+      <section class="pane review-pane" aria-labelledby="review-heading">
+        <h2 id="review-heading" class="mono pane-heading">REVIEW PANE</h2>
+        <div id="review-empty" class="mono empty-state">Select a draft from the queue to review it.</div>
+        <div id="review-content" hidden>
+          <div class="review-split">
+            <div class="review-preview">
+              <iframe id="preview-frame" title="Rendered preview" class="preview-frame"></iframe>
+            </div>
+            <div class="review-editor">
+              <label class="field">
+                <span class="mono field-label">Name</span>
+                <input id="field-name" class="text-input" type="text" data-field="name" />
+              </label>
+              <label class="field">
+                <span class="mono field-label">State</span>
+                <select id="field-state" class="text-input" data-field="state">
+                  <option value="VIC">VIC</option>
+                  <option value="NSW">NSW</option>
+                  <option value="QLD">QLD</option>
+                  <option value="SA">SA</option>
+                  <option value="WA">WA</option>
+                  <option value="TAS">TAS</option>
+                  <option value="NT">NT</option>
+                  <option value="ACT">ACT</option>
+                </select>
+              </label>
+              <div class="field-row">
+                <label class="field">
+                  <span class="mono field-label">Latitude</span>
+                  <input id="field-latitude" class="text-input mono" type="number" step="any" data-field="latitude" />
+                </label>
+                <label class="field">
+                  <span class="mono field-label">Longitude</span>
+                  <input id="field-longitude" class="text-input mono" type="number" step="any" data-field="longitude" />
+                </label>
+              </div>
+              <svg id="coord-thumb" class="coord-thumb" viewBox="0 0 160 140" aria-hidden="true">
+                <rect x="4" y="4" width="152" height="132" class="coord-box" />
+                <text x="8" y="16" class="mono coord-label">-9°</text>
+                <text x="8" y="132" class="mono coord-label">-44°</text>
+                <text x="4" y="140" class="mono coord-label" text-anchor="start">112°E</text>
+                <text x="156" y="140" class="mono coord-label" text-anchor="end">154°E</text>
+                <circle id="coord-pin" class="coord-pin" r="4" cx="-10" cy="-10" />
+              </svg>
+
+              <fieldset class="field amenity-toggles">
+                <legend class="mono field-label">Amenities</legend>
+                <button type="button" class="toggle-chip" data-amenity="magnesium_pool">Mg</button>
+                <button type="button" class="toggle-chip" data-amenity="infrared_sauna">IR</button>
+                <button type="button" class="toggle-chip" data-amenity="traditional_sauna">SA</button>
+                <button type="button" class="toggle-chip" data-amenity="cold_plunge">CP</button>
+                <button type="button" class="toggle-chip" data-amenity="led_therapy">LED</button>
+              </fieldset>
+
+              <label class="field">
+                <span class="mono field-label">Summary</span>
+                <textarea id="field-summary" class="text-input" data-field="summary" rows="3"></textarea>
+              </label>
+
+              <div id="field-errors" class="field-errors mono"></div>
+              <p id="save-status" class="mono save-status" aria-live="polite"></p>
+            </div>
+          </div>
+
+          <div class="review-actions">
+            <div id="action-buttons" class="action-buttons">
+              <button id="approve-btn" type="button" class="btn btn-thermal">Approve <span class="mono key-hint">A</span></button>
+              <button id="reject-btn" type="button" class="btn btn-oxide">Reject <span class="mono key-hint">R</span></button>
+            </div>
+            <form id="reject-form" class="reject-form" hidden>
+              <input id="reject-reason" class="mono text-input" type="text" placeholder="Reason for rejecting…" required />
+              <button type="submit" class="btn btn-oxide">Confirm reject</button>
+              <button type="button" id="reject-cancel" class="btn btn-plain">Cancel</button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/admin.js"></script>
+  </body>
+</html>
