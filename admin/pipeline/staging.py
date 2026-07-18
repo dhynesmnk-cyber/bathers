@@ -16,7 +16,7 @@ from typing import Any
 import yaml
 
 from admin.config import PUBLISHED_DIR, REJECTED_DIR, STAGING_DIR
-from admin.pipeline import data_store
+from admin.pipeline import data_store, images
 from admin.schema import FieldError, count_prose_words, staging_status, validate_frontmatter
 
 FRONTMATTER_FIELD_ORDER = (
@@ -92,7 +92,8 @@ def _entry_from_path(path: Path) -> StagingEntry:
     data, body = split_frontmatter(text, slug)
     errors = validate_frontmatter(data)
     word_count = count_prose_words(body)
-    status = staging_status(errors, word_count)
+    has_pending_images = bool(images.list_candidates(slug)) and not data.get("image")
+    status = staging_status(errors, word_count, has_pending_images)
     return StagingEntry(
         slug=slug,
         frontmatter=data,
@@ -123,6 +124,20 @@ def update_staging(slug: str, patch: dict[str, Any]) -> StagingEntry:
     text = path.read_text(encoding="utf-8")
     data, body = split_frontmatter(text, slug)
     data.update(patch)
+    path.write_text(render_mdx(data, body), encoding="utf-8")
+    return _entry_from_path(path)
+
+
+def remove_frontmatter_keys(slug: str, keys: list[str]) -> StagingEntry:
+    """Delete keys entirely (rather than setting null) — used for the optional
+    image/image_source/image_caption fields on `Remove image` (UX.md §4.4)."""
+    path = STAGING_DIR / f"{slug}.mdx"
+    if not path.exists():
+        raise FileNotFoundError(slug)
+    text = path.read_text(encoding="utf-8")
+    data, body = split_frontmatter(text, slug)
+    for key in keys:
+        data.pop(key, None)
     path.write_text(render_mdx(data, body), encoding="utf-8")
     return _entry_from_path(path)
 
@@ -161,6 +176,22 @@ def approve(slug: str) -> int:
         previous_published_text=previous_published_text,
     )
     return count
+
+
+def remove_published_image(slug: str) -> None:
+    """UX.md §4.4 — takedown/claim action on an already-published venue: strip
+    the image fields and redeploy the derived data. No staging UI surfaces
+    this in Gate 4 (claim workflow itself is out of scope per TRD.md §8); the
+    capability exists as an admin action regardless."""
+    path = PUBLISHED_DIR / f"{slug}.mdx"
+    if not path.exists():
+        raise FileNotFoundError(slug)
+    text = path.read_text(encoding="utf-8")
+    data, body = split_frontmatter(text, slug)
+    for key in ("image", "image_source", "image_caption"):
+        data.pop(key, None)
+    path.write_text(render_mdx(data, body), encoding="utf-8")
+    data_store.rebuild()
 
 
 def undo_approve(slug: str) -> None:
