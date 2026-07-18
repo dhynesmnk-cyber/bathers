@@ -451,6 +451,63 @@ textarea.text-input {
   margin: 0;
 }
 
+/* Deploy strip (UX.md §1.4) — isolated footer, visually separated */
+
+.deploy-strip {
+  flex: none;
+  border-top: 1px solid rgba(168, 159, 143, 0.25);
+  padding: 0.75rem 1.25rem 1rem;
+  background: var(--paper-raised);
+}
+
+.deploy-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.deploy-summary {
+  color: var(--ink-faded);
+  margin: 0;
+}
+
+.deploy-preview {
+  margin-top: 0.75rem;
+  border-top: 1px solid rgba(168, 159, 143, 0.25);
+  padding-top: 0.75rem;
+}
+
+.deploy-blocked {
+  color: var(--oxide);
+  margin-bottom: 0.5rem;
+}
+
+.deploy-file-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  color: var(--ink);
+  font-size: 12px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.deploy-file-list li {
+  padding: 0.15rem 0;
+  border-top: 1px solid rgba(168, 159, 143, 0.15);
+}
+
+.deploy-file-list li:first-child {
+  border-top: none;
+}
+
+.deploy-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
 .link-btn {
   background: none;
   border: none;

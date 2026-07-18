@@ -1,5 +1,5 @@
-"""FastAPI admin app — UX.md §1 single-screen hub. Deploy strip is not built
-here (Gate 5). Vanilla JS + Jinja2 per TRD.md §2 — no SPA framework.
+"""FastAPI admin app — UX.md §1 single-screen hub. Vanilla JS + Jinja2 per
+TRD.md §2 — no SPA framework.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from starlette.requests import Request
 
 from admin.config import IMAGES_DIR, SITE_DIST_DIR, SITE_FONTS_DIR, STAGING_DIR
 from admin.mdx_preview import render_body_html
-from admin.pipeline import images, orchestrator, staging
+from admin.pipeline import deploy, images, orchestrator, staging
 from admin.pipeline.staging import UndoExpired, ValidationFailed
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -228,6 +228,46 @@ def api_remove_published_image(slug: str):
     except FileNotFoundError:
         raise HTTPException(404, f"no published venue '{slug}'")
     return {"ok": True}
+
+
+@app.get("/api/deploy/status")
+def api_deploy_status():
+    return deploy.status_summary()
+
+
+@app.get("/api/deploy/preview")
+def api_deploy_preview():
+    preview = deploy.build_preview()
+    return {
+        "files": preview.files,
+        "unexpected": preview.unexpected,
+        "guard_violations": preview.guard_violations,
+        "commit_message": preview.commit_message,
+        "blocked": preview.blocked,
+    }
+
+
+class DeployBody(BaseModel):
+    commit_message: str = ""
+
+
+_deploy_lock = threading.Lock()  # deploy shells out to git; keep it to one run at a time
+
+
+@app.post("/api/deploy")
+def api_deploy(body: DeployBody):
+    if not _deploy_lock.acquire(blocking=False):
+        raise HTTPException(409, "a deploy is already running")
+
+    def stream():
+        try:
+            for line in deploy.run_deploy(body.commit_message):
+                yield _sse_line({"time": line.time, "level": line.level, "text": line.text})
+        finally:
+            _deploy_lock.release()
+        yield "event: done\ndata: {}\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
 
 
 @app.get("/api/health")

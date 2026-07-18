@@ -127,6 +127,26 @@
       </section>
     </main>
 
+    <footer class="deploy-strip" aria-labelledby="deploy-heading">
+      <h2 id="deploy-heading" class="mono pane-heading">DEPLOY</h2>
+      <div class="deploy-row">
+        <p id="deploy-summary" class="mono deploy-summary">—</p>
+        <button id="deploy-btn" type="button" class="btn btn-thermal">Deploy</button>
+      </div>
+      <div id="deploy-preview" class="deploy-preview" hidden>
+        <div id="deploy-blocked" class="mono deploy-blocked" hidden></div>
+        <ul id="deploy-file-list" class="mono deploy-file-list"></ul>
+        <label class="field">
+          <span class="mono field-label">Commit message</span>
+          <input id="deploy-commit-message" class="mono text-input" type="text" />
+        </label>
+        <div class="deploy-actions">
+          <button id="deploy-confirm-btn" type="button" class="btn btn-thermal">Confirm deploy</button>
+          <button id="deploy-cancel-btn" type="button" class="btn btn-plain">Cancel</button>
+        </div>
+      </div>
+    </footer>
+
     <script src="/static/admin.js"></script>
   </body>
 </html>

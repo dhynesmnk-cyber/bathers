@@ -45,6 +45,14 @@
   const imageCaption = el("image-caption");
   const imagePublishBtn = el("image-publish-btn");
   const imageRemoveBtn = el("image-remove-btn");
+  const deploySummary = el("deploy-summary");
+  const deployBtn = el("deploy-btn");
+  const deployPreview = el("deploy-preview");
+  const deployBlocked = el("deploy-blocked");
+  const deployFileList = el("deploy-file-list");
+  const deployCommitMessage = el("deploy-commit-message");
+  const deployConfirmBtn = el("deploy-confirm-btn");
+  const deployCancelBtn = el("deploy-cancel-btn");
 
   let selectedImageIndex = null;
   let lastHarvestUrl = "";
@@ -456,6 +464,97 @@
     harvestLog.appendChild(span);
     harvestLog.scrollTop = harvestLog.scrollHeight;
   }
+
+  // ---- Deploy strip (UX.md §1.4) ----
+
+  async function fetchDeployStatus() {
+    const res = await fetch("/api/deploy/status");
+    if (!res.ok) return;
+    const status = await res.json();
+    deploySummary.textContent = `${status.file_count} file${status.file_count === 1 ? "" : "s"} staged for publish · last deploy ${status.last_deploy}`;
+  }
+
+  function renderDeployPreview(preview) {
+    deployFileList.innerHTML = "";
+    for (const path of preview.files) {
+      const li = document.createElement("li");
+      li.textContent = path;
+      deployFileList.appendChild(li);
+    }
+
+    const problems = [];
+    if (preview.guard_violations.length) {
+      problems.push(`tracked files under a gitignored directory: ${preview.guard_violations.join(", ")}`);
+    }
+    if (preview.unexpected.length) {
+      problems.push(`unexpected tracked files outside the publish set: ${preview.unexpected.join(", ")}`);
+    }
+    if (problems.length) {
+      deployBlocked.hidden = false;
+      deployBlocked.textContent = "Refused — " + problems.join("; ");
+    } else {
+      deployBlocked.hidden = true;
+      deployBlocked.textContent = "";
+    }
+
+    deployCommitMessage.value = preview.commit_message;
+    deployConfirmBtn.disabled = preview.blocked || preview.files.length === 0;
+  }
+
+  deployBtn.addEventListener("click", async () => {
+    const res = await fetch("/api/deploy/preview");
+    if (!res.ok) return;
+    const preview = await res.json();
+    renderDeployPreview(preview);
+    deployPreview.hidden = false;
+  });
+
+  deployCancelBtn.addEventListener("click", () => {
+    deployPreview.hidden = true;
+  });
+
+  deployConfirmBtn.addEventListener("click", async () => {
+    deployConfirmBtn.disabled = true;
+    try {
+      const res = await fetch("/api/deploy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commit_message: deployCommitMessage.value }),
+      });
+      if (res.status === 409) {
+        appendLogLine(nowTime(), "error", "a deploy is already running");
+        return;
+      }
+      if (!res.ok || !res.body) {
+        appendLogLine(nowTime(), "error", `deploy request failed — HTTP ${res.status}`);
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split("\n\n");
+        buffer = events.pop();
+        for (const raw of events) {
+          if (raw.startsWith("event: done")) continue;
+          const dataLine = raw.split("\n").find((line) => line.startsWith("data: "));
+          if (!dataLine) continue;
+          const payload = JSON.parse(dataLine.slice("data: ".length));
+          if (!payload.text) continue;
+          appendLogLine(payload.time, payload.level, payload.text);
+        }
+      }
+      deployPreview.hidden = true;
+      await fetchDeployStatus();
+    } finally {
+      deployConfirmBtn.disabled = false;
+    }
+  });
+
+  fetchDeployStatus();
 
   // ---- Keyboard shortcuts ----
 
