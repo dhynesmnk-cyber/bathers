@@ -39,6 +39,15 @@
   const harvestUrl = el("harvest-url");
   const harvestSubmit = el("harvest-submit");
   const harvestLog = el("harvest-log");
+  const retryPlaywrightBtn = el("retry-playwright-btn");
+  const imageStrip = el("image-strip");
+  const imagePublishRow = el("image-publish-row");
+  const imageCaption = el("image-caption");
+  const imagePublishBtn = el("image-publish-btn");
+  const imageRemoveBtn = el("image-remove-btn");
+
+  let selectedImageIndex = null;
+  let lastHarvestUrl = "";
 
   function isEditableTarget(target) {
     return ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
@@ -78,7 +87,7 @@
       meta.appendChild(notation);
 
       const chip = document.createElement("span");
-      chip.className = "status-chip status-" + entry.status;
+      chip.className = "status-chip status-" + entry.status.replace(/\s+/g, "-");
       chip.textContent = entry.status;
       meta.appendChild(chip);
 
@@ -129,7 +138,81 @@
     });
     updateCoordPin(fm.latitude, fm.longitude);
     renderFieldErrors(entry.errors || []);
+    renderImageSection(entry);
   }
+
+  // ---- Images (UX.md §4 — publishing is a separate deliberate action) ----
+
+  function renderImageSection(entry) {
+    selectedImageIndex = null;
+    imageStrip.innerHTML = "";
+    imageCaption.value = "";
+    imagePublishBtn.disabled = true;
+
+    const fm = entry.frontmatter || {};
+    if (fm.image) {
+      const img = document.createElement("img");
+      img.className = "image-published";
+      img.src = fm.image;
+      img.alt = fm.image_caption || "";
+      imageStrip.appendChild(img);
+      const caption = document.createElement("p");
+      caption.className = "mono save-status";
+      caption.textContent = fm.image_caption || "";
+      imageStrip.appendChild(caption);
+      imagePublishRow.hidden = true;
+      imageRemoveBtn.hidden = false;
+      return;
+    }
+
+    imageRemoveBtn.hidden = true;
+    const candidates = entry.image_candidates || [];
+    if (candidates.length === 0) {
+      imagePublishRow.hidden = true;
+      return;
+    }
+    imagePublishRow.hidden = false;
+    for (const candidate of candidates) {
+      const img = document.createElement("img");
+      img.className = "image-thumb";
+      img.src = candidate.url;
+      img.alt = "";
+      img.title = candidate.source_url;
+      img.addEventListener("click", () => {
+        selectedImageIndex = candidate.index;
+        imageStrip.querySelectorAll(".image-thumb").forEach((t) => t.classList.remove("selected"));
+        img.classList.add("selected");
+        imagePublishBtn.disabled = !(selectedImageIndex !== null && imageCaption.value.trim());
+      });
+      imageStrip.appendChild(img);
+    }
+  }
+
+  imageCaption.addEventListener("input", () => {
+    imagePublishBtn.disabled = !(selectedImageIndex !== null && imageCaption.value.trim());
+  });
+
+  imagePublishBtn.addEventListener("click", async () => {
+    if (!selectedSlug || selectedImageIndex === null) return;
+    const res = await fetch(`/api/queue/${encodeURIComponent(selectedSlug)}/images/${selectedImageIndex}/publish`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ caption: imageCaption.value.trim() }),
+    });
+    if (!res.ok) return;
+    currentEntry = await res.json();
+    renderImageSection(currentEntry);
+    await fetchQueue();
+  });
+
+  imageRemoveBtn.addEventListener("click", async () => {
+    if (!selectedSlug) return;
+    const res = await fetch(`/api/queue/${encodeURIComponent(selectedSlug)}/images/remove`, { method: "POST" });
+    if (!res.ok) return;
+    currentEntry = await res.json();
+    renderImageSection(currentEntry);
+    await fetchQueue();
+  });
 
   function updateCoordPin(lat, lng) {
     if (lat === null || lat === undefined || lng === null || lng === undefined || lat === "" || lng === "") {
@@ -304,25 +387,67 @@
     advanceAfterAction(body.next_slug);
   });
 
-  // ---- Harvest (Gate 4 wires the real pipeline; this stubs the log pane) ----
+  // ---- Harvest (TRD.md §7 — Harvester -> Architect -> Gatekeeper, streamed) ----
 
-  harvestForm.addEventListener("submit", async (event) => {
+  harvestForm.addEventListener("submit", (event) => {
     event.preventDefault();
+    runHarvest(harvestUrl.value, false);
+  });
+
+  retryPlaywrightBtn.addEventListener("click", () => {
+    retryPlaywrightBtn.hidden = true;
+    runHarvest(lastHarvestUrl, true);
+  });
+
+  function nowTime() {
+    return new Date().toLocaleTimeString("en-AU", { hour12: false });
+  }
+
+  async function runHarvest(url, usePlaywright) {
+    if (!url) return;
+    lastHarvestUrl = url;
     harvestSubmit.disabled = true;
+    retryPlaywrightBtn.hidden = true;
     try {
       const res = await fetch("/api/harvest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: harvestUrl.value }),
+        body: JSON.stringify({ url, use_playwright: usePlaywright }),
       });
-      const body = await res.json();
-      for (const line of body.lines || []) {
-        appendLogLine(line.time, line.level, line.text);
+      if (res.status === 409) {
+        appendLogLine(nowTime(), "error", "a harvest job is already running");
+        return;
       }
+      if (!res.ok || !res.body) {
+        appendLogLine(nowTime(), "error", `harvest request failed — HTTP ${res.status}`);
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split("\n\n");
+        buffer = events.pop();
+        for (const raw of events) {
+          if (raw.startsWith("event: done")) continue;
+          const dataLine = raw.split("\n").find((line) => line.startsWith("data: "));
+          if (!dataLine) continue;
+          const payload = JSON.parse(dataLine.slice("data: ".length));
+          if (!payload.text) continue;
+          appendLogLine(payload.time, payload.level, payload.text);
+          if (payload.level === "warn" && payload.text.includes("Retry with Playwright")) {
+            retryPlaywrightBtn.hidden = false;
+          }
+        }
+      }
+      await fetchQueue();
     } finally {
       harvestSubmit.disabled = false;
     }
-  });
+  }
 
   function appendLogLine(time, level, text) {
     const span = document.createElement("div");

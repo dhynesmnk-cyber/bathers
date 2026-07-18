@@ -147,7 +147,11 @@ body {
 
 .harvest-log .line-info { color: var(--ink); }
 .harvest-log .line-error { color: var(--oxide); }
-.harvest-log .line-ok { color: var(--thermal); }
+.harvest-log .line-warn { color: var(--ink-faded); }
+
+#retry-playwright-btn {
+  margin-top: 0.5rem;
+}
 
 /* Queue */
 
@@ -203,6 +207,11 @@ body {
 .status-chip.status-FLAGGED {
   color: var(--oxide);
   border-color: var(--oxide);
+}
+
+.status-chip.status-IMG-PENDING {
+  color: var(--ink-faded);
+  border-color: var(--ink-faded);
 }
 
 /* Review pane */
@@ -320,6 +329,45 @@ textarea.text-input {
   color: var(--paper);
   background: var(--thermal);
   border-color: var(--thermal);
+}
+
+.image-strip {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.image-thumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border: 1px solid rgba(168, 159, 143, 0.4);
+  border-radius: 2px;
+  cursor: pointer;
+  display: block;
+}
+
+.image-thumb.selected {
+  border-color: var(--thermal);
+  border-width: 2px;
+}
+
+.image-published {
+  max-width: 220px;
+  border: 1px solid rgba(168, 159, 143, 0.4);
+  border-radius: 2px;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.image-publish-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.image-publish-row .text-input {
+  flex: 1;
 }
 
 .field-errors {

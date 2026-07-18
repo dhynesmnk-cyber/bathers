@@ -1,25 +1,25 @@
-"""FastAPI admin app — UX.md §1 single-screen hub. Gate 3 scope only: harvest
-panel is stubbed (real pipeline is Gate 4), deploy strip is not built here
-(Gate 5). Vanilla JS + Jinja2 per TRD.md §2 — no SPA framework.
+"""FastAPI admin app — UX.md §1 single-screen hub. Deploy strip is not built
+here (Gate 5). Vanilla JS + Jinja2 per TRD.md §2 — no SPA framework.
 """
 
 from __future__ import annotations
 
-import datetime
+import json
+import threading
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from admin.config import SITE_DIST_DIR, SITE_FONTS_DIR, STAGING_DIR
+from admin.config import IMAGES_DIR, SITE_DIST_DIR, SITE_FONTS_DIR, STAGING_DIR
 from admin.mdx_preview import render_body_html
-from admin.pipeline import staging
+from admin.pipeline import images, orchestrator, staging
 from admin.pipeline.staging import UndoExpired, ValidationFailed
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -58,7 +58,16 @@ def _entry_summary(entry: staging.StagingEntry) -> dict[str, Any]:
 
 
 def _entry_detail(entry: staging.StagingEntry) -> dict[str, Any]:
-    return {**_entry_summary(entry), "frontmatter": entry.frontmatter, "body": entry.body}
+    candidates = images.list_candidates(entry.slug)
+    return {
+        **_entry_summary(entry),
+        "frontmatter": entry.frontmatter,
+        "body": entry.body,
+        "image_candidates": [
+            {"index": c.index, "url": f"/api/queue/{entry.slug}/images/{c.index}/file", "source_url": c.source_url}
+            for c in candidates
+        ],
+    }
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -149,20 +158,76 @@ def api_undo(slug: str):
 
 class HarvestBody(BaseModel):
     url: str
+    use_playwright: bool = False
+
+
+_harvest_lock = threading.Lock()  # UX.md §1.1 — one harvest job at a time
+
+
+def _sse_line(payload: dict[str, Any]) -> str:
+    return f"data: {json.dumps(payload)}\n\n"
 
 
 @app.post("/api/harvest")
 def api_harvest(body: HarvestBody):
-    # Pipeline stubbed for Gate 3 (real Harvester/Architect/Gatekeeper wiring
-    # is Gate 4, CLAUDE.md). Log pane is wired to real responses so the UI
-    # shape doesn't change when the pipeline lands.
-    now = datetime.datetime.now().strftime("%H:%M:%S")
-    return {
-        "lines": [
-            {"time": now, "level": "info", "text": f"fetching {body.url}"},
-            {"time": now, "level": "error", "text": "pipeline not implemented yet — arrives in Gate 4"},
-        ]
-    }
+    if not _harvest_lock.acquire(blocking=False):
+        raise HTTPException(409, "a harvest job is already running")
+
+    def stream():
+        try:
+            for line in orchestrator.run_harvest_pipeline(body.url, use_playwright=body.use_playwright):
+                yield _sse_line({"time": line.time, "level": line.level, "text": line.text})
+        finally:
+            _harvest_lock.release()
+        yield "event: done\ndata: {}\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@app.get("/api/queue/{slug}/images/{index}/file")
+def api_image_file(slug: str, index: int):
+    candidate = next((c for c in images.list_candidates(slug) if c.index == index), None)
+    if candidate is None:
+        raise HTTPException(404, "no such candidate image")
+    path = IMAGES_DIR / slug / candidate.filename
+    if not path.exists():
+        raise HTTPException(404, "candidate image file missing")
+    return FileResponse(path)
+
+
+class PublishImageBody(BaseModel):
+    caption: str
+
+
+@app.post("/api/queue/{slug}/images/{index}/publish")
+def api_publish_image(slug: str, index: int, body: PublishImageBody):
+    if not body.caption.strip():
+        raise HTTPException(400, "a caption is required")
+    try:
+        fields = images.publish_image(slug, index, body.caption.strip())
+    except FileNotFoundError:
+        raise HTTPException(404, "no such candidate image")
+    entry = staging.update_staging(slug, fields)
+    return _entry_detail(entry)
+
+
+@app.post("/api/queue/{slug}/images/remove")
+def api_remove_staged_image(slug: str):
+    images.remove_image(slug)  # candidate downloads stay in temp_data/ — only the published file/fields are cleared
+    entry = staging.remove_frontmatter_keys(slug, ["image", "image_source", "image_caption"])
+    return _entry_detail(entry)
+
+
+@app.post("/api/venues/{slug}/remove-image")
+def api_remove_published_image(slug: str):
+    # UX.md §4.4 takedown/claim action — no UI surfaces this yet (the claim
+    # workflow itself is out of scope per TRD.md §8), but the single admin
+    # action itself is required regardless of who triggers it.
+    try:
+        staging.remove_published_image(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"no published venue '{slug}'")
+    return {"ok": True}
 
 
 @app.get("/api/health")

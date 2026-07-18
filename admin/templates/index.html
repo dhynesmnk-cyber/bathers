@@ -29,6 +29,7 @@
           <button id="harvest-submit" type="submit" class="btn btn-thermal">Fetch venue</button>
         </form>
         <pre id="harvest-log" class="mono harvest-log" aria-live="polite"></pre>
+        <button id="retry-playwright-btn" type="button" class="btn btn-plain" hidden>Retry with Playwright</button>
       </section>
 
       <section class="pane queue-pane" aria-labelledby="queue-heading">
@@ -95,6 +96,16 @@
                 <span class="mono field-label">Summary</span>
                 <textarea id="field-summary" class="text-input" data-field="summary" rows="3"></textarea>
               </label>
+
+              <div id="image-section" class="field">
+                <span class="mono field-label">Image</span>
+                <div id="image-strip" class="image-strip"></div>
+                <div id="image-publish-row" class="image-publish-row" hidden>
+                  <input id="image-caption" class="text-input mono" type="text" placeholder="PLATE I. — caption…" />
+                  <button id="image-publish-btn" type="button" class="btn btn-thermal" disabled>Publish image</button>
+                </div>
+                <button id="image-remove-btn" type="button" class="btn btn-oxide" hidden>Remove image</button>
+              </div>
 
               <div id="field-errors" class="field-errors mono"></div>
               <p id="save-status" class="mono save-status" aria-live="polite"></p>
