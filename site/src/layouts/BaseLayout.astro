@@ -1,5 +1,6 @@
 ---
 import GrainOverlay from "../components/GrainOverlay.astro";
+import { GOATCOUNTER_SITE } from "../config";
 import "../styles/global.css";
 
 interface Props {
@@ -24,5 +25,10 @@ const canonicalHref = canonicalPath ?? Astro.url.pathname;
   <body>
     <GrainOverlay />
     <slot />
+    <script
+      is:inline
+      data-goatcounter={`https://${GOATCOUNTER_SITE}.goatcounter.com/count`}
+      async
+      src="//gc.zgo.at/count.js"></script>
   </body>
 </html>

@@ -82,6 +82,10 @@ Implement UX.md §1 in full: harvest panel with streaming log, review queue with
 
 Accounts/auth, venue claiming beyond a mailto line, reviews by users, search, analytics, image galleries (one image max), any hosted database, any serverless functions.
 
+**Exception (user-approved, 2026-07-20):** a minimal, single-purpose exception to the "analytics" exclusion above — GoatCounter click tracking on the Book Now button only (no page-view analytics, no dashboards beyond a simple admin read-back of per-venue click counts). See `admin/pipeline/goatcounter.py`. Nothing else in this list is affected; general site analytics remains out of scope.
+
+**Exception (user-approved, 2026-07-20):** admin-side venue *discovery* (finding candidate URLs via Google Places Text Search, reviewed by a human before harvesting) is in scope. Public-facing site search remains out of scope — this exception does not add a search feature to the published site. See `admin/pipeline/discovery.py`.
+
 ## 9. Execution
 
 Build proceeds through the five gates defined in CLAUDE.md, in order, stopping at each gate for verification. Do not begin a gate before the previous gate's done-condition passes. Read CLAUDE.md, DESIGN.md, UX.md, and SCHEMA.md before writing any code.

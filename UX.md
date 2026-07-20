@@ -33,6 +33,15 @@ A single-screen local web app (FastAPI + plain HTML/JS, no SPA framework). The s
   Trust in the pipeline comes from visibility. Never replace this with a spinner.
 - Each completed harvest appends its item to the Review Queue without a page reload.
 
+### 1.1a Discovery panel
+
+A pre-fill step ahead of the harvest flow above, not a replacement for it (TRD.md §8 exception — admin-side discovery only, never public-site search). Lives directly below the harvest form:
+
+- A state dropdown (reusing the same eight-state enum as everywhere else) and an optional free-text keyword override (defaults to `day spa, bathhouse, hot springs, thermal baths` if left blank). `Search` runs a Google Places Text Search for those terms in that state.
+- Results appear as a checked-by-default list (name + formatted address), already deduplicated against every venue currently published or staged — a venue already in the pipeline never reappears as "new."
+- `Queue selected` sends each checked candidate's website through the **existing** single-URL harvest endpoint, one after another — this does not change the "one job at a time" harvest model (§1.1); it only automates pasting URLs a human would otherwise type in one at a time. Each queued item streams through the same live log pane as a normal harvest, including all of §1.5's failure states (a duplicate slug mid-batch fails that one item cleanly without stopping the rest).
+- Discovery itself never harvests, stages, or writes anything — it only returns a list for the reviewer to select from.
+
 ### 1.2 Review Queue
 
 - Vertical list of everything in `_staging/`, newest first. Each row: venue name, slug, state, amenity notation (per DESIGN.md §6), and a status chip:

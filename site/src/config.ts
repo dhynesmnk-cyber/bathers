@@ -44,3 +44,10 @@ export function amenityFromUrlSlug(segment: string): (typeof AMENITY_KEYS)[numbe
 
 export const SITE_NAME = "Bathers'";
 export const SITE_TAGLINE = "Notes on heat, cold and water at Australian day spas and bathhouses.";
+
+// GoatCounter click tracking (Book Now button only — TRD.md §8 exception).
+// Site codes aren't secret; only the read-back API token stays server-side
+// in admin/.env (GOATCOUNTER_API_TOKEN, see admin/pipeline/goatcounter.py).
+// The Astro build has no .env loader of its own (TRD.md §2 — no runtime
+// backend for the public site), so this lives here as a plain constant.
+export const GOATCOUNTER_SITE = "bathers";
