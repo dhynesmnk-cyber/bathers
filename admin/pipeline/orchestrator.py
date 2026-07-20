@@ -179,7 +179,7 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False) -> Iterator[Log
     coords = None
     address = harvester_data.get("address")
     if address:
-        coords = geocode.geocode_address(address)
+        coords = geocode.geocode_address(address, log=log)
         if coords:
             log(f"geocoded address → {coords[0]:.4f}, {coords[1]:.4f}")
         yield from drain()
@@ -261,8 +261,16 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False) -> Iterator[Log
     yield from drain()
 
     candidate_urls = images.discover_image_urls(result.html, url)
+    attributions: dict[str, str] = {}
+    if places_result.photos:
+        for photo in places_result.photos:
+            photo_url = places.fetch_photo_media_url(photo.name)
+            candidate_urls.append(photo_url)
+            attributions[photo_url] = photo.attribution
+        log(f"Google Places supplied {len(places_result.photos)} candidate photo(s)")
+        yield from drain()
     if candidate_urls:
-        candidates = images.download_candidates(candidate_urls, slug)
+        candidates = images.download_candidates(candidate_urls, slug, attributions=attributions)
         if candidates:
             log(f"downloaded {len(candidates)} candidate image(s) → temp_data/images/{slug}/")
             yield from drain()

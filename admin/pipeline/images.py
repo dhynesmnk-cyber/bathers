@@ -23,13 +23,17 @@ MAX_DIMENSION = 1600
 FETCH_TIMEOUT = 20.0
 USER_AGENT = "BathersDirectoryBot/1.0 (local admin tool; contact via venue's own listing)"
 
-_SKIP_HINTS = ("logo", "icon", "sprite", "favicon", "avatar", "pixel.gif", "1x1")
+_SKIP_HINTS = (
+    "logo", "icon", "sprite", "favicon", "avatar", "pixel.gif", "1x1",
+    "badge", "wordmark", "brandmark", "social", "payment", "certif", "award", "svg",
+)
+_SMALL_DIMENSION = 64  # px; icons/badges are usually explicitly sized small in markup
 
 
 class _ImgTagParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
-        self.srcs: list[str] = []
+        self.images: list[dict[str, str | None]] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         if tag != "img":
@@ -37,7 +41,32 @@ class _ImgTagParser(HTMLParser):
         attr_map = dict(attrs)
         src = attr_map.get("src")
         if src:
-            self.srcs.append(src)
+            self.images.append(
+                {
+                    "src": src,
+                    "alt": attr_map.get("alt"),
+                    "class": attr_map.get("class"),
+                    "width": attr_map.get("width"),
+                    "height": attr_map.get("height"),
+                }
+            )
+
+
+def _is_icon_sized(img: dict[str, str | None]) -> bool:
+    width, height = img.get("width"), img.get("height")
+    if not width or not height:
+        return False
+    try:
+        return int(width) <= _SMALL_DIMENSION and int(height) <= _SMALL_DIMENSION
+    except ValueError:
+        return False
+
+
+def _looks_like_icon(img: dict[str, str | None]) -> bool:
+    haystack = " ".join(filter(None, (img.get("src"), img.get("alt"), img.get("class")))).lower()
+    if any(hint in haystack for hint in _SKIP_HINTS):
+        return True
+    return _is_icon_sized(img)
 
 
 @dataclass
@@ -45,6 +74,7 @@ class Candidate:
     index: int
     filename: str
     source_url: str
+    attribution: str | None = None
 
 
 def discover_image_urls(html: str, base_url: str) -> list[str]:
@@ -52,10 +82,10 @@ def discover_image_urls(html: str, base_url: str) -> list[str]:
     parser.feed(html)
     seen: set[str] = set()
     urls: list[str] = []
-    for src in parser.srcs:
-        if any(hint in src.lower() for hint in _SKIP_HINTS):
+    for img in parser.images:
+        if _looks_like_icon(img):
             continue
-        absolute = urljoin(base_url, src)
+        absolute = urljoin(base_url, img["src"])
         if absolute in seen:
             continue
         seen.add(absolute)
@@ -63,9 +93,12 @@ def discover_image_urls(html: str, base_url: str) -> list[str]:
     return urls
 
 
-def download_candidates(urls: list[str], slug: str) -> list[Candidate]:
+def download_candidates(
+    urls: list[str], slug: str, attributions: dict[str, str] | None = None
+) -> list[Candidate]:
     slug_dir = IMAGES_DIR / slug
     slug_dir.mkdir(parents=True, exist_ok=True)
+    attributions = attributions or {}
     candidates: list[Candidate] = []
     for url in urls:
         if len(candidates) >= MAX_CANDIDATES:
@@ -80,7 +113,9 @@ def download_candidates(urls: list[str], slug: str) -> list[Candidate]:
             index = len(candidates)
             filename = f"{index}.{ext}"
             (slug_dir / filename).write_bytes(response.content)
-            candidates.append(Candidate(index=index, filename=filename, source_url=url))
+            candidates.append(
+                Candidate(index=index, filename=filename, source_url=url, attribution=attributions.get(url))
+            )
         except httpx.HTTPError:
             continue
     manifest = {"slug": slug, "candidates": [c.__dict__ for c in candidates]}
