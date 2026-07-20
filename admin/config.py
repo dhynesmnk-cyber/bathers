@@ -2,7 +2,27 @@
 hardcoded relative paths in feature code). Field names and amenity keys
 mirror SCHEMA.md and site/src/config.ts exactly."""
 
+import socket
 from pathlib import Path
+
+# Some sandboxed dev environments advertise an IPv6 route that's actually a
+# black hole (packets vanish silently — no RST, no ICMP unreachable). curl
+# falls back to IPv4 automatically (RFC 8305 "happy eyeballs"); Python's
+# socket/httpx stack does not, and hangs past any per-call timeout because
+# the hang happens in the underlying connect(), which the timeout doesn't
+# reliably interrupt in that failure mode. Every external call this project
+# makes (Places, GoatCounter, Nominatim, the harvester's own scraping) goes
+# through httpx, so force IPv4-only DNS resolution process-wide, here, before
+# any pipeline module runs. Harmless on environments where IPv6 works fine —
+# this project has no IPv6-only dependency.
+_orig_getaddrinfo = socket.getaddrinfo
+
+
+def _ipv4_only_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    return _orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+
+
+socket.getaddrinfo = _ipv4_only_getaddrinfo
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -24,6 +44,7 @@ TEMP_DATA_DIR = ROOT / "temp_data"
 IMAGES_DIR = TEMP_DATA_DIR / "images"
 FAILED_DIR = TEMP_DATA_DIR / "failed"
 PLACES_DIR = TEMP_DATA_DIR / "places"
+GOATCOUNTER_CACHE_DIR = TEMP_DATA_DIR / "goatcounter"
 
 PROMPTS_DIR = ROOT / "PROMPTS"
 
@@ -53,6 +74,8 @@ ADMIN_PORT = int(_ENV.get("ADMIN_PORT", "8787"))
 GEOCODER = _ENV.get("GEOCODER", "")
 GEOCODER_USER_AGENT = _ENV.get("GEOCODER_USER_AGENT", "")
 GOOGLE_PLACES_API_KEY = _ENV.get("GOOGLE_PLACES_API_KEY", "")
+GOATCOUNTER_API_TOKEN = _ENV.get("GOATCOUNTER_API_TOKEN", "")
+GOATCOUNTER_SITE = _ENV.get("GOATCOUNTER_SITE", "")
 
 AMENITY_KEYS = (
     "magnesium_pool",

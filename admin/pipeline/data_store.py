@@ -9,11 +9,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sqlite3
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+_logger = logging.getLogger("admin.data_store")
 
 from admin.config import (
     AMENITY_KEYS,
@@ -65,8 +68,15 @@ def parse_frontmatter(path: Path) -> dict[str, Any]:
 
 
 def iter_published(published_dir: Path):
+    """Skips and logs (rather than raises on) any file that fails to parse —
+    the DB is disposable and rebuildable from `_published` (TRD §5), and one
+    corrupted/hand-edited file shouldn't take the entire rebuild — every
+    other venue's data — down with it."""
     for path in sorted(published_dir.glob("*.mdx")):
-        yield path.stem, parse_frontmatter(path)
+        try:
+            yield path.stem, parse_frontmatter(path)
+        except ValueError as exc:
+            _logger.warning("rebuild: skipping %s — %s", path.stem, exc)
 
 
 def create_schema(conn: sqlite3.Connection) -> None:
@@ -189,7 +199,10 @@ def rebuild(
     try:
         create_schema(conn)
         for slug, data in iter_published(published_dir):
-            upsert_venue(conn, slug, data)
+            try:
+                upsert_venue(conn, slug, data)
+            except (sqlite3.Error, KeyError, TypeError) as exc:
+                _logger.warning("rebuild: skipping %s — %s", slug, exc)
         conn.commit()
         venues = fetch_all_venues(conn)
     finally:

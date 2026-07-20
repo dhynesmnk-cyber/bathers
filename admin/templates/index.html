@@ -12,6 +12,7 @@
       <p id="undo-banner" class="mono undo-banner" hidden>
         Approved — <button type="button" id="undo-btn" class="link-btn">undo?</button>
       </p>
+      <button id="conversions-toggle-btn" type="button" class="btn btn-plain">Conversions</button>
       <button id="help-toggle-btn" type="button" class="btn btn-plain">Help <span class="mono key-hint">?</span></button>
     </header>
 
@@ -31,6 +32,27 @@
         </form>
         <pre id="harvest-log" class="mono harvest-log" aria-live="polite"></pre>
         <button id="retry-playwright-btn" type="button" class="btn btn-plain" hidden>Retry with Playwright</button>
+
+        <div class="discovery-section">
+          <h3 class="mono pane-heading">DISCOVER</h3>
+          <form id="discover-form" class="discover-form">
+            <select id="discover-region" class="mono text-input">
+              {% for state in states %}
+              <option value="{{ state }}">{{ state }}</option>
+              {% endfor %}
+            </select>
+            <input
+              id="discover-keywords"
+              class="mono text-input"
+              type="text"
+              placeholder="day spa, bathhouse… (optional)"
+            />
+            <button id="discover-submit" type="submit" class="btn btn-plain">Search</button>
+          </form>
+          <ul id="discover-results" class="discover-results"></ul>
+          <p id="discover-empty" class="mono empty-state" hidden>No new candidates found.</p>
+          <button id="discover-queue-btn" type="button" class="btn btn-thermal" hidden>Queue selected</button>
+        </div>
       </section>
 
       <section class="pane queue-pane" aria-labelledby="queue-heading">
@@ -55,14 +77,9 @@
               <label class="field">
                 <span class="mono field-label">State</span>
                 <select id="field-state" class="text-input" data-field="state">
-                  <option value="VIC">VIC</option>
-                  <option value="NSW">NSW</option>
-                  <option value="QLD">QLD</option>
-                  <option value="SA">SA</option>
-                  <option value="WA">WA</option>
-                  <option value="TAS">TAS</option>
-                  <option value="NT">NT</option>
-                  <option value="ACT">ACT</option>
+                  {% for state in states %}
+                  <option value="{{ state }}">{{ state }}</option>
+                  {% endfor %}
                 </select>
               </label>
               <div class="field-row">
@@ -130,6 +147,12 @@
                 <button id="image-remove-btn" type="button" class="btn btn-oxide" hidden>Remove image</button>
               </div>
 
+              <div id="faq-section" class="field">
+                <span class="mono field-label">FAQ</span>
+                <div id="faq-list" class="faq-list"></div>
+                <button id="faq-add-btn" type="button" class="btn btn-plain">Add question</button>
+              </div>
+
               <div id="field-errors" class="field-errors mono"></div>
               <p id="save-status" class="mono save-status" aria-live="polite"></p>
             </div>
@@ -171,6 +194,7 @@
     </footer>
 
     {% include "partials/help_panel.html" %}
+    {% include "partials/conversions_panel.html" %}
 
     <script src="/static/admin.js"></script>
   </body>

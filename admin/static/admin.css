@@ -153,6 +153,57 @@ body {
   margin-top: 0.5rem;
 }
 
+/* Discovery (TRD.md §8 exception — venue discovery, UX.md §1.1a) */
+
+.discovery-section {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(168, 159, 143, 0.25);
+}
+
+.discover-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.discover-form .text-input {
+  flex: 1;
+}
+
+.discover-results {
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  font-size: 12px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.discover-result {
+  border-top: 1px solid rgba(168, 159, 143, 0.15);
+  padding: 0.4rem 0;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.discover-result:first-child {
+  border-top: none;
+}
+
+.discover-result-text {
+  flex: 1;
+}
+
+.discover-result-name {
+  color: var(--ink);
+}
+
+.discover-result-address {
+  color: var(--ink-faded);
+}
+
 /* Queue */
 
 .queue-list {
@@ -280,6 +331,12 @@ body {
   border-color: var(--oxide);
 }
 
+#faq-section.field-invalid {
+  border: 1px solid var(--oxide);
+  border-radius: 2px;
+  padding: 0.5rem;
+}
+
 textarea.text-input {
   resize: vertical;
 }
@@ -388,6 +445,44 @@ textarea.text-input {
 .places-check-missing {
   color: var(--oxide);
   border-color: var(--oxide);
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.faq-pair {
+  border: 1px solid rgba(168, 159, 143, 0.35);
+  border-radius: 2px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.faq-pair-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-start;
+}
+
+.faq-pair-row .text-input {
+  flex: 1;
+}
+
+.faq-remove-btn {
+  background: transparent;
+  color: var(--oxide);
+  border: 1px solid var(--oxide);
+  border-radius: 2px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  padding: 0.4rem 0.5rem;
+  cursor: pointer;
+  flex: none;
 }
 
 .field-errors {

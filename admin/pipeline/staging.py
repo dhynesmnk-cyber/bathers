@@ -8,6 +8,8 @@ how Gate 2 already guarantees idempotency.
 
 from __future__ import annotations
 
+import json
+import re
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -22,7 +24,7 @@ from admin.schema import FieldError, count_prose_words, staging_status, validate
 FRONTMATTER_FIELD_ORDER = (
     "name", "state", "suburb", "address", "latitude", "longitude", "website",
     "amenities", "status", "summary", "drafted", "source_url",
-    "image", "image_source", "image_caption",
+    "image", "image_source", "image_caption", "faq",
 )
 AMENITY_FIELD_ORDER = (
     "magnesium_pool", "infrared_sauna", "traditional_sauna", "cold_plunge", "led_therapy",
@@ -86,6 +88,55 @@ def render_mdx(data: dict[str, Any], body: str) -> str:
     return f"---\n{render_frontmatter(data)}---\n\n{body.strip()}\n"
 
 
+# ---- TippedPhoto body tag (UX.md §4.3) ----
+#
+# publish_image() (images.py) only ever computes frontmatter fields — the
+# venue page renders a photo exclusively via a literal <TippedPhoto> tag in
+# the MDX body ([slug].astro: `<Content components={{ Pull, TippedPhoto }} />`).
+# Setting image/image_source/image_caption alone has no visible effect on the
+# built page. These helpers are the other half of "publish": inserting (and,
+# on removal, stripping) that tag so the frontmatter and the body never
+# disagree about whether a photo exists.
+
+_TIPPED_PHOTO_TAG_RE = re.compile(r"<TippedPhoto\b[^>]*/>")
+
+
+def _jsx_attr(name: str, value: str) -> str:
+    # {} + json.dumps rather than a bare "..." attribute — MDX/JSX string
+    # attributes don't support backslash-escaping, so a caption containing a
+    # literal `"` would otherwise break the tag. json.dumps produces a valid
+    # JS string literal for the {} expression form regardless of content.
+    return f"{name}={{{json.dumps(value)}}}"
+
+
+def _tipped_photo_tag(slug: str, fields: dict[str, Any]) -> str:
+    caption = fields["image_caption"]
+    attrs = " ".join(
+        [
+            _jsx_attr("slug", slug),
+            _jsx_attr("src", fields["image"]),
+            _jsx_attr("alt", caption),
+            _jsx_attr("caption", caption),
+            _jsx_attr("sourceUrl", fields["image_source"]),
+        ]
+    )
+    return f"<TippedPhoto {attrs} />"
+
+
+def _strip_tipped_photo(body: str) -> str:
+    stripped = _TIPPED_PHOTO_TAG_RE.sub("", body)
+    return re.sub(r"\n{3,}", "\n\n", stripped).strip()
+
+
+def _insert_tipped_photo(body: str, tag: str) -> str:
+    """DESIGN.md §7 — "mid-article, never top." Inserts around the middle
+    block of the body's paragraphs, never before the first."""
+    blocks = [b for b in re.split(r"\n\s*\n", body.strip()) if b.strip()]
+    insert_at = max(1, len(blocks) // 2) if len(blocks) > 1 else len(blocks)
+    blocks.insert(insert_at, tag)
+    return "\n\n".join(blocks)
+
+
 def _entry_from_path(path: Path) -> StagingEntry:
     text = path.read_text(encoding="utf-8")
     slug = path.stem
@@ -135,16 +186,34 @@ def update_staging(slug: str, patch: dict[str, Any]) -> StagingEntry:
     return _entry_from_path(path)
 
 
-def remove_frontmatter_keys(slug: str, keys: list[str]) -> StagingEntry:
-    """Delete keys entirely (rather than setting null) — used for the optional
-    image/image_source/image_caption fields on `Remove image` (UX.md §4.4)."""
+def publish_image_fields(slug: str, fields: dict[str, str]) -> StagingEntry:
+    """UX.md §4.3's "publish image" action: merges the image/image_source/
+    image_caption frontmatter fields AND inserts the corresponding
+    <TippedPhoto> body tag in the same write — frontmatter alone renders
+    nothing (see the TippedPhoto note above `render_mdx`)."""
     path = STAGING_DIR / f"{slug}.mdx"
     if not path.exists():
         raise FileNotFoundError(slug)
     text = path.read_text(encoding="utf-8")
     data, body = split_frontmatter(text, slug)
-    for key in keys:
+    data.update(fields)
+    body = _insert_tipped_photo(_strip_tipped_photo(body), _tipped_photo_tag(slug, fields))
+    path.write_text(render_mdx(data, body), encoding="utf-8")
+    return _entry_from_path(path)
+
+
+def remove_image_fields(slug: str) -> StagingEntry:
+    """UX.md §4.4's "Remove image" action on a staged draft — reverse of
+    publish_image_fields: drops the frontmatter fields and strips the
+    <TippedPhoto> tag back out of the body."""
+    path = STAGING_DIR / f"{slug}.mdx"
+    if not path.exists():
+        raise FileNotFoundError(slug)
+    text = path.read_text(encoding="utf-8")
+    data, body = split_frontmatter(text, slug)
+    for key in ("image", "image_source", "image_caption"):
         data.pop(key, None)
+    body = _strip_tipped_photo(body)
     path.write_text(render_mdx(data, body), encoding="utf-8")
     return _entry_from_path(path)
 
@@ -198,6 +267,7 @@ def remove_published_image(slug: str) -> None:
     data, body = split_frontmatter(text, slug)
     for key in ("image", "image_source", "image_caption"):
         data.pop(key, None)
+    body = _strip_tipped_photo(body)
     path.write_text(render_mdx(data, body), encoding="utf-8")
     data_store.rebuild()
 

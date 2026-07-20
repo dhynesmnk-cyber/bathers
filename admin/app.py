@@ -17,9 +17,9 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from admin.config import IMAGES_DIR, SITE_DIST_DIR, SITE_FONTS_DIR, STAGING_DIR
+from admin.config import IMAGES_DIR, SITE_DIST_DIR, SITE_FONTS_DIR, STAGING_DIR, STATES, VENUES_JSON_PATH
 from admin.mdx_preview import render_body_html
-from admin.pipeline import deploy, images, orchestrator, places, staging
+from admin.pipeline import deploy, discovery, goatcounter, images, orchestrator, places, staging
 from admin.pipeline.staging import UndoExpired, ValidationFailed
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -65,7 +65,12 @@ def _entry_detail(entry: staging.StagingEntry) -> dict[str, Any]:
         "frontmatter": entry.frontmatter,
         "body": entry.body,
         "image_candidates": [
-            {"index": c.index, "url": f"/api/queue/{entry.slug}/images/{c.index}/file", "source_url": c.source_url}
+            {
+                "index": c.index,
+                "url": f"/api/queue/{entry.slug}/images/{c.index}/file",
+                "source_url": c.source_url,
+                "attribution": c.attribution,
+            }
             for c in candidates
         ],
         "places_check": asdict(places_check) if places_check else None,
@@ -74,7 +79,7 @@ def _entry_detail(entry: staging.StagingEntry) -> dict[str, Any]:
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
-    return templates.TemplateResponse(request, "index.html", {})
+    return templates.TemplateResponse(request, "index.html", {"states": STATES})
 
 
 @app.get("/preview/{slug}", response_class=HTMLResponse)
@@ -209,14 +214,14 @@ def api_publish_image(slug: str, index: int, body: PublishImageBody):
         fields = images.publish_image(slug, index, body.caption.strip())
     except FileNotFoundError:
         raise HTTPException(404, "no such candidate image")
-    entry = staging.update_staging(slug, fields)
+    entry = staging.publish_image_fields(slug, fields)
     return _entry_detail(entry)
 
 
 @app.post("/api/queue/{slug}/images/remove")
 def api_remove_staged_image(slug: str):
     images.remove_image(slug)  # candidate downloads stay in temp_data/ — only the published file/fields are cleared
-    entry = staging.remove_frontmatter_keys(slug, ["image", "image_source", "image_caption"])
+    entry = staging.remove_image_fields(slug)
     return _entry_detail(entry)
 
 
@@ -270,6 +275,31 @@ def api_deploy(body: DeployBody):
         yield "event: done\ndata: {}\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+class DiscoverBody(BaseModel):
+    region: str
+    keywords: list[str] | None = None
+
+
+@app.post("/api/discover")
+def api_discover(body: DiscoverBody):
+    if not places.GOOGLE_PLACES_API_KEY:
+        raise HTTPException(400, "GOOGLE_PLACES_API_KEY is not set — discovery is unavailable")
+    candidates = discovery.discover_venues(body.region, body.keywords)
+    return [asdict(c) for c in candidates]
+
+
+@app.get("/api/conversions")
+def api_conversions(refresh: bool = False):
+    counts = goatcounter.fetch_click_counts() if refresh else (goatcounter.get_cached_counts() or goatcounter.fetch_click_counts())
+    venues = json.loads(VENUES_JSON_PATH.read_text(encoding="utf-8")) if VENUES_JSON_PATH.exists() else []
+    names = {v["slug"]: v["name"] for v in venues}
+    rows = [
+        {"slug": slug, "name": names.get(slug, slug), "count": count}
+        for slug, count in sorted(counts.items(), key=lambda kv: kv[1], reverse=True)
+    ]
+    return {"configured": goatcounter.configured(), "rows": rows}
 
 
 @app.get("/api/health")

@@ -43,16 +43,31 @@
   const helpToggleBtn = el("help-toggle-btn");
   const helpPanel = el("help-panel");
   const helpCloseBtn = el("help-close-btn");
+  const conversionsToggleBtn = el("conversions-toggle-btn");
+  const conversionsPanel = el("conversions-panel");
+  const conversionsCloseBtn = el("conversions-close-btn");
+  const conversionsRefreshBtn = el("conversions-refresh-btn");
+  const conversionsList = el("conversions-list");
+  const conversionsEmpty = el("conversions-empty");
   const harvestForm = el("harvest-form");
   const harvestUrl = el("harvest-url");
   const harvestSubmit = el("harvest-submit");
   const harvestLog = el("harvest-log");
   const retryPlaywrightBtn = el("retry-playwright-btn");
+  const discoverForm = el("discover-form");
+  const discoverRegion = el("discover-region");
+  const discoverKeywords = el("discover-keywords");
+  const discoverSubmit = el("discover-submit");
+  const discoverResults = el("discover-results");
+  const discoverEmpty = el("discover-empty");
+  const discoverQueueBtn = el("discover-queue-btn");
   const imageStrip = el("image-strip");
   const imagePublishRow = el("image-publish-row");
   const imageCaption = el("image-caption");
   const imagePublishBtn = el("image-publish-btn");
   const imageRemoveBtn = el("image-remove-btn");
+  const faqList = el("faq-list");
+  const faqAddBtn = el("faq-add-btn");
   const deploySummary = el("deploy-summary");
   const deployBtn = el("deploy-btn");
   const deployPreview = el("deploy-preview");
@@ -160,6 +175,7 @@
     renderFieldErrors(entry.errors || []);
     renderImageSection(entry);
     renderPlacesCheck(entry.places_check);
+    renderFaqSection(entry);
   }
 
   // ---- Google Places check (read-only — never feeds queuePatch, so it can
@@ -228,11 +244,14 @@
       img.className = "image-thumb";
       img.src = candidate.url;
       img.alt = "";
-      img.title = candidate.source_url;
+      img.title = candidate.attribution || candidate.source_url;
       img.addEventListener("click", () => {
         selectedImageIndex = candidate.index;
         imageStrip.querySelectorAll(".image-thumb").forEach((t) => t.classList.remove("selected"));
         img.classList.add("selected");
+        if (candidate.attribution && !imageCaption.value.trim()) {
+          imageCaption.value = candidate.attribution;
+        }
         imagePublishBtn.disabled = !(selectedImageIndex !== null && imageCaption.value.trim());
       });
       imageStrip.appendChild(img);
@@ -265,6 +284,69 @@
     await fetchQueue();
   });
 
+  // ---- FAQ (AI-drafted, human-editable — same debounced autosave as other fields) ----
+
+  function currentFaqPairs() {
+    return Array.from(faqList.querySelectorAll(".faq-pair")).map((pairEl) => ({
+      question: pairEl.querySelector(".faq-question").value,
+      answer: pairEl.querySelector(".faq-answer").value,
+    }));
+  }
+
+  function commitFaqChange() {
+    queuePatch("faq", currentFaqPairs());
+  }
+
+  function addFaqPairEl(item) {
+    const wrap = document.createElement("div");
+    wrap.className = "faq-pair";
+
+    const questionRow = document.createElement("div");
+    questionRow.className = "faq-pair-row";
+    const questionInput = document.createElement("input");
+    questionInput.className = "text-input faq-question";
+    questionInput.type = "text";
+    questionInput.placeholder = "Question…";
+    questionInput.value = item.question || "";
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "faq-remove-btn";
+    removeBtn.textContent = "Remove";
+    removeBtn.addEventListener("click", () => {
+      wrap.remove();
+      commitFaqChange();
+    });
+    questionRow.appendChild(questionInput);
+    questionRow.appendChild(removeBtn);
+
+    const answerInput = document.createElement("textarea");
+    answerInput.className = "text-input faq-answer";
+    answerInput.rows = 2;
+    answerInput.placeholder = "Answer…";
+    answerInput.value = item.answer || "";
+
+    questionInput.addEventListener("input", commitFaqChange);
+    answerInput.addEventListener("input", commitFaqChange);
+
+    wrap.appendChild(questionRow);
+    wrap.appendChild(answerInput);
+    faqList.appendChild(wrap);
+  }
+
+  function renderFaqSection(entry) {
+    faqList.innerHTML = "";
+    const fm = entry.frontmatter || {};
+    const faq = Array.isArray(fm.faq) ? fm.faq : [];
+    for (const item of faq) {
+      addFaqPairEl(item);
+    }
+  }
+
+  faqAddBtn.addEventListener("click", () => {
+    addFaqPairEl({ question: "", answer: "" });
+    commitFaqChange();
+  });
+
   function updateCoordPin(lat, lng) {
     if (lat === null || lat === undefined || lng === null || lng === undefined || lat === "" || lng === "") {
       coordPin.setAttribute("cx", "-10");
@@ -295,6 +377,7 @@
     website: fieldWebsite,
     summary: fieldSummary,
     source_url: fieldSourceUrl,
+    faq: el("faq-section"),
   };
 
   function renderFieldErrors(errors) {
@@ -522,6 +605,85 @@
     harvestLog.scrollTop = harvestLog.scrollHeight;
   }
 
+  // ---- Discovery (UX.md §1.1a — pre-fills the harvest flow, one job at a
+  // time still enforced by the existing /api/harvest lock) ----
+
+  let discoverCandidates = [];
+
+  function renderDiscoverResults() {
+    discoverResults.innerHTML = "";
+    discoverEmpty.hidden = discoverCandidates.length > 0;
+    discoverQueueBtn.hidden = discoverCandidates.length === 0;
+    discoverCandidates.forEach((candidate, index) => {
+      const li = document.createElement("li");
+      li.className = "discover-result";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = true;
+      checkbox.dataset.index = String(index);
+
+      const text = document.createElement("div");
+      text.className = "discover-result-text";
+      const name = document.createElement("div");
+      name.className = "discover-result-name";
+      name.textContent = candidate.name;
+      const address = document.createElement("div");
+      address.className = "discover-result-address";
+      address.textContent = candidate.formatted_address || candidate.website;
+      text.appendChild(name);
+      text.appendChild(address);
+
+      li.appendChild(checkbox);
+      li.appendChild(text);
+      discoverResults.appendChild(li);
+    });
+  }
+
+  discoverForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    discoverSubmit.disabled = true;
+    const originalLabel = discoverSubmit.textContent;
+    discoverSubmit.textContent = "Searching…";
+    try {
+      const keywords = discoverKeywords.value
+        .split(",")
+        .map((k) => k.trim())
+        .filter(Boolean);
+      const res = await fetch("/api/discover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ region: discoverRegion.value, keywords: keywords.length ? keywords : null }),
+      });
+      if (!res.ok) {
+        appendLogLine(nowTime(), "error", `discovery failed — HTTP ${res.status}`);
+        return;
+      }
+      discoverCandidates = await res.json();
+      renderDiscoverResults();
+    } finally {
+      discoverSubmit.disabled = false;
+      discoverSubmit.textContent = originalLabel;
+    }
+  });
+
+  discoverQueueBtn.addEventListener("click", async () => {
+    const checked = Array.from(discoverResults.querySelectorAll("input[type=checkbox]:checked")).map(
+      (cb) => discoverCandidates[Number(cb.dataset.index)],
+    );
+    discoverQueueBtn.disabled = true;
+    try {
+      for (const candidate of checked) {
+        appendLogLine(nowTime(), "info", `queueing discovered venue — ${candidate.name}`);
+        await runHarvest(candidate.website, false);
+      }
+    } finally {
+      discoverQueueBtn.disabled = false;
+      discoverCandidates = [];
+      renderDiscoverResults();
+    }
+  });
+
   // ---- Deploy strip (UX.md §1.4) ----
 
   async function fetchDeployStatus() {
@@ -624,6 +786,56 @@
     helpPanel.hidden = true;
   });
 
+  // ---- Conversions panel (Book Now click counts, TRD.md §8 exception) ----
+
+  function renderConversions(data) {
+    conversionsList.innerHTML = "";
+    if (!data.configured) {
+      conversionsEmpty.hidden = false;
+      conversionsEmpty.textContent = "Not configured — set GOATCOUNTER_API_TOKEN and GOATCOUNTER_SITE in .env.";
+      return;
+    }
+    if (!data.rows.length) {
+      conversionsEmpty.hidden = false;
+      conversionsEmpty.textContent = "No Book Now clicks recorded yet.";
+      return;
+    }
+    conversionsEmpty.hidden = true;
+    for (const row of data.rows) {
+      const li = document.createElement("li");
+      li.textContent = `${row.name} — ${row.count}`;
+      conversionsList.appendChild(li);
+    }
+  }
+
+  async function fetchConversions(refresh) {
+    conversionsList.innerHTML = "";
+    conversionsEmpty.hidden = false;
+    conversionsEmpty.textContent = "Loading…";
+    conversionsRefreshBtn.disabled = true;
+    try {
+      const res = await fetch(`/api/conversions${refresh ? "?refresh=true" : ""}`);
+      if (!res.ok) {
+        conversionsEmpty.textContent = `Failed to load — HTTP ${res.status}`;
+        return;
+      }
+      renderConversions(await res.json());
+    } finally {
+      conversionsRefreshBtn.disabled = false;
+    }
+  }
+
+  function toggleConversionsPanel() {
+    conversionsPanel.hidden = !conversionsPanel.hidden;
+    if (!conversionsPanel.hidden) fetchConversions(false);
+  }
+
+  conversionsToggleBtn.addEventListener("click", toggleConversionsPanel);
+  conversionsCloseBtn.addEventListener("click", () => {
+    conversionsPanel.hidden = true;
+  });
+  conversionsRefreshBtn.addEventListener("click", () => fetchConversions(true));
+
   // ---- Keyboard shortcuts ----
 
   document.addEventListener("keydown", (event) => {
@@ -668,6 +880,8 @@
       hideRejectForm();
     } else if (!helpPanel.hidden) {
       helpPanel.hidden = true;
+    } else if (!conversionsPanel.hidden) {
+      conversionsPanel.hidden = true;
     }
   });
 
