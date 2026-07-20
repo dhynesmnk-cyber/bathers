@@ -33,6 +33,7 @@ This order is used everywhere amenities are displayed.
 | `image` | string | – | Path to published image asset. Present only after the separate image-publish action (UX.md §4). |
 | `image_source` | string (url) | –* | *Required if `image` present (zod refinement). |
 | `image_caption` | string | –* | *Required if `image` present. `PLATE I.` register. |
+| `faq` | array of `{question, answer}` | – | Optional, 3–6 pairs recommended, hard cap 8. Drafted by the Architect strictly from the Harvester's `facts` object (§4); never fabricated. Reviewer-editable in the admin pane. Absent or empty array → no FAQ section renders (zero-FAQ pages must look complete, same posture as the zero-image default). |
 
 Slug = filename (`peninsula-hot-springs.mdx`), kebab-case, unique across `_staging` + `_published`. Slug is **not** a frontmatter field — it is derived from the filename everywhere.
 
@@ -62,6 +63,8 @@ CREATE TABLE amenities (
 
 The DB is derived and disposable (TRD §5): rebuildable in full from `_published` frontmatter. Approve = upsert on `slug`.
 
+**Note on FAQ:** not stored in SQLite — like the MDX body, it is rendered content, not a query/filter dimension.
+
 ## 4. Harvester JSON output
 
 The Harvester agent must emit **only** this object — no prose, no markdown fences:
@@ -89,6 +92,8 @@ The Harvester agent must emit **only** this object — no prose, no markdown fen
 ```
 
 Rules: amenity `true` only on explicit evidence in the scraped text; unknown scalar → `null`, never guessed. Coordinates are almost never on venue sites — the pipeline geocodes `address` if possible, else leaves null for the reviewer to fill (the review pane's map thumbnail makes this a 10-second fix). `facts` holds raw material for the Architect; empty arrays are fine.
+
+**Note on FAQ:** the Harvester's JSON contract does not carry an `faq` key. FAQ answers are the Architect's synthesis, drafted only from the `facts` object above — adding a duplicate `faq` key to the Harvester's output would just re-derive the same facts one step early. See `PROMPTS/architect.md`.
 
 ## 5. Sample MDX (place in `_published` at Gate 1)
 

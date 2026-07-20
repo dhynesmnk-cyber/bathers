@@ -38,6 +38,10 @@ const spasCollection = defineCollection({
       image: z.string().optional(),
       image_source: z.string().url().optional(),
       image_caption: z.string().optional(),
+      faq: z
+        .array(z.object({ question: z.string(), answer: z.string() }))
+        .max(8)
+        .optional(),
     })
     .strict()
     .refine((data) => !data.image || !!data.image_source, {

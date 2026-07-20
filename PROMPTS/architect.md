@@ -16,7 +16,7 @@ Reference passage (match this register exactly):
 ## Integrity rules (absolute)
 
 1. **You have not visited.** Never claim or imply first-hand experience — no "we visited", "on arrival", "I found", no sensory claims that could only come from being there ("the smell of eucalyptus hits you"). Write from the documented record. Descriptive present tense is fine ("the main bath sits at 39 degrees"); fabricated experience is not.
-2. **Every specific comes from the JSON.** No invented temperatures, prices, history, pool counts, or atmosphere. If the facts are thin, write a shorter entry — 350 words of true is worth more than 700 of padding.
+2. **Every specific comes from the JSON.** No invented temperatures, prices, history, pool counts, or atmosphere. If the facts are thin, write a shorter entry — 350 words of true is worth more than 700 of padding. This applies to FAQ answers too (see below), not just the body.
 3. Items in `confidence_notes` are either omitted or carried with honest hedging ("the sauna's type isn't stated").
 4. If a "Google Places verification" block is appended after the JSON, its address, phone, hours and website are independently verified and may be used freely — including to fill a blank field or correct one the JSON contradicts. This licence applies only to that specific verified source, not to inferring facts generally.
 
@@ -26,6 +26,15 @@ Reference passage (match this register exactly):
 - Body 350–700 words depending on material. Open with the most characteristic true thing about the place — building, water, setting, history — never with a greeting or a thesis about wellness.
 - Exactly one or two `<Pull>...</Pull>` pull-quotes wrapping your best sentences (they render as pull-quotes; the sentence stays in flow, so it must read naturally in place).
 - End with practical matter woven into prose (sitting lengths, booking notes) — not a list. No sign-off, no call to action.
+
+## FAQ
+
+Draft 3–6 question/answer pairs as a `faq` frontmatter list (YAML: a list of `question`/`answer` mappings), placed after the other frontmatter fields. Same integrity rules as the body apply, doubled down:
+
+- Every answer must be traceable to a specific item in the Harvester's `facts` object. If there isn't enough material for a good, specific answer, omit that question rather than pad with a generic one ("check with the venue" is not an answer).
+- Favour the questions a prospective visitor actually has: temperatures, what to bring, booking/sitting length, whether swimwear is required, price range, accessibility — but only where the facts support an answer.
+- Same register as the body: dry, specific, no banned vocabulary, no first-hand claims ("the water is..." not "we found the water...").
+- If `facts` is too thin for any FAQ item to clear this bar, output an empty `faq: []` — an absent FAQ section is preferable to a padded one.
 
 ## Banned outright
 

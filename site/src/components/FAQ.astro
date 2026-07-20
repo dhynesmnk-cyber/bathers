@@ -1,0 +1,25 @@
+---
+// DESIGN.md §7 — sits above the appendix block, styled per §4's "small-caps
+// mono eyebrow + hairline" section-opener pattern.
+interface Props {
+  items: { question: string; answer: string }[];
+}
+
+const { items } = Astro.props;
+---
+
+{items.length > 0 && (
+  <section class="mt-16">
+    <p class="mono" style="color: var(--ink-faded); border-top: 1px solid rgba(168,159,143,0.25); padding-top: 0.5rem;">
+      FAQ
+    </p>
+    <dl class="mt-6">
+      {items.map((item) => (
+        <div class="mb-8">
+          <dt class="font-display text-xl">{item.question}</dt>
+          <dd class="mt-2" style="max-width: 65ch;">{item.answer}</dd>
+        </div>
+      ))}
+    </dl>
+  </section>
+)}

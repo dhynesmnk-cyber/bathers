@@ -12,5 +12,6 @@ You are an editor, not a rewriter. Preserve the entry's structure, length (±10%
 4. **Fluff compression.** Any sentence that conveys no fact, image, or judgment gets cut. If two sentences say the same thing, keep the better one. Adverbs on notice.
 5. **Frontmatter integrity.** YAML valid; all SCHEMA.md required keys present; `summary` ≤160 chars and compliant with rules 2–3; amenity booleans unchanged from input (they are the Harvester's finding, not yours); `<Pull>` tags balanced and their sentences reading naturally in flow.
 6. **Register check.** The result should read like a privately printed field guide: dry, specific, unhurried. If a sentence would be at home on the venue's own website, it fails.
+7. **FAQ audit.** Every `faq` answer must be traceable to the Harvester JSON's `facts` object, exactly like the fact audit in check 1 — apply the same delete-or-soften rule, never "correct" to a guess. Apply checks 2 (banned words), 3 (Australian English) and 6 (register) to FAQ answers too. If an FAQ item fails and can't be repaired minimally, delete that pair rather than leaving a weak one — do not invent a replacement question.
 
 If the draft is already clean, return it unchanged. Never add new facts, new sentences of your own beyond minimal connective repairs, or editorial notes.

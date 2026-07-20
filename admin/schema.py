@@ -21,6 +21,7 @@ AU_LATITUDE_BOUNDS = (-44.0, -9.0)
 AU_LONGITUDE_BOUNDS = (112.0, 154.0)
 SUMMARY_MAX_CHARS = 160
 MIN_PROSE_WORDS = 300
+FAQ_MAX_ITEMS = 8
 
 _URL_RE = re.compile(r"^https?://[^\s/$.?#].[^\s]*$", re.IGNORECASE)
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -112,10 +113,28 @@ def validate_frontmatter(data: dict[str, Any]) -> list[FieldError]:
         if not isinstance(data.get("image_caption"), str) or not data.get("image_caption", "").strip():
             errors.append(FieldError("image_caption", "image_caption is required when image is present"))
 
+    faq = data.get("faq")
+    if faq is not None:
+        if not isinstance(faq, list):
+            errors.append(FieldError("faq", "faq must be a list of {question, answer} pairs"))
+        elif len(faq) > FAQ_MAX_ITEMS:
+            errors.append(FieldError("faq", f"faq exceeds {FAQ_MAX_ITEMS} pairs"))
+        else:
+            for i, item in enumerate(faq):
+                if not isinstance(item, dict):
+                    errors.append(FieldError("faq", f"faq[{i}] must be an object with question/answer"))
+                    continue
+                question = item.get("question")
+                answer = item.get("answer")
+                if not isinstance(question, str) or not question.strip():
+                    errors.append(FieldError("faq", f"faq[{i}].question is required"))
+                if not isinstance(answer, str) or not answer.strip():
+                    errors.append(FieldError("faq", f"faq[{i}].answer is required"))
+
     known_fields = {
         "name", "state", "suburb", "address", "latitude", "longitude", "website",
         "amenities", "status", "summary", "drafted", "source_url",
-        "image", "image_source", "image_caption",
+        "image", "image_source", "image_caption", "faq",
     }
     extra_fields = [key for key in data if key not in known_fields]
     if extra_fields:
