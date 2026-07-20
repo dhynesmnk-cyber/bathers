@@ -92,9 +92,20 @@ This system must be used consistently everywhere amenities appear, including the
 ## 7. Page-Specific Notes
 
 - **Index:** masthead first — site name in large Fraunces with a one-line mono subtitle (like a pamphlet title page), then a short editorial foreword (real prose, 2–3 paragraphs), then the map chapter, then the state-grouped contents list.
-- **Venue page:** name → dateline/notation row → prose with 1–2 pull-quotes → tipped-in photo if one exists (mid-article, never top) → appendix block (`--paper-raised`, mono, hairline-topped) with address, hours, and the claim-this-listing line.
+- **Venue page:** name → dateline/notation row → prose with 1–2 pull-quotes → tipped-in photo if one exists (mid-article, never top) → FAQ (if present) → appendix block (`--paper-raised`, mono, hairline-topped) with address, the Book Now button, hours, and the claim-this-listing line. FAQ sits above the appendix, not inside it — it's still editorial content ("what is this place like"), while the appendix is the page's practical/logistics close and should stay a stable landing spot regardless of how much FAQ content exists.
 - **Programmatic pages** (state × amenity): identical shell; generated foreword paragraph; contents-style list. Must be indistinguishable in quality from the index.
 - **Zero-image default:** every page must look complete and intentional with no images at all. Images are garnish, never load-bearing. (See UX.md §4 for the image approval pipeline.)
+
+### 7a. Interactive elements — the Book Now button
+
+The public site has exactly one button-styled element: the venue page's "Book now" link out to the venue's own website. It must look like a stamped instruction, not a SaaS CTA:
+
+- Element: a real `<a>` styled as a button (it navigates, so not `<button>`).
+- Sits inline in the page flow, inside the appendix block, alongside the address and claim-this-listing lines — never fixed or floating (UX.md §3 already bans floating buttons site-wide).
+- Typography: IBM Plex Mono, uppercase, letterspaced 0.05em, 13px — matches the appendix block's existing mono register, not the display face.
+- Colour: 1px solid `--thermal` border, `--thermal` text; background stays `--paper-raised` (the appendix block's own surface) — no filled thermal background, which would exceed the "<5% of screen" thermal budget on a page that may also show thermal in the notation row and links. Hover/focus keeps the border and text thermal-only (no colour-flip, no glow).
+- Shape: 0 border-radius (the site-wide reset already enforces this — do not override it above 2px). No box-shadow, no gradient, no icon.
+- Padding: roughly 0.75em vertical, 1.25em horizontal — a legible tappable target (44px minimum height) without becoming a hero element.
 
 ## 8. Admin UI (visual only — behaviour in UX.md)
 

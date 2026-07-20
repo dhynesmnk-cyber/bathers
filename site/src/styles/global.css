@@ -118,3 +118,23 @@ a:focus-visible {
   font-size: 13px;
   letter-spacing: 0.05em;
 }
+
+/* DESIGN.md §7a — the site's one button-styled element. Combine with .mono
+   for the type treatment; this class only carries the box/colour/shape. */
+.book-now-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 1.25em;
+  border: 1px solid var(--thermal);
+  color: var(--thermal);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.book-now-btn:hover,
+.book-now-btn:focus-visible {
+  text-decoration: none;
+  color: var(--thermal);
+  border-color: var(--thermal);
+}

@@ -58,8 +58,27 @@
           {{ body_html | safe }}
         </div>
 
+        {% if data.get("faq") %}
+        <section class="mt-16">
+          <p class="mono" style="color: var(--ink-faded); border-top: 1px solid rgba(168,159,143,0.25); padding-top: 0.5rem;">FAQ</p>
+          <dl class="mt-6">
+            {% for item in data.get("faq") %}
+            <div class="mb-8">
+              <dt class="font-display text-xl">{{ item.get("question") }}</dt>
+              <dd class="mt-2" style="max-width: 65ch;">{{ item.get("answer") }}</dd>
+            </div>
+            {% endfor %}
+          </dl>
+        </section>
+        {% endif %}
+
         <div class="mono mt-16 pt-6" style="border-top: 1px solid rgba(168,159,143,0.25); background: var(--paper-raised); padding: 1.5rem;">
           <p>{{ data.get("address") or "(address)" }}</p>
+          {% if data.get("website") %}
+          <p class="mt-4">
+            <a href="{{ data.get('website') }}" class="book-now-btn mono" target="_blank" rel="noopener">Book now</a>
+          </p>
+          {% endif %}
           <p class="mt-4">
             <a href="mailto:claim@bathers.example">Claim this listing</a>
           </p>
