@@ -70,22 +70,20 @@ This is what separates "dark editorial" from "dark dashboard":
 
 ---
 
-## 6. Signature Element — the Field Notation System
+## 6. Venue Feature Display — Icon System
 
-The one thing this site is remembered by: **amenities are recorded as a naturalist's notation, not icons.**
+**Exception (user-approved, 2026-07-21), superseding the section below.** The mono field-notation system (`Mg · IR · SA · CP`) is replaced by hand-authored inline SVG line icons for venue-feature display: the five amenities, plus the 2026-07-21 `hours`/`cost`/facilities additions (SCHEMA.md §1a/§2). This override is scoped narrowly to *venue-feature display* — it does not touch the rest of the site's icon-free posture:
 
-Each amenity has a two-to-three-letter mono abbreviation, printed as a specimen label in the venue dateline row and in index entries:
+- **Unaffected, still icon-free:** section openers (§4), the Book Now button (§7a), and the map's amenity filter toggles (§5's "Filters are text" — still plain mono text labels, unchanged).
+- **Affected — now icon+label:** the venue dateline row, index/programmatic-page entries (icon-only, compact, with a `title` tooltip), the admin review pane's amenity/facility toggle chips, and programmatic state/amenity page headings (the `<title>` tag and meta description keep the old plain-text abbreviation register, since a `<title>` cannot render an icon).
 
-```
-37.8136° S, 144.9631° E   ·   VIC   ·   Mg · IR · SA · CP
-```
+Icon rules:
+- One shared renderer (`site/src/components/Icon.astro`, paths in `site/src/icons/paths.ts`): 24×24 viewBox, stroke-only, `currentColor`, `stroke-width: 1.4`, round caps/joins — no fill, no colour beyond the surrounding text colour, so the icons stay tonal with the page rather than becoming decorative.
+- Present features only; absent ones omitted (the "a field diary doesn't record what wasn't there" principle carries over unchanged from the old notation system).
+- Full-size context (venue page) shows icon + label text; compact context (index/list entries) shows icon only with a `title` attribute for the full label, keeping list rows to one line.
+- No icon package/font — every icon is hand-authored inline SVG, kept to simple primitives (circles, rects, short paths) for visual consistency across the set.
 
-- `Mg` magnesium pool · `IR` infrared sauna · `SA` traditional sauna · `CP` cold plunge · `LED` light therapy
-- Present amenities in `--ink`; absent ones omitted (never greyed-out — a field diary doesn't record what wasn't there).
-- On hover/focus, the abbreviation expands inline to its full name in italic Newsreader.
-- The same notation drives the filter toggles and the programmatic SEO page headings ("Bathhouses of Victoria — Mg · CP").
-
-This system must be used consistently everywhere amenities appear, including the admin review pane.
+Superseded text, kept for record: amenities were previously recorded as a naturalist's notation — a two-to-three-letter mono abbreviation (`Mg` magnesium pool · `IR` infrared sauna · `SA` traditional sauna · `CP` cold plunge · `LED` light therapy), expanding to the full name on hover/focus. That system is no longer in use for venue-feature display as of 2026-07-21.
 
 ---
 

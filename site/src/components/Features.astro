@@ -1,0 +1,61 @@
+---
+// Replaces Notation.astro (2026-07-21 DESIGN.md §6 exception — icons
+// replace the mono field-notation system for venue-feature display; see
+// DESIGN.md §6 for the rationale and scope of the override).
+import Icon from "./Icon.astro";
+import { AMENITY_KEYS, AMENITY_NOTATION, FACILITY_KEYS, FACILITY_LABELS } from "../config";
+import type { IconKey } from "../icons/paths";
+
+interface Props {
+  latitude?: number;
+  longitude?: number;
+  state: string;
+  amenities: Record<(typeof AMENITY_KEYS)[number], boolean>;
+  facilities?: Partial<Record<(typeof FACILITY_KEYS)[number], boolean>>;
+  hours?: string;
+  cost?: string;
+  compact?: boolean;
+}
+
+const { latitude, longitude, state, amenities, facilities, hours, cost, compact = false } = Astro.props;
+
+const latLabel = latitude !== undefined ? `${Math.abs(latitude).toFixed(4)}° S` : null;
+const lngLabel = longitude !== undefined ? `${longitude.toFixed(4)}° E` : null;
+
+const presentAmenities = AMENITY_KEYS.filter((key) => amenities[key]);
+const presentFacilities = FACILITY_KEYS.filter((key) => facilities?.[key]);
+
+type Feature = { icon: IconKey; label: string };
+const features: Feature[] = [
+  ...presentAmenities.map((key) => ({ icon: key as IconKey, label: AMENITY_NOTATION[key].full })),
+  ...(hours ? [{ icon: "hours" as IconKey, label: hours }] : []),
+  ...(cost ? [{ icon: "cost" as IconKey, label: cost }] : []),
+  ...presentFacilities.map((key) => ({ icon: key as IconKey, label: FACILITY_LABELS[key] })),
+];
+---
+
+<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+  {
+    !compact && latLabel && lngLabel && (
+      <span class="mono text-[var(--ink-faded)]">{latLabel}, {lngLabel}</span>
+    )
+  }
+  <span class="mono text-[var(--ink-faded)]">{state}</span>
+  {
+    features.map((feature) => (
+      <span
+        class="feature-chip inline-flex items-center gap-1 text-[var(--ink)]"
+        title={feature.label}
+      >
+        <Icon name={feature.icon} size={compact ? 14 : 16} />
+        {!compact && <span class="mono text-sm">{feature.label}</span>}
+      </span>
+    ))
+  }
+</div>
+
+<style>
+  .feature-chip svg {
+    flex-shrink: 0;
+  }
+</style>

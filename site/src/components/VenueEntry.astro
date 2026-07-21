@@ -1,6 +1,6 @@
 ---
-import Notation from "./Notation.astro";
-import type { AMENITY_KEYS } from "../config";
+import Features from "./Features.astro";
+import type { AMENITY_KEYS, FACILITY_KEYS } from "../config";
 
 interface Props {
   name: string;
@@ -9,9 +9,10 @@ interface Props {
   state: string;
   summary: string;
   amenities: Record<(typeof AMENITY_KEYS)[number], boolean>;
+  facilities?: Partial<Record<(typeof FACILITY_KEYS)[number], boolean>>;
 }
 
-const { name, slug, suburb, state, summary, amenities } = Astro.props;
+const { name, slug, suburb, state, summary, amenities, facilities } = Astro.props;
 ---
 
 <article
@@ -24,6 +25,6 @@ const { name, slug, suburb, state, summary, amenities } = Astro.props;
     <h3 class="font-display text-3xl font-light text-[var(--ink)]">{name}</h3>
   </a>
   <div class="mt-1 mono text-[var(--ink-faded)]">{suburb}</div>
-  <Notation state={state} amenities={amenities} compact />
+  <Features state={state} amenities={amenities} facilities={facilities} compact />
   <p class="mt-2 max-w-[65ch] italic text-[var(--ink-faded)]">{summary}</p>
 </article>

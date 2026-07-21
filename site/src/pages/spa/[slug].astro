@@ -1,7 +1,7 @@
 ---
 import { getCollection, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import Notation from "../../components/Notation.astro";
+import Features from "../../components/Features.astro";
 import Pull from "../../components/Pull.astro";
 import TippedPhoto from "../../components/TippedPhoto.astro";
 import FAQ from "../../components/FAQ.astro";
@@ -27,7 +27,15 @@ const { Content } = await render(venue);
         {data.name}
       </h1>
       <div class="mt-2 mb-12">
-        <Notation latitude={data.latitude} longitude={data.longitude} state={data.state} amenities={data.amenities} />
+        <Features
+          latitude={data.latitude}
+          longitude={data.longitude}
+          state={data.state}
+          amenities={data.amenities}
+          facilities={data.facilities}
+          hours={data.hours}
+          cost={data.cost}
+        />
       </div>
 
       <div class="reading-spine">

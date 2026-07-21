@@ -380,6 +380,15 @@ textarea.text-input {
   border-radius: 2px;
   padding: 0.3rem 0.6rem;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.chip-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 .toggle-chip.active {

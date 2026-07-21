@@ -4,6 +4,7 @@
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import VenueEntry from "../../components/VenueEntry.astro";
+import Icon from "../../components/Icon.astro";
 import { AMENITY_KEYS, AMENITY_NOTATION, STATE_NAMES, STATES, amenityUrlSlug } from "../../config";
 import forewords from "../../data/forewords.json";
 
@@ -47,7 +48,10 @@ const pageTitle = `Bathhouses of ${STATE_NAMES[state]} — ${notation.short}`;
       <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
         Bathhouses of {STATE_NAMES[state]}
       </h1>
-      <p class="mono mt-2 text-[var(--ink-faded)]">{notation.short} — {notation.full}</p>
+      <p class="mt-2 inline-flex items-center gap-1 text-[var(--ink-faded)]">
+        <Icon name={amenityKey} size={15} />
+        <span class="mono text-sm">{notation.full}</span>
+      </p>
     </header>
 
     {
@@ -76,6 +80,7 @@ const pageTitle = `Bathhouses of ${STATE_NAMES[state]} — ${notation.short}`;
             state={venue.data.state}
             summary={venue.data.summary}
             amenities={venue.data.amenities}
+            facilities={venue.data.facilities}
           />
         ))
       }
