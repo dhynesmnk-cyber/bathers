@@ -4,20 +4,31 @@ TRD.md §2 — no SPA framework.
 
 from __future__ import annotations
 
+import base64
 import json
+import secrets
 import threading
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from admin.config import IMAGES_DIR, SITE_DIST_DIR, SITE_FONTS_DIR, STAGING_DIR, STATES, VENUES_JSON_PATH
+from admin.config import (
+    ADMIN_PASSWORD,
+    ADMIN_USERNAME,
+    IMAGES_DIR,
+    SITE_DIST_DIR,
+    SITE_FONTS_DIR,
+    STAGING_DIR,
+    STATES,
+    VENUES_JSON_PATH,
+)
 from admin.mdx_preview import render_body_html
 from admin.pipeline import deploy, discovery, goatcounter, images, orchestrator, places, staging
 from admin.pipeline.staging import UndoExpired, ValidationFailed
@@ -31,6 +42,26 @@ if SITE_DIST_DIR.exists():
     app.mount("/site-dist", StaticFiles(directory=str(SITE_DIST_DIR)), name="site-dist")
 if SITE_FONTS_DIR.exists():
     app.mount("/fonts", StaticFiles(directory=str(SITE_FONTS_DIR)), name="admin-fonts")
+
+
+def _basic_auth_ok(header: str | None) -> bool:
+    if not header or not header.startswith("Basic "):
+        return False
+    try:
+        username, _, password = base64.b64decode(header[6:]).decode("utf-8").partition(":")
+    except (ValueError, UnicodeDecodeError):
+        return False
+    return secrets.compare_digest(username, ADMIN_USERNAME) and secrets.compare_digest(password, ADMIN_PASSWORD)
+
+
+@app.middleware("http")
+async def require_basic_auth(request: Request, call_next):
+    # No credentials configured (local dev's .env leaves these blank) — auth stays off.
+    if not ADMIN_USERNAME and not ADMIN_PASSWORD:
+        return await call_next(request)
+    if not _basic_auth_ok(request.headers.get("authorization")):
+        return Response(status_code=401, headers={"WWW-Authenticate": 'Basic realm="Bathers Admin"'})
+    return await call_next(request)
 
 
 def _site_css_href() -> str | None:

@@ -1,0 +1,17 @@
+# The container gets its real working copy via docker-entrypoint.sh's git
+# clone onto the Fly volume, not the Docker build context — none of this
+# needs to be sent to the builder.
+.git
+node_modules
+site/node_modules
+site/dist
+.venv
+temp_data
+content-staging
+.env
+.env.*
+!.env.example
+data/directory.db
+__pycache__
+*.pyc
+.netlify
