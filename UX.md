@@ -98,7 +98,7 @@ Content order (top to bottom): masthead → editorial foreword → **the map cha
 
 ### 2.2 Venue page
 
-- Content order per DESIGN.md §7. The appendix block includes `Claim this listing` as a plain `mailto:` line (v1 — no forms).
+- Content order per DESIGN.md §7. The appendix block includes a business-owner contact line (`Run this venue? Get in touch`, reworded 2026-07-21 to soften the claim/unclaimed framing per the homepage's "curated space for wellness" repositioning) as a plain `mailto:` line (v1 — no forms).
 - Amenity notations in the dateline expand on hover/focus (title + inline italic). On touch, a tap toggles the expansion.
 - Pull-quotes are generated at build time from marked spans in the MDX (`<Pull>` component), not duplicated text.
 
