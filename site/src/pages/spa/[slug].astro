@@ -44,8 +44,9 @@ const { Content } = await render(venue);
 
       <FAQ items={data.faq ?? []} />
 
-      <div class="mono mt-16 pt-6" style="border-top: 1px solid rgba(168,159,143,0.25); background: var(--paper-raised); padding: 1.5rem;">
+      <div class="mono mt-16 pt-6" style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent); background: var(--paper-raised); padding: 1.5rem;">
         <p>{data.address}</p>
+        {data.access && <p class="mt-4">{data.access}</p>}
         {data.website && (
           <p class="mt-4">
             <a

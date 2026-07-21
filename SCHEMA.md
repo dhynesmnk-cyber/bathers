@@ -41,6 +41,7 @@ Practical/logistics info, distinct from the bathing-experience amenities above �
 | `facilities` | object | – | *(2026-07-21)* The five boolean keys from §1a. Optional — omit entirely on venues where none are known; individual keys default `false`. |
 | `hours` | string | – | *(2026-07-21)* Freeform display string, e.g. `"Mon–Sun 6am–10pm"`. Drafted by the Architect from `facts.hours`, never fabricated. |
 | `cost` | string | – | *(2026-07-21)* Freeform display string, e.g. `"$45–120 per session"`. Drafted by the Architect from `facts.pricing`, never fabricated. |
+| `access` | string | – | *(2026-07-21)* Freeform display string, for venues gated by hotel-guest or membership status, e.g. `"Guests of the hotel, or Langham members — day spa visitors can also book a treatment to get pool access for the day."` Drafted by the Architect from `facts`, never fabricated. Omitted for the majority of standalone venues with no such restriction. |
 | `status` | enum | ✓ | `unclaimed` \| `claimed`. Default `unclaimed`. |
 | `summary` | string | ✓ | ≤160 chars. Index one-liner + meta description. Written by the Architect, in register. |
 | `drafted` | date (YYYY-MM-DD) | ✓ | Date the draft was generated. |
@@ -66,7 +67,8 @@ CREATE TABLE venues (
   summary TEXT NOT NULL,
   has_image INTEGER NOT NULL DEFAULT 0,
   hours TEXT,
-  cost TEXT
+  cost TEXT,
+  access TEXT
 );
 CREATE TABLE amenities (
   slug TEXT PRIMARY KEY REFERENCES venues(slug) ON DELETE CASCADE,
@@ -120,7 +122,7 @@ Rules: amenity `true` only on explicit evidence in the scraped text; unknown sca
 
 **Note on FAQ:** the Harvester's JSON contract does not carry an `faq` key. FAQ answers are the Architect's synthesis, drafted only from the `facts` object above — adding a duplicate `faq` key to the Harvester's output would just re-derive the same facts one step early. See `PROMPTS/architect.md`.
 
-**Note on `hours`/`cost`/`facilities` (2026-07-21):** same division of labour — the Harvester's JSON contract is unchanged; `facts.hours` and `facts.pricing` already exist and are reused as the Architect's source material for the frontmatter `hours`/`cost` strings, and `facts` generally for `facilities`. No new Harvester fields.
+**Note on `hours`/`cost`/`facilities`/`access` (2026-07-21):** same division of labour — the Harvester's JSON contract is unchanged; `facts.hours` and `facts.pricing` already exist and are reused as the Architect's source material for the frontmatter `hours`/`cost` strings, and `facts` generally for `facilities` and `access` (there's no dedicated Harvester bucket for "who can book" — guest/member-access details typically land in `facts.setting` or `facts.other` when a venue's own site mentions them). No new Harvester fields.
 
 ## 5. Sample MDX (place in `_published` at Gate 1)
 
@@ -154,19 +156,21 @@ source_url: "https://www.sos-senseofself.com/"
 ---
 
 Behind a rusted door off Easey Street, a two-storey brick warehouse has been
-given over entirely to the business of doing very little. The main bath sits
-at 39 degrees and is rich in magnesium; the Finnish sauna runs to 80; the
-plunge, between 10 and 12, is exactly as cold as it needs to be.
+given over entirely to the business of doing very little. The main bath runs
+at 39 degrees and is rich in magnesium — hot enough that the cold plunge, a
+sharp 10 to 12 degrees, feels like the good kind of shock rather than a dare.
+Sittings run two hours and are sold in blocks, so book ahead if you can; the
+good afternoon slots go first.
 
 <Pull>The house rule before midday is no chatter, and the room is better for it.</Pull>
 
-Bathing here is sold in two-hour sittings, which turns out to be the correct
-unit of time. There is a hammam with a self-guided scrub ritual, a kessa glove
-for the committed, and enough concrete and planting to make the whole thing
-feel closer to a public bath in the old sense than a day spa in the new one.
+There's a hammam with a self-guided scrub ritual, a kessa glove if you want
+to commit to it properly, and a Finnish sauna that runs to 80 degrees — plus
+enough concrete and planting that the whole place feels closer to an
+old-fashioned public bath than a modern day spa.
 ```
 
-This sample is the Gate 1 fixture and the register reference for the Architect prompt. Note what it does: no first-person visit claims, facts carried in specifics (temperatures, durations, materials), dry rather than promotional.
+This sample is the Gate 1 fixture and the register reference for the Architect prompt (2026-07-21: rewritten to match the warmed register — see `PROMPTS/architect.md`). Note what it does: no first-person visit claims, facts carried in specifics (temperatures, durations, materials), warm and direct rather than promotional or logbook-dry.
 
 ## 6. Astro build note
 

@@ -105,7 +105,7 @@ def validate_frontmatter(data: dict[str, Any]) -> list[FieldError]:
             if non_bool:
                 errors.append(FieldError("facilities", f"facilities keys must be boolean: {', '.join(non_bool)}"))
 
-    for field in ("hours", "cost"):
+    for field in ("hours", "cost", "access"):
         value = data.get(field)
         if value is not None and not isinstance(value, str):
             errors.append(FieldError(field, f"'{field}' must be a string"))
@@ -152,7 +152,7 @@ def validate_frontmatter(data: dict[str, Any]) -> list[FieldError]:
 
     known_fields = {
         "name", "state", "suburb", "address", "latitude", "longitude", "website",
-        "amenities", "facilities", "hours", "cost", "status", "summary", "drafted", "source_url",
+        "amenities", "facilities", "hours", "cost", "access", "status", "summary", "drafted", "source_url",
         "image", "image_source", "image_caption", "faq",
     }
     extra_fields = [key for key in data if key not in known_fields]

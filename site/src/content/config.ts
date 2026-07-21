@@ -45,6 +45,7 @@ const spasCollection = defineCollection({
       facilities: facilitiesSchema,
       hours: z.string().optional(),
       cost: z.string().optional(),
+      access: z.string().optional(),
       status: z.enum(["unclaimed", "claimed"]).default("unclaimed"),
       summary: z.string().max(160),
       drafted: z.date(),

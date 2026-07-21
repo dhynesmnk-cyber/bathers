@@ -11,6 +11,7 @@
     "has_image": true,
     "hours": null,
     "cost": null,
+    "access": null,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -38,6 +39,7 @@
     "has_image": true,
     "hours": null,
     "cost": null,
+    "access": null,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -65,6 +67,7 @@
     "has_image": false,
     "hours": null,
     "cost": null,
+    "access": null,
     "amenities": {
       "magnesium_pool": true,
       "infrared_sauna": false,

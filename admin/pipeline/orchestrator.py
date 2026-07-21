@@ -107,7 +107,14 @@ def _finalize_frontmatter(gate_fm: dict, harvester_data: dict, coords: tuple[flo
     return final
 
 
-def run_harvest_pipeline(url: str, use_playwright: bool = False) -> Iterator[LogLine]:
+def run_harvest_pipeline(url: str, use_playwright: bool = False, allow_existing_slug: bool = False) -> Iterator[LogLine]:
+    """`allow_existing_slug` is a narrow, deliberate escape hatch for
+    re-harvesting a venue that already has a slug in `_published` or
+    `_staging` — e.g. regenerating existing content after a prompt/voice
+    change. It never writes to `_published` directly (CLAUDE.md rule 5);
+    output still lands in `_staging/`, to be reviewed and approved normally.
+    The normal single-URL harvest form never sets this — it always goes
+    through the duplicate-slug guards below."""
     lines: list[LogLine] = []
 
     def log(text: str, level: str = "info") -> None:
@@ -178,14 +185,18 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False) -> Iterator[Log
         return
 
     slug = slugify(name)
-    if (PUBLISHED_DIR / f"{slug}.mdx").exists():
-        log(f"slug '{slug}' exists in _published — skipping (view existing?)", "error")
+    if not allow_existing_slug:
+        if (PUBLISHED_DIR / f"{slug}.mdx").exists():
+            log(f"slug '{slug}' exists in _published — skipping (view existing?)", "error")
+            yield from drain()
+            return
+        if (STAGING_DIR / f"{slug}.mdx").exists():
+            log(f"slug '{slug}' already staged — skipping", "error")
+            yield from drain()
+            return
+    else:
+        log(f"regenerating '{slug}' (allow_existing_slug) — output still lands in _staging/", "warn")
         yield from drain()
-        return
-    if (STAGING_DIR / f"{slug}.mdx").exists():
-        log(f"slug '{slug}' already staged — skipping", "error")
-        yield from drain()
-        return
 
     coords = None
     address = harvester_data.get("address")

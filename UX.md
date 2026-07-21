@@ -59,6 +59,9 @@ The human-in-the-loop verification surface. Split view:
   - Text fields (name, state) as inputs.
   - Coordinates as a pair of inputs **plus a small static map thumbnail** showing the pin — a wrong coordinate is invisible as a number and obvious on a map.
   - Amenity booleans as toggle chips using the field-notation abbreviations (`Mg` `IR` `SA` `CP` `LED`). Toggling updates frontmatter in place. This is where the reviewer corrects the AI's amenity extraction before it becomes canonical.
+  - `Hours` and `Cost` as freeform text inputs (SCHEMA.md §2, 2026-07-21) — drafted by the Architect from harvested facts, reviewer-editable, left blank rather than guessed when undocumented.
+  - `Facilities` as a second toggle-chip fieldset alongside amenities, covering the five logistics keys (SCHEMA.md §1a): parking, towels provided, changerooms, bookings required, wheelchair access.
+  - `Access` as a freeform text input (SCHEMA.md §2, 2026-07-21) — for venues gated by hotel-guest or membership status, states the rule and how a non-resident/non-member arranges entry. Drafted by the Architect strictly from harvested facts; left blank for the majority of standalone venues where no such restriction applies.
 - Edits save to the staging file on change (debounced), with a subtle `saved 12:06` mono timestamp. No explicit save button, no unsaved-changes modal.
 - **Actions:** `Approve` (thermal, prominent) and `Reject` (oxide, secondary). Keyboard: `A` approve, `R` reject, with a 3-second inline undo (`Approved — undo?`) instead of confirmation dialogs. Confirmation dialogs slow a review session; undo keeps it fast *and* safe.
 - **Approve does, in order:** validate frontmatter against the schema → move file `_staging` → `_published` → upsert venue + amenities into the SQLite data file (frontmatter is canonical; DB is derived; always upsert on slug, never insert) → regenerate `venues.json`/GeoJSON for the map → advance selection to the next queue item.

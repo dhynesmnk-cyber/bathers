@@ -31,6 +31,7 @@
   const fieldSourceUrl = el("field-source-url");
   const fieldHours = el("field-hours");
   const fieldCost = el("field-cost");
+  const fieldAccess = el("field-access");
   const fieldErrorsEl = el("field-errors");
   const saveStatusEl = el("save-status");
   const coordPin = el("coord-pin");
@@ -177,6 +178,7 @@
     fieldSourceUrl.value = fm.source_url || "";
     fieldHours.value = fm.hours || "";
     fieldCost.value = fm.cost || "";
+    fieldAccess.value = fm.access || "";
     const amenities = fm.amenities || {};
     document.querySelectorAll(".toggle-chip[data-amenity]").forEach((btn) => {
       btn.classList.toggle("active", !!amenities[btn.dataset.amenity]);
@@ -393,6 +395,7 @@
     source_url: fieldSourceUrl,
     hours: fieldHours,
     cost: fieldCost,
+    access: fieldAccess,
     faq: el("faq-section"),
   };
 
@@ -447,6 +450,7 @@
   fieldSourceUrl.addEventListener("input", () => queuePatch("source_url", fieldSourceUrl.value));
   fieldHours.addEventListener("input", () => queuePatch("hours", fieldHours.value));
   fieldCost.addEventListener("input", () => queuePatch("cost", fieldCost.value));
+  fieldAccess.addEventListener("input", () => queuePatch("access", fieldAccess.value));
   fieldLat.addEventListener("input", () => {
     const v = fieldLat.value === "" ? null : Number(fieldLat.value);
     updateCoordPin(v, fieldLng.value === "" ? null : Number(fieldLng.value));
