@@ -32,6 +32,8 @@ class ScrapeResult:
     html: str
     html_bytes: int
     thin: bool
+    title: str | None = None
+    meta_description: str | None = None
 
 
 def _robots_allowed(url: str) -> bool:
@@ -69,11 +71,27 @@ def extract_text(html: str, url: str) -> str:
     return (text or "").strip()
 
 
+def extract_metadata(html: str, url: str) -> tuple[str | None, str | None]:
+    """Page <title> and meta description — often carry the venue's name and a
+    marketing summary that trafilatura's body extraction strips as boilerplate
+    (header/nav/footer chrome), especially on non-article-style pages."""
+    doc = trafilatura.extract_metadata(html, default_url=url)
+    if doc is None:
+        return None, None
+    return doc.title or None, doc.description or None
+
+
 def harvest(url: str) -> ScrapeResult:
     html = fetch_html(url)
     text = extract_text(html, url)
+    title, description = extract_metadata(html, url)
     return ScrapeResult(
-        text=text, html=html, html_bytes=len(html.encode("utf-8")), thin=len(text) < THIN_EXTRACTION_CHARS
+        text=text,
+        html=html,
+        html_bytes=len(html.encode("utf-8")),
+        thin=len(text) < THIN_EXTRACTION_CHARS,
+        title=title,
+        meta_description=description,
     )
 
 
@@ -93,6 +111,12 @@ def harvest_with_playwright(url: str) -> ScrapeResult:
         finally:
             browser.close()
     text = extract_text(html, url)
+    title, description = extract_metadata(html, url)
     return ScrapeResult(
-        text=text, html=html, html_bytes=len(html.encode("utf-8")), thin=len(text) < THIN_EXTRACTION_CHARS
+        text=text,
+        html=html,
+        html_bytes=len(html.encode("utf-8")),
+        thin=len(text) < THIN_EXTRACTION_CHARS,
+        title=title,
+        meta_description=description,
     )

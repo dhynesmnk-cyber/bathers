@@ -36,3 +36,4 @@ Emit exactly the JSON structure defined below. It matches SCHEMA.md §4 of the p
 4. **Strip the marketing.** "A sanctuary of refinement for the modern soul" contains zero facts; discard it. "39°C magnesium pool" is a fact; keep it.
 5. **confidence_notes** is for anything ambiguous, contradictory, or suspiciously promotional-only. Empty array if clean.
 6. If the text is clearly not a spa/bathhouse website, output the structure with `"name": null` and a single confidence note saying why.
+7. If a `Page title` line is present, treat it as strong evidence for `name` — page titles are usually the venue's proper name, sometimes followed by a tagline (e.g. "Peninsula Hot Springs — Spa & Massage Victoria" → name is "Peninsula Hot Springs"). This does not relax Rule 1 for amenities/facts, which must still come from the body text.

@@ -140,11 +140,22 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False) -> Iterator[Log
     log(f"extracting text (trafilatura)  ok ({len(result.text)} chars)")
     yield from drain()
 
+    harvester_input = result.text
+    if result.title or result.meta_description:
+        # Body extraction strips header/nav/footer chrome as boilerplate, which is
+        # often exactly where a venue's name lives — trafilatura's own page
+        # metadata (title/description) carries it instead.
+        harvester_input = (
+            f"Page title: {result.title or '(none)'}\n"
+            f"Page description: {result.meta_description or '(none)'}\n\n"
+            f"Body text:\n{result.text}"
+        )
+
     try:
         harvester_data, _usage = agents.call_agent(
             model=MODEL_HARVESTER,
             system=agents.load_prompt("harvester.md"),
-            user_content=result.text,
+            user_content=harvester_input,
             max_tokens=2048,
             validate=_validate_harvester_json,
             log=log,
