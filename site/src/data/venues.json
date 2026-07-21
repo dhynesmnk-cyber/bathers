@@ -27,6 +27,33 @@
     }
   },
   {
+    "slug": "chuan-spa",
+    "name": "Chuan Spa",
+    "state": "VIC",
+    "suburb": "Southbank",
+    "latitude": -37.8204542,
+    "longitude": 144.9657017,
+    "status": "unclaimed",
+    "summary": "Hotel spa on level 9 of the Langham Southbank, built around Traditional Chinese Medicine principles, with pool, sauna, steam room and treatment menu.",
+    "has_image": true,
+    "hours": null,
+    "cost": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": true,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
     "slug": "sense-of-self",
     "name": "Sense of Self",
     "state": "VIC",

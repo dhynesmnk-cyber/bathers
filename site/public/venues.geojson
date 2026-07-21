@@ -39,6 +39,39 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
+          144.9657017,
+          -37.8204542
+        ]
+      },
+      "properties": {
+        "slug": "chuan-spa",
+        "name": "Chuan Spa",
+        "state": "VIC",
+        "suburb": "Southbank",
+        "status": "unclaimed",
+        "summary": "Hotel spa on level 9 of the Langham Southbank, built around Traditional Chinese Medicine principles, with pool, sauna, steam room and treatment menu.",
+        "has_image": true,
+        "amenities": {
+          "magnesium_pool": false,
+          "infrared_sauna": false,
+          "traditional_sauna": true,
+          "cold_plunge": false,
+          "led_therapy": false
+        },
+        "facilities": {
+          "parking": false,
+          "towels_provided": false,
+          "changerooms": false,
+          "bookings_required": false,
+          "wheelchair_access": false
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
           144.9885,
           -37.7965
         ]
