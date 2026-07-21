@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bathers' — Blog</title>
+    <link rel="stylesheet" href="/static/admin.css" />
+    <link rel="stylesheet" href="/static/vendor/quill/quill.snow.css" />
+    <link rel="stylesheet" href="/static/blog.css" />
+  </head>
+  <body>
+    <header class="hub-header">
+      <span class="mono eyebrow">BATHERS' — BLOG</span>
+      <p id="save-status" class="mono save-status" aria-live="polite"></p>
+      <a href="/" class="btn btn-plain">Back to hub</a>
+    </header>
+
+    <main class="blog-grid">
+      <section class="pane blog-list-pane" aria-labelledby="blog-list-heading">
+        <h2 id="blog-list-heading" class="mono pane-heading">POSTS</h2>
+        <form id="new-post-form" class="blog-new-form">
+          <input id="new-post-title" class="mono text-input" type="text" placeholder="New post title…" required />
+          <button type="submit" class="btn btn-thermal">New</button>
+        </form>
+        <ul id="blog-list" class="queue-list" role="listbox" aria-label="Blog posts"></ul>
+        <p id="blog-list-empty" class="mono empty-state" hidden>No posts yet. Give one a title to begin.</p>
+      </section>
+
+      <section class="pane blog-editor-pane" aria-labelledby="blog-editor-heading">
+        <h2 id="blog-editor-heading" class="mono pane-heading">EDITOR</h2>
+        <div id="editor-empty" class="mono empty-state">Select a post, or start a new one.</div>
+        <div id="editor-content" hidden>
+          <label class="field">
+            <span class="mono field-label">Title</span>
+            <input id="field-title" class="text-input" type="text" data-field="title" />
+          </label>
+
+          <label class="field">
+            <span class="mono field-label">Summary</span>
+            <textarea id="field-summary" class="text-input" data-field="summary" rows="2" maxlength="160"></textarea>
+          </label>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="mono field-label">Dateline</span>
+              <input id="field-dateline" class="text-input mono" type="date" data-field="dateline" />
+            </label>
+            <label class="field">
+              <span class="mono field-label">Video URL (YouTube/Vimeo)</span>
+              <input id="field-video-url" class="text-input mono" type="url" data-field="video_url" placeholder="https://youtu.be/…" />
+            </label>
+          </div>
+
+          <div class="field">
+            <span class="mono field-label">Cover image</span>
+            <div id="cover-image-preview" class="image-strip"></div>
+            <input id="cover-image-input" type="file" accept="image/*" class="mono" />
+          </div>
+
+          <div class="field">
+            <span class="mono field-label">Body</span>
+            <div id="quill-editor"></div>
+          </div>
+
+          <div class="blog-actions">
+            <span id="status-chip" class="status-chip"></span>
+            <button id="publish-btn" type="button" class="btn btn-thermal">Publish</button>
+            <button id="delete-btn" type="button" class="btn btn-oxide">Delete draft</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/vendor/quill/quill.js"></script>
+    <script src="/static/blog.js"></script>
+  </body>
+</html>

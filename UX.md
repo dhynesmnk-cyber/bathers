@@ -138,3 +138,16 @@ Pipeline:
 ## 5. What "Done" Looks Like Per Session
 
 A review session should feel like: open hub → arrow through queue → correct a toggle or two → `A`, `A`, `R` (reason), `A` → glance at diff → deploy → close. Under two minutes for four venues. Any friction beyond that — dialogs, page reloads, mystery states, silent failures — is a UX bug against this spec.
+
+---
+
+## 6. Blog Authoring (2026-07-21 addition)
+
+A second admin screen at `/blog`, linked from the main hub's header — separate from the venue review workflow because posts are hand-authored, not part of the AI pipeline (TRD.md §8 exception).
+
+- Two-pane layout: a post list (drafts and published posts together, each with a status chip) and an editor.
+- Editor fields: title, summary, dateline, video URL (YouTube/Vimeo only), a cover-image upload, and a Quill.js rich-text body editor. All fields autosave on a debounce, same pattern as the venue frontmatter editor (§1.3).
+- Inserting an image via the Quill toolbar uploads it immediately and inserts the returned URL — no separate "publish image" step for in-body images, since a blog post's images are part of the same authored draft, not AI-harvested candidates needing a deliberate curation choice (contrast UX.md §4, which is venue-specific).
+- **Publish** (draft only) moves the post from `content-staging/_blog_staging/` into `site/src/content/blog/_published/`, converting any staged images to `site/public/blog-images/` in the same action. Blocked if title, summary or dateline is missing, with the specific missing field(s) surfaced.
+- Editing an already-published post updates it in place (no re-publish step) — new images uploaded at this stage are converted straight to `site/public/blog-images/`, since the post is already live.
+- **Delete draft** removes an unpublished draft outright (no reject/undo — there's no AI output to preserve a record of). Deleting an already-published post isn't offered; publishing is a considered action.

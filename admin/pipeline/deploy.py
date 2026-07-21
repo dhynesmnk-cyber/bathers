@@ -2,11 +2,13 @@
 tracked-file guard, and the streamed add -> commit -> push.
 
 Only these are ever committed: `_published/`, published images
-(site/public/images/), the SQLite file, and the generated JSON/GeoJSON
+(site/public/images/), the SQLite file, the generated JSON/GeoJSON
 (venues.json, venues.geojson, forewords.json — all pipeline-derived
-artefacts the build needs). `_staging/`, `_rejected/`, `temp_data/`, `.env`
-must never be tracked at all; the guard refuses to run if any of them
-somehow are (e.g. force-added by hand).
+artefacts the build needs), and the 2026-07-21 blog additions
+(site/src/content/blog/_published/, site/public/blog-images/). `_staging/`,
+`_rejected/`, `_blog_staging/`, `temp_data/`, `.env` must never be tracked
+at all; the guard refuses to run if any of them somehow are (e.g.
+force-added by hand).
 """
 
 from __future__ import annotations
@@ -26,6 +28,8 @@ ALLOWED_PREFIXES = (
     "site/src/data/venues.json",
     "site/public/venues.geojson",
     "site/src/data/forewords.json",
+    "site/src/content/blog/_published/",
+    "site/public/blog-images/",
 )
 
 GUARD_PATHSPECS = ("temp_data", "content-staging", ".env", ".env.*")
@@ -85,22 +89,26 @@ def _status_entries() -> list[tuple[str, str]]:
     return entries
 
 
-def _published_slugs_changed(entries: list[tuple[str, str]]) -> list[str]:
-    slugs = [
-        Path(path).stem
-        for _, path in entries
-        if path.startswith("site/src/content/spas/_published/") and path.endswith(".mdx")
-    ]
+def _published_slugs_changed(entries: list[tuple[str, str]], prefix: str) -> list[str]:
+    slugs = [Path(path).stem for _, path in entries if path.startswith(prefix) and path.endswith(".mdx")]
     return sorted(set(slugs))
 
 
-def _auto_commit_message(slugs: list[str]) -> str:
-    if not slugs:
+def _auto_commit_message(venue_slugs: list[str], post_slugs: list[str]) -> str:
+    if not venue_slugs and not post_slugs:
         return "Publish: data refresh"
-    shown = slugs[:2]
-    rest = len(slugs) - len(shown)
-    suffix = f" (+{rest} venue{'s' if rest != 1 else ''})" if rest > 0 else ""
-    return f"Publish: {', '.join(shown)}{suffix}"
+    parts = []
+    if venue_slugs:
+        shown = venue_slugs[:2]
+        rest = len(venue_slugs) - len(shown)
+        suffix = f" (+{rest} venue{'s' if rest != 1 else ''})" if rest > 0 else ""
+        parts.append(f"{', '.join(shown)}{suffix}")
+    if post_slugs:
+        shown = post_slugs[:2]
+        rest = len(post_slugs) - len(shown)
+        suffix = f" (+{rest} post{'s' if rest != 1 else ''})" if rest > 0 else ""
+        parts.append(f"blog: {', '.join(shown)}{suffix}")
+    return f"Publish: {'; '.join(parts)}"
 
 
 def build_preview() -> DeployPreview:
@@ -111,7 +119,10 @@ def build_preview() -> DeployPreview:
         files=files,
         unexpected=unexpected,
         guard_violations=guard_violations(),
-        commit_message=_auto_commit_message(_published_slugs_changed(entries)),
+        commit_message=_auto_commit_message(
+            _published_slugs_changed(entries, "site/src/content/spas/_published/"),
+            _published_slugs_changed(entries, "site/src/content/blog/_published/"),
+        ),
     )
 
 

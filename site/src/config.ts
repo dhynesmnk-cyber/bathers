@@ -60,6 +60,18 @@ export function amenityFromUrlSlug(segment: string): (typeof AMENITY_KEYS)[numbe
   return AMENITY_KEYS.find((key) => amenityUrlSlug(key) === segment);
 }
 
+// Blog video embeds (2026-07-21 addition) — external embeds only (YouTube/
+// Vimeo), validated against the same host allowlist as the zod schema
+// (site/src/content/config.ts). Converts a watch/share URL into an
+// embeddable iframe src.
+export function videoEmbedUrl(url: string): string {
+  const youtubeWatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+  if (youtubeWatch) return `https://www.youtube-nocookie.com/embed/${youtubeWatch[1]}`;
+  const vimeoShare = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeoShare) return `https://player.vimeo.com/video/${vimeoShare[1]}`;
+  return url; // already an embeddable player.vimeo.com/video/ID URL
+}
+
 export const SITE_NAME = "Bathers'";
 export const SITE_TAGLINE = "Notes on heat, cold and water at Australian day spas and bathhouses.";
 

@@ -1,0 +1,79 @@
+.blog-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  min-height: 0;
+}
+
+.blog-editor-pane {
+  border-right: none;
+}
+
+.blog-new-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.blog-new-form .text-input {
+  flex: 1;
+}
+
+.blog-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.status-chip.status-draft {
+  background: rgba(180, 99, 58, 0.15);
+  color: var(--oxide);
+}
+
+.status-chip.status-published {
+  background: rgba(127, 181, 164, 0.15);
+  color: var(--thermal);
+}
+
+#quill-editor {
+  background: var(--paper-raised);
+  min-height: 320px;
+}
+
+#cover-image-preview img,
+.image-strip img {
+  max-width: 160px;
+  max-height: 120px;
+  border: 2px solid var(--paper-raised);
+}
+
+/* Quill's own light-mode chrome tokens repainted to the site palette so the
+   editor doesn't clash with the surrounding dark admin UI. */
+.ql-toolbar.ql-snow,
+.ql-container.ql-snow {
+  border-color: rgba(168, 159, 143, 0.4);
+}
+
+.ql-toolbar.ql-snow {
+  background: var(--paper-raised);
+}
+
+.ql-editor {
+  color: var(--ink);
+  font-family: "Newsreader", serif;
+  font-size: 16px;
+  min-height: 300px;
+}
+
+.ql-snow .ql-stroke {
+  stroke: var(--ink-faded);
+}
+
+.ql-snow .ql-fill {
+  fill: var(--ink-faded);
+}
+
+.ql-snow .ql-picker {
+  color: var(--ink-faded);
+}

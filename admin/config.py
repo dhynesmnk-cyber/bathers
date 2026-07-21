@@ -35,6 +35,12 @@ PUBLISHED_DIR = ROOT / "site" / "src" / "content" / "spas" / "_published"
 STAGING_DIR = ROOT / "content-staging" / "_staging"
 REJECTED_DIR = ROOT / "content-staging" / "_rejected"
 
+# Blog (2026-07-21 addition) — mirrors the venue staging/published split:
+# drafts live outside site/src/content until Publish moves them across.
+BLOG_PUBLISHED_DIR = ROOT / "site" / "src" / "content" / "blog" / "_published"
+BLOG_STAGING_DIR = ROOT / "content-staging" / "_blog_staging"
+SITE_BLOG_IMAGES_DIR = ROOT / "site" / "public" / "blog-images"
+
 DB_PATH = ROOT / "data" / "directory.db"
 VENUES_JSON_PATH = ROOT / "site" / "src" / "data" / "venues.json"
 VENUES_GEOJSON_PATH = ROOT / "site" / "public" / "venues.geojson"
@@ -45,6 +51,7 @@ IMAGES_DIR = TEMP_DATA_DIR / "images"
 FAILED_DIR = TEMP_DATA_DIR / "failed"
 PLACES_DIR = TEMP_DATA_DIR / "places"
 GOATCOUNTER_CACHE_DIR = TEMP_DATA_DIR / "goatcounter"
+BLOG_IMAGES_TEMP_DIR = TEMP_DATA_DIR / "blog_images"
 
 PROMPTS_DIR = ROOT / "PROMPTS"
 

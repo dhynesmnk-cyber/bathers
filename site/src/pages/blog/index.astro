@@ -1,0 +1,43 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { SITE_NAME } from "../../config";
+
+const posts = (await getCollection("blog")).sort(
+  (a, b) => b.data.dateline.valueOf() - a.data.dateline.valueOf(),
+);
+---
+
+<BaseLayout title={`Journal — ${SITE_NAME}`} description="Notes and dispatches from the field.">
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <header class="mb-16">
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">Journal</h1>
+      <p class="mono mt-2 text-[var(--ink-faded)]">Notes and dispatches from the field.</p>
+      <p class="mono mt-4"><a href="/">{SITE_NAME}</a></p>
+    </header>
+
+    <section aria-labelledby="contents-heading">
+      <div class="mono mb-8 flex items-center gap-4 text-[var(--ink-faded)]">
+        <span>CONTENTS</span>
+        <span class="h-px flex-1" style="background: rgba(168,159,143,0.25);"></span>
+      </div>
+      {posts.length === 0 && <p class="mono text-[var(--ink-faded)]">No entries yet.</p>}
+      {
+        posts.map((post) => (
+          <article
+            class="py-6"
+            style="border-top: 1px solid rgba(168,159,143,0.25);"
+          >
+            <a href={`/blog/${post.id}/`}>
+              <h2 class="font-display text-3xl font-light text-[var(--ink)]">{post.data.title}</h2>
+            </a>
+            <div class="mt-1 mono text-[var(--ink-faded)]">
+              {post.data.dateline.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
+            </div>
+            <p class="mt-2 max-w-[65ch] italic text-[var(--ink-faded)]">{post.data.summary}</p>
+          </article>
+        ))
+      }
+    </section>
+  </main>
+</BaseLayout>

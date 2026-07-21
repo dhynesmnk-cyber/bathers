@@ -68,6 +68,29 @@ const spasCollection = defineCollection({
     }),
 });
 
+// Blog (2026-07-21 addition, SCHEMA.md §7). Mirrors the venue staging/
+// published split: content-staging/_blog_staging holds drafts outside this
+// tree entirely; this collection only ever sees published posts.
+const VIDEO_HOST_RE = /^https:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|player\.vimeo\.com\/video\/|vimeo\.com\/)/;
+
+const blogCollection = defineCollection({
+  loader: glob({ pattern: "**/*.mdx", base: "./src/content/blog/_published" }),
+  schema: z.object({
+    title: z.string(),
+    dateline: z.date(),
+    summary: z.string().max(160),
+    cover_image: z.string().optional(),
+    video_url: z
+      .string()
+      .url()
+      .refine((url) => VIDEO_HOST_RE.test(url), {
+        message: "video_url must be a YouTube or Vimeo URL",
+      })
+      .optional(),
+  }),
+});
+
 export const collections = {
   spas: spasCollection,
+  blog: blogCollection,
 };

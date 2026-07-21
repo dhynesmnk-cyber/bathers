@@ -167,3 +167,25 @@ feel closer to a public bath in the old sense than a day spa in the new one.
 ```
 
 This sample is the Gate 1 fixture and the register reference for the Architect prompt. Note what it does: no first-person visit claims, facts carried in specifics (temperatures, durations, materials), dry rather than promotional.
+
+## 6. Astro build note
+
+Both content collections' MDX bodies are parsed as JSX, which requires void elements to be self-closing (`<img />`, not `<img>`). The blog pipeline (§7) enforces this automatically when saving a post body; hand-edited MDX (venue or blog) must follow the same rule.
+
+## 7. Blog Posts (2026-07-21 addition)
+
+Hand-authored, not part of the AI pipeline — no Harvester/Architect/Gatekeeper involvement, no SQLite table (posts aren't queried/filtered the way venues are; the Astro content collection is the only store). Mirrors the venue staging/published split: drafts live in `content-staging/_blog_staging/` until a deliberate Publish action moves them into `site/src/content/blog/_published/`.
+
+| Field | Type | Req | Rules |
+|---|---|---|---|
+| `title` | string | ✓ | |
+| `dateline` | date (YYYY-MM-DD) | ✓ | |
+| `summary` | string | ✓ | ≤160 chars. Index one-liner + meta description. |
+| `cover_image` | string | – | Path to a published image asset (`/blog-images/<slug>-<n>.webp`), written by the image-publish step. |
+| `video_url` | string (url) | – | External embed only — must match a YouTube or Vimeo watch/share URL pattern. No self-hosted video. |
+
+Slug = filename, kebab-case, derived from the title at creation (`admin.pipeline.blog.slugify`), unique across `_blog_staging` + `_published`, exactly like venues.
+
+Body is Quill-authored HTML saved directly as the MDX body. `admin.pipeline.blog._mdx_safe_html` self-closes void elements (`<img>` → `<img />`, `<br>` → `<br />`) on every save — see §6.
+
+Images inserted mid-draft are staged in `temp_data/blog_images/<slug>/` (gitignored) and converted to webp in `site/public/blog-images/` only at Publish, mirroring the venue image pipeline's separate publish step (UX.md §4). Images added while editing an *already-published* post skip the staging step and are converted straight to `site/public/blog-images/`, since there's no publish gate left to cross for that post.

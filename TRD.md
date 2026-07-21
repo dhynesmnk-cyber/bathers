@@ -33,18 +33,24 @@ One repo, two clearly separated applications sharing a content directory. No Pyt
       config.ts           # zod collection schema — MUST mirror SCHEMA.md exactly
       /spas
         /_published       # approved MDX (the only content Astro builds from)
-    /components           # Map.astro, VenueEntry.astro, Notation.astro, Pull.astro, TippedPhoto.astro
+      /blog
+        /_published       # published posts (2026-07-21, SCHEMA.md §7)
+    /components           # Map.astro, VenueEntry.astro, Features.astro, Icon.astro, Pull.astro, TippedPhoto.astro
+    /icons/paths.ts        # hand-authored inline SVG icon set (DESIGN.md §6)
     /data/venues.json     # generated on approve — committed
     /pages
       index.astro
       /[state]/index.astro
       /[state]/[amenity].astro
       /spa/[slug].astro
+      /blog/index.astro
+      /blog/[slug].astro
   /public/venues.geojson  # generated on approve — committed
+  /public/blog-images     # published blog images — committed
 /admin                    # FastAPI app
   app.py  config.py  pipeline/  templates/  static/
 /content-staging          # OUTSIDE site/src/content so Astro never builds drafts
-  /_staging  /_rejected
+  /_staging  /_rejected  /_blog_staging
 /data/directory.db        # committed derived DB
 /temp_data                # scrape output + candidate images — gitignored
 /PROMPTS                  # agent prompt files, loaded at runtime by admin app
@@ -71,6 +77,8 @@ One repo, two clearly separated applications sharing a content directory. No Pyt
 
 Implement UX.md §1 in full: harvest panel with streaming log, review queue with status chips, review pane (rendered preview using the public site's actual CSS, frontmatter editor, coordinate map thumbnail, amenity toggle chips, debounced autosave), approve/reject with keyboard shortcuts and 3-second undo, deploy strip with diff preview and tracked-file guard, and **every failure state in the UX.md §1.5 table**. The image pipeline is UX.md §4 verbatim: candidate images are staging-only, publishing an image is a separate action, max one image per venue, attribution mandatory, one-click removal.
 
+Also implement UX.md §6 (2026-07-21) — the `/blog` authoring screen and its own create/update/publish/image-upload flow.
+
 ## 7. AI Pipeline Requirements
 
 - Three agents, prompts loaded from `/PROMPTS/*.md` at call time (never embedded in Python source): Harvester (facts → JSON per SCHEMA.md §4), Architect (JSON → MDX draft), Gatekeeper (draft → polished Australian-English MDX).
@@ -85,6 +93,8 @@ Accounts/auth, venue claiming beyond a mailto line, reviews by users, search, an
 **Exception (user-approved, 2026-07-20):** a minimal, single-purpose exception to the "analytics" exclusion above — GoatCounter click tracking on the Book Now button only (no page-view analytics, no dashboards beyond a simple admin read-back of per-venue click counts). See `admin/pipeline/goatcounter.py`. Nothing else in this list is affected; general site analytics remains out of scope.
 
 **Exception (user-approved, 2026-07-20):** admin-side venue *discovery* (finding candidate URLs via Google Places Text Search, reviewed by a human before harvesting) is in scope. Public-facing site search remains out of scope — this exception does not add a search feature to the published site. See `admin/pipeline/discovery.py`.
+
+**Exception (user-approved, 2026-07-21):** a hand-authored blog/journal is in scope — a new Astro content collection (`site/src/content/blog/`, SCHEMA.md §7) with list/post pages, and an admin authoring screen (`/blog`) with a Quill.js rich-text editor (vendored locally, `admin/static/vendor/quill/` — no CDN, no build step; see UX.md §6), inline image upload, and external YouTube/Vimeo video embeds (no self-hosted video, no new backend dependency). Unlike venues, posts are not part of the AI pipeline — no Harvester/Architect/Gatekeeper, no SQLite table.
 
 ## 9. Execution
 

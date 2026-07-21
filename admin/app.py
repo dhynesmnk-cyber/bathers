@@ -23,6 +23,7 @@ from admin.config import (
     ADMIN_PASSWORD,
     ADMIN_USERNAME,
     IMAGES_DIR,
+    SITE_BLOG_IMAGES_DIR,
     SITE_DIST_DIR,
     SITE_FONTS_DIR,
     STAGING_DIR,
@@ -30,7 +31,8 @@ from admin.config import (
     VENUES_JSON_PATH,
 )
 from admin.mdx_preview import render_body_html
-from admin.pipeline import deploy, discovery, goatcounter, images, orchestrator, places, staging
+from admin.pipeline import blog, deploy, discovery, goatcounter, images, orchestrator, places, staging
+from admin.pipeline.blog import ValidationFailed as BlogValidationFailed
 from admin.pipeline.staging import UndoExpired, ValidationFailed
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -42,6 +44,8 @@ if SITE_DIST_DIR.exists():
     app.mount("/site-dist", StaticFiles(directory=str(SITE_DIST_DIR)), name="site-dist")
 if SITE_FONTS_DIR.exists():
     app.mount("/fonts", StaticFiles(directory=str(SITE_FONTS_DIR)), name="admin-fonts")
+SITE_BLOG_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/blog-images", StaticFiles(directory=str(SITE_BLOG_IMAGES_DIR)), name="blog-images")
 
 
 def _basic_auth_ok(header: str | None) -> bool:
@@ -111,6 +115,11 @@ def _entry_detail(entry: staging.StagingEntry) -> dict[str, Any]:
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse(request, "index.html", {"states": STATES})
+
+
+@app.get("/blog", response_class=HTMLResponse)
+def blog_page(request: Request):
+    return templates.TemplateResponse(request, "blog.html", {})
 
 
 @app.get("/preview/{slug}", response_class=HTMLResponse)
@@ -319,6 +328,114 @@ def api_discover(body: DiscoverBody):
         raise HTTPException(400, "GOOGLE_PLACES_API_KEY is not set — discovery is unavailable")
     candidates = discovery.discover_venues(body.region, body.keywords)
     return [asdict(c) for c in candidates]
+
+
+def _blog_summary(entry: blog.BlogEntry, location: str) -> dict[str, Any]:
+    fm = entry.frontmatter
+    return {
+        "slug": entry.slug,
+        "title": fm.get("title"),
+        "summary": fm.get("summary"),
+        "dateline": str(fm.get("dateline")) if fm.get("dateline") else None,
+        "status": location,
+        "saved_at": entry.saved_at,
+    }
+
+
+def _blog_detail(entry: blog.BlogEntry, location: str) -> dict[str, Any]:
+    return {**_blog_summary(entry, location), "frontmatter": entry.frontmatter, "body": entry.body}
+
+
+@app.get("/api/blog")
+def api_list_blog():
+    return [_blog_summary(entry, location) for entry, location in blog.list_all()]
+
+
+class CreateBlogPostBody(BaseModel):
+    title: str
+
+
+@app.post("/api/blog")
+def api_create_blog_post(body: CreateBlogPostBody):
+    try:
+        entry = blog.create_draft(body.title)
+    except BlogValidationFailed as exc:
+        raise HTTPException(400, detail={"errors": exc.errors})
+    return _blog_detail(entry, "draft")
+
+
+@app.get("/api/blog/{slug}")
+def api_get_blog_post(slug: str):
+    try:
+        entry, location = blog.get(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"no blog post '{slug}'")
+    return _blog_detail(entry, location)
+
+
+class BlogPatchBody(BaseModel):
+    patch: dict[str, Any]
+
+
+@app.patch("/api/blog/{slug}")
+def api_update_blog_post(slug: str, body: BlogPatchBody):
+    try:
+        entry, location = blog.update(slug, body.patch)
+    except FileNotFoundError:
+        raise HTTPException(404, f"no blog post '{slug}'")
+    return _blog_detail(entry, location)
+
+
+@app.delete("/api/blog/{slug}")
+def api_delete_blog_draft(slug: str):
+    try:
+        blog.delete_draft(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"no draft '{slug}'")
+    return {"ok": True}
+
+
+@app.post("/api/blog/{slug}/publish")
+def api_publish_blog_post(slug: str):
+    try:
+        blog.publish(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"no draft '{slug}'")
+    except BlogValidationFailed as exc:
+        raise HTTPException(422, detail={"errors": exc.errors})
+    return {"ok": True}
+
+
+@app.get("/api/blog/{slug}/images/{index}/file")
+def api_blog_draft_image(slug: str, index: int):
+    path = blog.draft_image_path(slug, index)
+    if path is None or not path.exists():
+        raise HTTPException(404, "no such draft image")
+    return FileResponse(path)
+
+
+class UploadBlogImageBody(BaseModel):
+    # Base64 JSON rather than multipart/form-data — avoids adding the
+    # python-multipart dependency (not in TRD.md's stack, and unnecessary
+    # for images this size) for the sake of one upload endpoint; every other
+    # write in this API is already JSON, so this keeps the same shape.
+    data: str
+    content_type: str
+
+
+@app.post("/api/blog/{slug}/images")
+def api_upload_blog_image(slug: str, body: UploadBlogImageBody):
+    try:
+        raw = base64.b64decode(body.data)
+    except (ValueError, base64.binascii.Error):
+        raise HTTPException(400, "data must be valid base64")
+    try:
+        result = blog.save_image(slug, raw, body.content_type)
+    except FileNotFoundError:
+        raise HTTPException(404, f"no blog post '{slug}'")
+    except BlogValidationFailed as exc:
+        raise HTTPException(400, detail={"errors": exc.errors})
+    return result
 
 
 @app.get("/api/published")

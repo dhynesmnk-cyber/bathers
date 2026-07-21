@@ -1,0 +1,64 @@
+---
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { SITE_NAME, videoEmbedUrl } from "../../config";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { data } = post;
+const { Content } = await render(post);
+---
+
+<BaseLayout title={`${data.title} — ${SITE_NAME}`} description={data.summary}>
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <article>
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
+        {data.title}
+      </h1>
+      <div class="mt-2 mb-12 mono text-[var(--ink-faded)]">
+        {data.dateline.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
+      </div>
+
+      {
+        data.cover_image && (
+          <img
+            src={data.cover_image}
+            alt=""
+            class="mb-12 w-full"
+            style="border: 3px solid var(--paper-raised);"
+          />
+        )
+      }
+
+      <div class="reading-spine">
+        <Content />
+      </div>
+
+      {
+        data.video_url && (
+          <div class="mt-12" style="aspect-ratio: 16 / 9;">
+            <iframe
+              src={videoEmbedUrl(data.video_url)}
+              class="h-full w-full"
+              style="border: none;"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+              loading="lazy"
+            />
+          </div>
+        )
+      }
+
+      <div class="mono mt-16 pt-6" style="border-top: 1px solid rgba(168,159,143,0.25);">
+        <a href="/blog/">More from the Journal</a>
+      </div>
+    </article>
+  </main>
+</BaseLayout>
