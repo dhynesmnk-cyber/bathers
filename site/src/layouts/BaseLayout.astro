@@ -1,5 +1,6 @@
 ---
 import GrainOverlay from "../components/GrainOverlay.astro";
+import ThemeToggle from "../components/ThemeToggle.astro";
 import { GOATCOUNTER_SITE } from "../config";
 import "../styles/global.css";
 
@@ -16,6 +17,16 @@ const canonicalHref = canonicalPath ?? Astro.url.pathname;
 <!doctype html>
 <html lang="en-AU">
   <head>
+    <script is:inline>
+      (function () {
+        try {
+          var stored = localStorage.getItem("bathers-theme");
+          if (stored === "light" || stored === "dark") {
+            document.documentElement.setAttribute("data-theme", stored);
+          }
+        } catch (e) {}
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
@@ -24,6 +35,9 @@ const canonicalHref = canonicalPath ?? Astro.url.pathname;
   </head>
   <body>
     <GrainOverlay />
+    <div class="mx-auto max-w-3xl px-6 pt-6">
+      <ThemeToggle />
+    </div>
     <slot />
     <script
       is:inline

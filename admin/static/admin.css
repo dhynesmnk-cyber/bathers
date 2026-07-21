@@ -31,14 +31,27 @@
   src: url("/fonts/ibm-plex-mono-500.woff2") format("woff2");
 }
 
+/* DESIGN.md §2/§8 — admin is auto (prefers-color-scheme) only, no manual
+   toggle. Light values match the public site's light mode. */
 :root {
-  --paper: #191614;
-  --paper-raised: #211d1a;
-  --ink: #e8e2d6;
-  --ink-faded: #a89f8f;
-  --thermal: #7fb5a4;
-  --oxide: #b4633a;
-  color-scheme: dark;
+  color-scheme: light dark;
+  --paper: #f2ece0;
+  --paper-raised: #e9e1d1;
+  --ink: #2a241e;
+  --ink-faded: #6b6255;
+  --thermal: #3f6b5b;
+  --oxide: #96502e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #191614;
+    --paper-raised: #211d1a;
+    --ink: #e8e2d6;
+    --ink-faded: #a89f8f;
+    --thermal: #7fb5a4;
+    --oxide: #b4633a;
+  }
 }
 
 * {
@@ -79,7 +92,7 @@ body {
 
 .hub-header {
   padding: 0.75rem 1.25rem;
-  border-bottom: 1px solid rgba(168, 159, 143, 0.25);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
   flex: none;
   display: flex;
   align-items: center;
@@ -100,7 +113,7 @@ body {
 }
 
 .pane {
-  border-right: 1px solid rgba(168, 159, 143, 0.25);
+  border-right: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
   padding: 1rem;
   overflow-y: auto;
   min-height: 0;
@@ -134,7 +147,7 @@ body {
 
 .harvest-log {
   background: var(--paper);
-  border: 1px solid rgba(168, 159, 143, 0.25);
+  border: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
   border-radius: 2px;
   padding: 0.5rem;
   font-size: 12px;
@@ -158,7 +171,7 @@ body {
 .discovery-section {
   margin-top: 1.25rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(168, 159, 143, 0.25);
+  border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
 }
 
 .discover-form {
@@ -181,7 +194,7 @@ body {
 }
 
 .discover-result {
-  border-top: 1px solid rgba(168, 159, 143, 0.15);
+  border-top: 1px solid color-mix(in srgb, var(--ink-faded) 15%, transparent);
   padding: 0.4rem 0;
   display: flex;
   gap: 0.5rem;
@@ -213,13 +226,13 @@ body {
 }
 
 .queue-item {
-  border-top: 1px solid rgba(168, 159, 143, 0.25);
+  border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
   padding: 0.6rem 0.4rem;
   cursor: pointer;
 }
 
 .queue-item:last-child {
-  border-bottom: 1px solid rgba(168, 159, 143, 0.25);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
 }
 
 .queue-item.selected {
@@ -247,7 +260,7 @@ body {
   letter-spacing: 0.05em;
   padding: 0.1rem 0.35rem;
   border-radius: 2px;
-  border: 1px solid rgba(168, 159, 143, 0.4);
+  border: 1px solid color-mix(in srgb, var(--ink-faded) 40%, transparent);
 }
 
 .status-chip.status-DRAFTED {
@@ -276,7 +289,7 @@ body {
 }
 
 .review-preview {
-  border: 1px solid rgba(168, 159, 143, 0.25);
+  border: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -320,7 +333,7 @@ body {
   width: 100%;
   background: var(--paper-raised);
   color: var(--ink);
-  border: 1px solid rgba(168, 159, 143, 0.35);
+  border: 1px solid color-mix(in srgb, var(--ink-faded) 35%, transparent);
   border-radius: 2px;
   padding: 0.4rem 0.5rem;
   font-size: 14px;
@@ -349,7 +362,7 @@ textarea.text-input {
 
 .coord-box {
   fill: var(--paper-raised);
-  stroke: rgba(168, 159, 143, 0.4);
+  stroke: color-mix(in srgb, var(--ink-faded) 40%, transparent);
 }
 
 .coord-label {
@@ -376,7 +389,7 @@ textarea.text-input {
   font-weight: 500;
   background: transparent;
   color: var(--ink-faded);
-  border: 1px solid rgba(168, 159, 143, 0.4);
+  border: 1px solid color-mix(in srgb, var(--ink-faded) 40%, transparent);
   border-radius: 2px;
   padding: 0.3rem 0.6rem;
   cursor: pointer;
@@ -408,7 +421,7 @@ textarea.text-input {
   width: 64px;
   height: 64px;
   object-fit: cover;
-  border: 1px solid rgba(168, 159, 143, 0.4);
+  border: 1px solid color-mix(in srgb, var(--ink-faded) 40%, transparent);
   border-radius: 2px;
   cursor: pointer;
   display: block;
@@ -421,7 +434,7 @@ textarea.text-input {
 
 .image-published {
   max-width: 220px;
-  border: 1px solid rgba(168, 159, 143, 0.4);
+  border: 1px solid color-mix(in srgb, var(--ink-faded) 40%, transparent);
   border-radius: 2px;
   display: block;
   margin-bottom: 0.5rem;
@@ -440,7 +453,7 @@ textarea.text-input {
   font-size: 11px;
   line-height: 1.6;
   white-space: pre-line;
-  border: 1px solid rgba(168, 159, 143, 0.35);
+  border: 1px solid color-mix(in srgb, var(--ink-faded) 35%, transparent);
   border-radius: 2px;
   padding: 0.4rem 0.5rem;
   margin-bottom: 0.75rem;
@@ -464,7 +477,7 @@ textarea.text-input {
 }
 
 .faq-pair {
-  border: 1px solid rgba(168, 159, 143, 0.35);
+  border: 1px solid color-mix(in srgb, var(--ink-faded) 35%, transparent);
   border-radius: 2px;
   padding: 0.5rem;
   display: flex;
@@ -509,7 +522,7 @@ textarea.text-input {
 
 .review-actions {
   flex: none;
-  border-top: 1px solid rgba(168, 159, 143, 0.25);
+  border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
   padding-top: 0.75rem;
   margin-top: 0.75rem;
 }
@@ -542,7 +555,7 @@ textarea.text-input {
 .btn-plain {
   background: transparent;
   color: var(--ink-faded);
-  border-color: rgba(168, 159, 143, 0.4);
+  border-color: color-mix(in srgb, var(--ink-faded) 40%, transparent);
 }
 
 .btn:disabled {
@@ -551,7 +564,7 @@ textarea.text-input {
 }
 
 .key-hint {
-  color: rgba(0, 0, 0, 0.5);
+  color: color-mix(in srgb, var(--paper) 50%, var(--thermal));
   margin-left: 0.3rem;
 }
 
@@ -579,7 +592,7 @@ textarea.text-input {
 
 .deploy-strip {
   flex: none;
-  border-top: 1px solid rgba(168, 159, 143, 0.25);
+  border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
   padding: 0.75rem 1.25rem 1rem;
   background: var(--paper-raised);
 }
@@ -598,7 +611,7 @@ textarea.text-input {
 
 .deploy-preview {
   margin-top: 0.75rem;
-  border-top: 1px solid rgba(168, 159, 143, 0.25);
+  border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
   padding-top: 0.75rem;
 }
 
@@ -619,7 +632,7 @@ textarea.text-input {
 
 .deploy-file-list li {
   padding: 0.15rem 0;
-  border-top: 1px solid rgba(168, 159, 143, 0.15);
+  border-top: 1px solid color-mix(in srgb, var(--ink-faded) 15%, transparent);
 }
 
 .deploy-file-list li:first-child {
@@ -654,7 +667,7 @@ textarea.text-input {
   width: min(380px, 100%);
   height: 100%;
   background: var(--paper-raised);
-  border-left: 1px solid rgba(168, 159, 143, 0.25);
+  border-left: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
   overflow-y: auto;
   padding: 1rem 1.25rem;
   z-index: 10;
@@ -674,7 +687,7 @@ textarea.text-input {
 .help-section {
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(168, 159, 143, 0.25);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
 }
 
 .help-section:last-child {

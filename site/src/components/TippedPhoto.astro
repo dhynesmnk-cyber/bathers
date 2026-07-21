@@ -24,7 +24,7 @@ const rotation = ((Math.abs(hash) % 240) / 100 - 1.2).toFixed(2);
 ---
 
 <figure class="my-12 flex flex-col items-start" style={`transform: rotate(${rotation}deg);`}>
-  <div class="p-1 pb-8" style="background: var(--paper-raised); border: 1px solid rgba(168,159,143,0.25);">
+  <div class="p-1 pb-8" style="background: var(--paper-raised); border: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);">
     <img src={src} alt={alt} class="block max-w-full" loading="lazy" />
   </div>
   <figcaption class="mono mt-2 text-[var(--ink-faded)]">

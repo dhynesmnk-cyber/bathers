@@ -16,7 +16,9 @@ It should **never** feel like: a SaaS product, an Airbnb listing, a Google Maps 
 
 ## 2. Colour
 
-Dark mode is the only mode. The palette is warm paper inverted: the "paper" is deep warm charcoal, the "ink" is warm off-white. One mineral accent, one oxide secondary. Nothing else.
+**Two modes, 2026-07-21 addition.** The site now supports both a light and a dark mode — auto-detected from the visitor's OS preference (`prefers-color-scheme`), with a manual override (see §5a, Theme Toggle). Dark mode keeps its original six values unchanged. Light mode is not a separate palette invented from scratch — it's the "ink on warm paper" register §1 always described, with dark mode as the inversion of it. One mineral accent, one oxide secondary, in both modes. Nothing else.
+
+**Dark mode:**
 
 | Token | Hex | Role |
 |---|---|---|
@@ -27,7 +29,18 @@ Dark mode is the only mode. The palette is warm paper inverted: the "paper" is d
 | `--thermal` | `#7fb5a4` | The mineral accent. Thermal-pool green — links, active states, the current map marker. Used sparingly: if more than ~5% of a screen is thermal, it's overused. |
 | `--oxide` | `#b4633a` | Secondary accent. Rust/iron-oxide — reject actions, warnings, the occasional annotation. Rarer than thermal. |
 
-**Banned:** the Tailwind default grey scale (`slate`, `gray`, `zinc`, `neutral`, `stone` utilities for colour), pure `#000`/`#fff`, any blue that reads "tech", any purple, gradients of any kind, coloured glows/shadows.
+**Light mode:**
+
+| Token | Hex | Role |
+|---|---|---|
+| `--paper` | `#f2ece0` | Page background. Warm off-white — handmade paper, never clinical white. Carries the grain texture (§4). |
+| `--paper-raised` | `#e9e1d1` | Slightly lifted surfaces. Difference should be barely perceptible, as in dark mode. |
+| `--ink` | `#2a241e` | Primary text. Warm charcoal, never pure black. |
+| `--ink-faded` | `#6b6255` | Secondary text, datelines, captions. |
+| `--thermal` | `#3f6b5b` | The mineral accent, deepened from the dark-mode value to hold ≥4.5:1 contrast against `--paper` at text weight. Same role: links, active states, current map marker. |
+| `--oxide` | `#96502e` | Secondary accent, deepened for the same contrast reason. Same role: reject actions, warnings, occasional annotation. |
+
+**Banned in both modes:** the Tailwind default grey scale (`slate`, `gray`, `zinc`, `neutral`, `stone` utilities for colour), pure `#000`/`#fff`, any blue that reads "tech", any purple, gradients of any kind, coloured glows/shadows.
 
 ---
 
@@ -53,7 +66,7 @@ Rules:
 
 This is what separates "dark editorial" from "dark dashboard":
 
-- **Grain:** a full-page noise overlay — SVG `feTurbulence` fractal noise, ~3% opacity, `mix-blend-mode: overlay`, fixed position, pointer-events none. Subtle enough that you only notice it when it's gone.
+- **Grain:** a full-page noise overlay — SVG `feTurbulence` fractal noise, ~3% opacity, `mix-blend-mode: overlay`, fixed position, pointer-events none. Subtle enough that you only notice it when it's gone. **Light mode (2026-07-21):** the same technique, but `overlay` blend against a light `--paper` reads differently than against a near-black one — tune opacity/blend-mode independently per mode rather than assuming the dark-mode values carry over; verify visually before locking in.
 - **Rules, not borders:** dividers are 1px hairlines in `--ink-faded` at 25% opacity. No boxed borders around content blocks. No border-radius above 2px anywhere on the public site. No box-shadows on the public site, ever.
 - **The tipped-in photograph** (see §6, Signature): when a venue has an image, it is treated as a physical photo tipped into a diary — inset, not full-bleed; 2–4px `--paper-raised` mount border; rotated between −1.2° and +1.2° (derive deterministically from the slug hash so it's stable per venue); mono caption beneath, e.g. `PLATE I. — THE MAGNESIUM POOL, LOOKING SOUTH.`
 - **Section openers:** small-caps mono eyebrow + hairline, in the manner of a pamphlet chapter head. No icons.
@@ -66,7 +79,19 @@ This is what separates "dark editorial" from "dark dashboard":
 - **No cards.** Venue listings on the index are typographic entries — name, dateline, one-line notation — separated by hairlines, like a table of contents. No thumbnails in lists.
 - **Whitespace is structural.** Section spacing at 6–10rem on desktop. When in doubt, add space, not decoration.
 - **Filters are text.** Amenity filters render as inline mono toggles (`magnesium pool · infrared · cold plunge`); active state = thermal underline. No sidebar, no checkboxes, no pills.
-- The map (Leaflet) is a chapter within the index page, not the hero. Tiles must be styled/filtered to sit in the palette (CSS filter to warm-dark, or a dark tile theme with a warm overlay). Default markers replaced with a small thermal ring; active marker fills.
+- The map (Leaflet) is a chapter within the index page, not the hero. Tiles must be styled/filtered to sit in the palette (CSS filter to warm-dark, or a dark tile theme with a warm overlay). Default markers replaced with a small thermal ring; active marker fills. **Light mode (2026-07-21):** dark mode keeps the warm-dark tile treatment; light mode uses a light basemap with little to no filter rather than the same dark-tile-plus-filter approach — the tile source itself is chosen at map-init time based on the active mode, not styled after the fact.
+
+---
+
+## 5a. Theme Toggle (2026-07-21 addition)
+
+A narrow, deliberate exception to the site's otherwise icon-free, toggle-free chrome — the second interactive control on the public site after the Book Now button (§7a).
+
+- Renders in-flow at the top of every page, above that page's own opening content (masthead on the index, the venue name on a venue page, the foreword on a programmatic page, the post title on a blog page) — never fixed, never floating (§3/UX.md's floating-UI ban still holds).
+- A plain mono text control, in the "filters are text" idiom (§5) — not an icon, switch, or pill.
+- Auto-detects the visitor's OS preference (`prefers-color-scheme`) by default; a click/keyboard-activated override persists via `localStorage` across the visit.
+- No animated transition on switch — a plain state change, consistent with the site's restrained motion posture (§9) and `prefers-reduced-motion`.
+- Admin app: auto (`prefers-color-scheme`) only, no manual toggle — it's a private, single-operator workbench (§8), not a visitor-facing surface.
 
 ---
 
@@ -108,7 +133,7 @@ The public site has exactly one button-styled element: the venue page's "Book no
 
 ## 8. Admin UI (visual only — behaviour in UX.md)
 
-The admin hub inherits the palette and the mono utility face but is allowed to be plainer: it's the workbench, not the pamphlet. Border-radius up to 4px and functional focus rings are fine here. Log output in mono on `--paper`, thermal for success lines, oxide for failures. No component library — hand-rolled, small, fast.
+The admin hub inherits the palette (both modes, §2) and the mono utility face but is allowed to be plainer: it's the workbench, not the pamphlet. Border-radius up to 4px and functional focus rings are fine here. Log output in mono on `--paper`, thermal for success lines, oxide for failures. No component library — hand-rolled, small, fast. Theme mode is auto (`prefers-color-scheme`) only — no manual toggle (§5a).
 
 ## 9. Quality Floor
 

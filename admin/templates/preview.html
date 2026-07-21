@@ -60,7 +60,7 @@
 
         {% if data.get("faq") %}
         <section class="mt-16">
-          <p class="mono" style="color: var(--ink-faded); border-top: 1px solid rgba(168,159,143,0.25); padding-top: 0.5rem;">FAQ</p>
+          <p class="mono" style="color: var(--ink-faded); border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent); padding-top: 0.5rem;">FAQ</p>
           <dl class="mt-6">
             {% for item in data.get("faq") %}
             <div class="mb-8">
@@ -72,7 +72,7 @@
         </section>
         {% endif %}
 
-        <div class="mono mt-16 pt-6" style="border-top: 1px solid rgba(168,159,143,0.25); background: var(--paper-raised); padding: 1.5rem;">
+        <div class="mono mt-16 pt-6" style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent); background: var(--paper-raised); padding: 1.5rem;">
           <p>{{ data.get("address") or "(address)" }}</p>
           {% if data.get("website") %}
           <p class="mt-4">

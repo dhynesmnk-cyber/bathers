@@ -110,6 +110,17 @@ Content order (top to bottom): masthead → editorial foreword → **the map cha
 
 ---
 
+### 2.4 Theme toggle (2026-07-21 addition)
+
+- Renders in-flow at the top of every page type (index, venue, programmatic, blog) per DESIGN.md §5a — a plain mono text control, never floating.
+- Defaults to the visitor's OS preference (`prefers-color-scheme`); no control state is shown as "wrong" — whichever mode is active is simply the current state.
+- Activating it (click, or `Enter`/`Space` when focused) flips the mode and writes the explicit choice to `localStorage`, which then wins over `prefers-color-scheme` for the rest of the visit and on return visits, until cleared.
+- No transition/animation on switch — an instant state change, consistent with §3's motion posture.
+- Works with JavaScript disabled: the control still renders (a real, focusable element) but is inert without JS — the page still themes correctly from `prefers-color-scheme` alone, so a no-JS visitor always gets a correctly themed page, just without the override.
+- Admin app: no manual toggle — auto (`prefers-color-scheme`) only, per DESIGN.md §8.
+
+---
+
 ## 3. Interaction Rules (site-wide)
 
 - No modals, no toasts, no cookie banners, no floating buttons on the public site.

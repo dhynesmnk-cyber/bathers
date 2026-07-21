@@ -1,0 +1,70 @@
+---
+---
+<div class="theme-toggle mono" role="group" aria-label="Colour theme">
+  <button type="button" data-theme-choice="light" aria-pressed="false">light</button><span aria-hidden="true"> · </span><button type="button" data-theme-choice="dark" aria-pressed="false">dark</button>
+</div>
+
+<script is:inline>
+  (function () {
+    var root = document.documentElement;
+    var buttons = document.querySelectorAll("[data-theme-choice]");
+
+    function currentMode() {
+      var explicit = root.getAttribute("data-theme");
+      if (explicit === "light" || explicit === "dark") return explicit;
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+
+    function reflect() {
+      var mode = currentMode();
+      buttons.forEach(function (btn) {
+        var active = btn.getAttribute("data-theme-choice") === mode;
+        btn.setAttribute("aria-pressed", String(active));
+        btn.classList.toggle("is-active", active);
+      });
+    }
+
+    buttons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var choice = btn.getAttribute("data-theme-choice");
+        root.setAttribute("data-theme", choice);
+        try {
+          localStorage.setItem("bathers-theme", choice);
+        } catch (e) {}
+        reflect();
+      });
+    });
+
+    reflect();
+  })();
+</script>
+
+<style>
+  .theme-toggle {
+    display: inline-flex;
+    color: var(--ink-faded);
+  }
+
+  .theme-toggle button {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+
+  .theme-toggle button.is-active {
+    color: var(--thermal);
+    text-decoration-color: var(--thermal);
+  }
+
+  .theme-toggle button:hover,
+  .theme-toggle button:focus-visible {
+    text-decoration-color: var(--thermal);
+  }
+</style>

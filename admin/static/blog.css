@@ -27,12 +27,12 @@
 }
 
 .status-chip.status-draft {
-  background: rgba(180, 99, 58, 0.15);
+  background: color-mix(in srgb, var(--oxide) 15%, transparent);
   color: var(--oxide);
 }
 
 .status-chip.status-published {
-  background: rgba(127, 181, 164, 0.15);
+  background: color-mix(in srgb, var(--thermal) 15%, transparent);
   color: var(--thermal);
 }
 
@@ -52,7 +52,7 @@
    editor doesn't clash with the surrounding dark admin UI. */
 .ql-toolbar.ql-snow,
 .ql-container.ql-snow {
-  border-color: rgba(168, 159, 143, 0.4);
+  border-color: color-mix(in srgb, var(--ink-faded) 40%, transparent);
 }
 
 .ql-toolbar.ql-snow {
@@ -76,4 +76,62 @@
 
 .ql-snow .ql-picker {
   color: var(--ink-faded);
+}
+
+/* Below: Quill's "snow" theme (vendor/quill/quill.snow.css) leaves several
+   sub-elements at their stock light-theme colours — near-black placeholder
+   text sitting on the dark editor background, white dropdown/tooltip
+   backgrounds, tech-blue links (DESIGN.md §2 bans "any blue that reads
+   'tech'") — that read broken/illegible regardless of site mode. Repaint
+   every one of them to the theme tokens so nothing shows Quill's defaults. */
+
+.ql-editor.ql-blank::before {
+  color: var(--ink-faded);
+  font-style: normal;
+}
+
+.ql-snow .ql-picker-options {
+  background: var(--paper-raised);
+  border: 1px solid color-mix(in srgb, var(--ink-faded) 40%, transparent);
+}
+
+.ql-snow .ql-picker-options .ql-picker-item {
+  color: var(--ink-faded);
+}
+
+.ql-snow .ql-tooltip {
+  background: var(--paper-raised);
+  border: 1px solid color-mix(in srgb, var(--ink-faded) 40%, transparent);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.ql-snow .ql-tooltip input[type="text"] {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--ink-faded) 40%, transparent);
+}
+
+.ql-snow .ql-tooltip a.ql-action,
+.ql-snow .ql-tooltip a.ql-remove {
+  color: var(--thermal);
+}
+
+.ql-editor code {
+  background: color-mix(in srgb, var(--ink-faded) 15%, transparent);
+  color: var(--ink);
+}
+
+.ql-editor pre.ql-syntax {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.ql-editor blockquote {
+  border-left: 4px solid var(--ink-faded);
+}
+
+.ql-editor a,
+.ql-snow a {
+  color: var(--thermal);
 }

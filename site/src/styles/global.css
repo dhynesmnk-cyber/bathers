@@ -45,26 +45,66 @@
 }
 
 @theme {
-  --color-paper: #191614;
-  --color-paper-raised: #211d1a;
-  --color-ink: #e8e2d6;
-  --color-ink-faded: #a89f8f;
-  --color-thermal: #7fb5a4;
-  --color-oxide: #b4633a;
+  /* Aliases so Tailwind utilities (if ever used) follow the same dual-mode
+     tokens below rather than a frozen literal. */
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-ink: var(--ink);
+  --color-ink-faded: var(--ink-faded);
+  --color-thermal: var(--thermal);
+  --color-oxide: var(--oxide);
 
   --font-display: "Fraunces", serif;
   --font-body: "Newsreader", serif;
   --font-mono: "IBM Plex Mono", monospace;
 }
 
+/* DESIGN.md §2 — two modes. Light is the default/"ink on warm paper"
+   register; dark is the inversion. Order matters: OS-preference media query
+   first, then explicit [data-theme] overrides from the toggle (ThemeToggle.astro)
+   win over it via source order + specificity. */
 :root {
-  color-scheme: dark;
+  color-scheme: light dark;
+  --paper: #f2ece0;
+  --paper-raised: #e9e1d1;
+  --ink: #2a241e;
+  --ink-faded: #6b6255;
+  --thermal: #3f6b5b;
+  --oxide: #96502e;
+  /* DESIGN.md §4 — grain reads differently by mode; tuned separately. */
+  --grain-opacity: 0.035;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #191614;
+    --paper-raised: #211d1a;
+    --ink: #e8e2d6;
+    --ink-faded: #a89f8f;
+    --thermal: #7fb5a4;
+    --oxide: #b4633a;
+    --grain-opacity: 0.03;
+  }
+}
+
+:root[data-theme="dark"] {
   --paper: #191614;
   --paper-raised: #211d1a;
   --ink: #e8e2d6;
   --ink-faded: #a89f8f;
   --thermal: #7fb5a4;
   --oxide: #b4633a;
+  --grain-opacity: 0.03;
+}
+
+:root[data-theme="light"] {
+  --paper: #f2ece0;
+  --paper-raised: #e9e1d1;
+  --ink: #2a241e;
+  --ink-faded: #6b6255;
+  --thermal: #3f6b5b;
+  --oxide: #96502e;
+  --grain-opacity: 0.035;
 }
 
 * {

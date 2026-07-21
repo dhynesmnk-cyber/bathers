@@ -19,7 +19,7 @@ const { name, slug, suburb, state, summary, amenities, facilities } = Astro.prop
   id={`venue-${slug}`}
   data-venue-slug={slug}
   class="py-6"
-  style="border-top: 1px solid rgba(168,159,143,0.25); scroll-margin-top: 2rem;"
+  style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent); scroll-margin-top: 2rem;"
 >
   <a href={`/spa/${slug}/`}>
     <h3 class="font-display text-3xl font-light text-[var(--ink)]">{name}</h3>
