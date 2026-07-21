@@ -14,6 +14,18 @@ One contract, four consumers: the zod content schema, the SQLite tables, the Har
 
 This order is used everywhere amenities are displayed.
 
+### 1a. Facility keys (2026-07-21 addition, optional)
+
+Practical/logistics info, distinct from the bathing-experience amenities above — absent on venues published before this date, defaulting to `false`/unset.
+
+| Key | Label |
+|---|---|
+| `parking` | Parking |
+| `towels_provided` | Towels provided |
+| `changerooms` | Changerooms |
+| `bookings_required` | Bookings required |
+| `wheelchair_access` | Wheelchair access |
+
 ## 2. MDX Frontmatter
 
 | Field | Type | Req | Rules |
@@ -26,6 +38,9 @@ This order is used everywhere amenities are displayed.
 | `longitude` | number | ✓ | 112.0 … 154.0. |
 | `website` | string (url) | ✓ | The venue's own site. |
 | `amenities` | object | ✓ | Exactly the five boolean keys from §1, all required, no extras (zod `.strict()`). |
+| `facilities` | object | – | *(2026-07-21)* The five boolean keys from §1a. Optional — omit entirely on venues where none are known; individual keys default `false`. |
+| `hours` | string | – | *(2026-07-21)* Freeform display string, e.g. `"Mon–Sun 6am–10pm"`. Drafted by the Architect from `facts.hours`, never fabricated. |
+| `cost` | string | – | *(2026-07-21)* Freeform display string, e.g. `"$45–120 per session"`. Drafted by the Architect from `facts.pricing`, never fabricated. |
 | `status` | enum | ✓ | `unclaimed` \| `claimed`. Default `unclaimed`. |
 | `summary` | string | ✓ | ≤160 chars. Index one-liner + meta description. Written by the Architect, in register. |
 | `drafted` | date (YYYY-MM-DD) | ✓ | Date the draft was generated. |
@@ -49,7 +64,9 @@ CREATE TABLE venues (
   longitude REAL NOT NULL,
   status TEXT NOT NULL DEFAULT 'unclaimed',
   summary TEXT NOT NULL,
-  has_image INTEGER NOT NULL DEFAULT 0
+  has_image INTEGER NOT NULL DEFAULT 0,
+  hours TEXT,
+  cost TEXT
 );
 CREATE TABLE amenities (
   slug TEXT PRIMARY KEY REFERENCES venues(slug) ON DELETE CASCADE,
@@ -58,6 +75,14 @@ CREATE TABLE amenities (
   traditional_sauna INTEGER NOT NULL,
   cold_plunge INTEGER NOT NULL,
   led_therapy INTEGER NOT NULL
+);
+CREATE TABLE facilities (
+  slug TEXT PRIMARY KEY REFERENCES venues(slug) ON DELETE CASCADE,
+  parking INTEGER NOT NULL DEFAULT 0,
+  towels_provided INTEGER NOT NULL DEFAULT 0,
+  changerooms INTEGER NOT NULL DEFAULT 0,
+  bookings_required INTEGER NOT NULL DEFAULT 0,
+  wheelchair_access INTEGER NOT NULL DEFAULT 0
 );
 ```
 
@@ -95,6 +120,8 @@ Rules: amenity `true` only on explicit evidence in the scraped text; unknown sca
 
 **Note on FAQ:** the Harvester's JSON contract does not carry an `faq` key. FAQ answers are the Architect's synthesis, drafted only from the `facts` object above — adding a duplicate `faq` key to the Harvester's output would just re-derive the same facts one step early. See `PROMPTS/architect.md`.
 
+**Note on `hours`/`cost`/`facilities` (2026-07-21):** same division of labour — the Harvester's JSON contract is unchanged; `facts.hours` and `facts.pricing` already exist and are reused as the Architect's source material for the frontmatter `hours`/`cost` strings, and `facts` generally for `facilities`. No new Harvester fields.
+
 ## 5. Sample MDX (place in `_published` at Gate 1)
 
 ```mdx
@@ -112,6 +139,14 @@ amenities:
   traditional_sauna: true
   cold_plunge: true
   led_therapy: false
+facilities:
+  parking: false
+  towels_provided: true
+  changerooms: true
+  bookings_required: true
+  wheelchair_access: false
+hours: "Daily, sittings from 10am–9pm"
+cost: "$65 per two-hour sitting"
 status: "unclaimed"
 summary: "A converted Easey Street warehouse holding a 39-degree mineral bath, an 80-degree Finnish sauna, a cold plunge and a hammam."
 drafted: 2026-07-17

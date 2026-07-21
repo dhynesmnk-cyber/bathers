@@ -23,11 +23,14 @@ from admin.schema import FieldError, count_prose_words, staging_status, validate
 
 FRONTMATTER_FIELD_ORDER = (
     "name", "state", "suburb", "address", "latitude", "longitude", "website",
-    "amenities", "status", "summary", "drafted", "source_url",
+    "amenities", "facilities", "hours", "cost", "status", "summary", "drafted", "source_url",
     "image", "image_source", "image_caption", "faq",
 )
 AMENITY_FIELD_ORDER = (
     "magnesium_pool", "infrared_sauna", "traditional_sauna", "cold_plunge", "led_therapy",
+)
+FACILITY_FIELD_ORDER = (
+    "parking", "towels_provided", "changerooms", "bookings_required", "wheelchair_access",
 )
 
 UNDO_WINDOW_SECONDS = 10  # client shows a 3s undo affordance; server keeps a wider grace window
@@ -79,6 +82,8 @@ def render_frontmatter(data: dict[str, Any]) -> str:
             continue
         if key == "amenities" and isinstance(data[key], dict):
             ordered[key] = {ak: data[key].get(ak) for ak in AMENITY_FIELD_ORDER if ak in data[key]}
+        elif key == "facilities" and isinstance(data[key], dict):
+            ordered[key] = {fk: data[key].get(fk) for fk in FACILITY_FIELD_ORDER if fk in data[key]}
         else:
             ordered[key] = data[key]
     return yaml.safe_dump(ordered, sort_keys=False, allow_unicode=True, default_flow_style=False)

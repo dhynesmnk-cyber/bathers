@@ -23,6 +23,8 @@ Reference passage (match this register exactly):
 ## Structure
 
 - Frontmatter per SCHEMA.md §2, populated from the JSON. `summary` ≤160 chars, in register, no marketing words. `drafted` = today's date (provided in the call). Unknown required scalars: leave the YAML key present with an empty value — the human reviewer completes them.
+- `hours` and `cost`: short freeform strings drafted from `facts.hours`/`facts.pricing` only (e.g. `"Daily, sittings from 10am–9pm"`, `"$65 per two-hour sitting"`). Same integrity rule as everywhere else — omit the key entirely if the facts don't support a confident, specific value; never write "check website" or similar as a stand-in.
+- `facilities`: set a key `true` only on explicit evidence in `facts` (e.g. an explicit mention of on-site parking, towels supplied, changerooms, booking requirement, wheelchair access). Unmentioned facilities are omitted from the object rather than guessed `false` — the reviewer fills gaps by hand, same posture as amenities.
 - Body 350–700 words depending on material. Open with the most characteristic true thing about the place — building, water, setting, history — never with a greeting or a thesis about wellness.
 - Exactly one or two `<Pull>...</Pull>` pull-quotes wrapping your best sentences (they render as pull-quotes; the sentence stays in flow, so it must read naturally in place).
 - End with practical matter woven into prose (sitting lengths, booking notes) — not a list. No sign-off, no call to action.

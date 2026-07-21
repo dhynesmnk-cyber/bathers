@@ -1,6 +1,6 @@
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
-import { AMENITY_KEYS, AU_LATITUDE_BOUNDS, AU_LONGITUDE_BOUNDS, STATES } from "../config";
+import { AMENITY_KEYS, AU_LATITUDE_BOUNDS, AU_LONGITUDE_BOUNDS, FACILITY_KEYS, STATES } from "../config";
 
 // Mirrors SCHEMA.md §2 exactly. Any change to this file must be propagated
 // to the SQLite schema, the Harvester JSON contract, and the admin
@@ -14,6 +14,17 @@ const amenitiesSchema = z
     >,
   )
   .strict();
+
+// Optional — added 2026-07-21, absent on venues published before then.
+const facilitiesSchema = z
+  .object(
+    Object.fromEntries(FACILITY_KEYS.map((key) => [key, z.boolean().default(false)])) as Record<
+      (typeof FACILITY_KEYS)[number],
+      z.ZodDefault<z.ZodBoolean>
+    >,
+  )
+  .strict()
+  .optional();
 
 const spasCollection = defineCollection({
   // Astro globs directly into _published — content-staging/_staging and
@@ -31,6 +42,9 @@ const spasCollection = defineCollection({
       longitude: z.number().min(AU_LONGITUDE_BOUNDS.min).max(AU_LONGITUDE_BOUNDS.max),
       website: z.string().url(),
       amenities: amenitiesSchema,
+      facilities: facilitiesSchema,
+      hours: z.string().optional(),
+      cost: z.string().optional(),
       status: z.enum(["unclaimed", "claimed"]).default("unclaimed"),
       summary: z.string().max(160),
       drafted: z.date(),

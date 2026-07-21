@@ -21,6 +21,7 @@ _logger = logging.getLogger("admin.data_store")
 from admin.config import (
     AMENITY_KEYS,
     DB_PATH,
+    FACILITY_KEYS,
     PUBLISHED_DIR,
     VENUES_GEOJSON_PATH,
     VENUES_JSON_PATH,
@@ -38,7 +39,9 @@ CREATE TABLE venues (
   longitude REAL NOT NULL,
   status TEXT NOT NULL DEFAULT 'unclaimed',
   summary TEXT NOT NULL,
-  has_image INTEGER NOT NULL DEFAULT 0
+  has_image INTEGER NOT NULL DEFAULT 0,
+  hours TEXT,
+  cost TEXT
 );
 CREATE TABLE amenities (
   slug TEXT PRIMARY KEY REFERENCES venues(slug) ON DELETE CASCADE,
@@ -47,6 +50,14 @@ CREATE TABLE amenities (
   traditional_sauna INTEGER NOT NULL,
   cold_plunge INTEGER NOT NULL,
   led_therapy INTEGER NOT NULL
+);
+CREATE TABLE facilities (
+  slug TEXT PRIMARY KEY REFERENCES venues(slug) ON DELETE CASCADE,
+  parking INTEGER NOT NULL DEFAULT 0,
+  towels_provided INTEGER NOT NULL DEFAULT 0,
+  changerooms INTEGER NOT NULL DEFAULT 0,
+  bookings_required INTEGER NOT NULL DEFAULT 0,
+  wheelchair_access INTEGER NOT NULL DEFAULT 0
 );
 """
 
@@ -86,12 +97,13 @@ def create_schema(conn: sqlite3.Connection) -> None:
 def upsert_venue(conn: sqlite3.Connection, slug: str, data: dict[str, Any]) -> None:
     conn.execute(
         """
-        INSERT INTO venues (slug, name, state, suburb, latitude, longitude, status, summary, has_image)
-        VALUES (:slug, :name, :state, :suburb, :latitude, :longitude, :status, :summary, :has_image)
+        INSERT INTO venues (slug, name, state, suburb, latitude, longitude, status, summary, has_image, hours, cost)
+        VALUES (:slug, :name, :state, :suburb, :latitude, :longitude, :status, :summary, :has_image, :hours, :cost)
         ON CONFLICT(slug) DO UPDATE SET
           name = excluded.name, state = excluded.state, suburb = excluded.suburb,
           latitude = excluded.latitude, longitude = excluded.longitude,
-          status = excluded.status, summary = excluded.summary, has_image = excluded.has_image
+          status = excluded.status, summary = excluded.summary, has_image = excluded.has_image,
+          hours = excluded.hours, cost = excluded.cost
         """,
         {
             "slug": slug,
@@ -103,6 +115,8 @@ def upsert_venue(conn: sqlite3.Connection, slug: str, data: dict[str, Any]) -> N
             "status": data.get("status", "unclaimed"),
             "summary": data["summary"],
             "has_image": 1 if data.get("image") else 0,
+            "hours": data.get("hours"),
+            "cost": data.get("cost"),
         },
     )
     amenities = data["amenities"]
@@ -120,20 +134,42 @@ def upsert_venue(conn: sqlite3.Connection, slug: str, data: dict[str, Any]) -> N
             **{key: 1 if amenities[key] else 0 for key in AMENITY_KEYS},
         },
     )
+    facilities = data.get("facilities") or {}
+    conn.execute(
+        """
+        INSERT INTO facilities (slug, parking, towels_provided, changerooms, bookings_required, wheelchair_access)
+        VALUES (:slug, :parking, :towels_provided, :changerooms, :bookings_required, :wheelchair_access)
+        ON CONFLICT(slug) DO UPDATE SET
+          parking = excluded.parking, towels_provided = excluded.towels_provided,
+          changerooms = excluded.changerooms, bookings_required = excluded.bookings_required,
+          wheelchair_access = excluded.wheelchair_access
+        """,
+        {
+            "slug": slug,
+            **{key: 1 if facilities.get(key) else 0 for key in FACILITY_KEYS},
+        },
+    )
 
 
 def fetch_all_venues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     rows = conn.execute(
         """
         SELECT v.slug, v.name, v.state, v.suburb, v.latitude, v.longitude,
-               v.status, v.summary, v.has_image,
-               a.magnesium_pool, a.infrared_sauna, a.traditional_sauna, a.cold_plunge, a.led_therapy
-        FROM venues v JOIN amenities a ON a.slug = v.slug
+               v.status, v.summary, v.has_image, v.hours, v.cost,
+               a.magnesium_pool, a.infrared_sauna, a.traditional_sauna, a.cold_plunge, a.led_therapy,
+               f.parking, f.towels_provided, f.changerooms, f.bookings_required, f.wheelchair_access
+        FROM venues v
+        JOIN amenities a ON a.slug = v.slug
+        JOIN facilities f ON f.slug = v.slug
         ORDER BY v.slug
         """
     ).fetchall()
     venues = []
-    for slug, name, state, suburb, latitude, longitude, status, summary, has_image, mg, ir, sa, cp, led in rows:
+    for (
+        slug, name, state, suburb, latitude, longitude, status, summary, has_image, hours, cost,
+        mg, ir, sa, cp, led,
+        parking, towels, changerooms, bookings, wheelchair,
+    ) in rows:
         venues.append(
             {
                 "slug": slug,
@@ -145,12 +181,21 @@ def fetch_all_venues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
                 "status": status,
                 "summary": summary,
                 "has_image": bool(has_image),
+                "hours": hours,
+                "cost": cost,
                 "amenities": {
                     "magnesium_pool": bool(mg),
                     "infrared_sauna": bool(ir),
                     "traditional_sauna": bool(sa),
                     "cold_plunge": bool(cp),
                     "led_therapy": bool(led),
+                },
+                "facilities": {
+                    "parking": bool(parking),
+                    "towels_provided": bool(towels),
+                    "changerooms": bool(changerooms),
+                    "bookings_required": bool(bookings),
+                    "wheelchair_access": bool(wheelchair),
                 },
             }
         )
@@ -178,6 +223,7 @@ def write_venues_geojson(venues: list[dict[str, Any]], path: Path) -> None:
                     "summary": v["summary"],
                     "has_image": v["has_image"],
                     "amenities": v["amenities"],
+                    "facilities": v["facilities"],
                 },
             }
             for v in venues

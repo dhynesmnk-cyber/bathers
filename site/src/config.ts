@@ -17,6 +17,24 @@ export const AMENITY_NOTATION: Record<(typeof AMENITY_KEYS)[number], { short: st
   led_therapy: { short: "LED", full: "LED light therapy" },
 };
 
+// Facilities (2026-07-21 addition — practical/logistics info, distinct from
+// the bathing-experience amenities above; see SCHEMA.md §2).
+export const FACILITY_KEYS = [
+  "parking",
+  "towels_provided",
+  "changerooms",
+  "bookings_required",
+  "wheelchair_access",
+] as const;
+
+export const FACILITY_LABELS: Record<(typeof FACILITY_KEYS)[number], string> = {
+  parking: "Parking",
+  towels_provided: "Towels provided",
+  changerooms: "Changerooms",
+  bookings_required: "Bookings required",
+  wheelchair_access: "Wheelchair access",
+};
+
 export const STATES = ["VIC", "NSW", "QLD", "SA", "WA", "TAS", "NT", "ACT"] as const;
 
 export const STATE_NAMES: Record<(typeof STATES)[number], string> = {

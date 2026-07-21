@@ -107,3 +107,21 @@ AMENITY_FULL_NAMES = {
     "cold_plunge": "cold plunge",
     "led_therapy": "LED light therapy",
 }
+
+# Facilities (2026-07-21 addition) — practical/logistics info, distinct from
+# the bathing-experience amenities above; optional, absent on older venues.
+FACILITY_KEYS = (
+    "parking",
+    "towels_provided",
+    "changerooms",
+    "bookings_required",
+    "wheelchair_access",
+)
+
+FACILITY_LABELS = {
+    "parking": "Parking",
+    "towels_provided": "Towels provided",
+    "changerooms": "Changerooms",
+    "bookings_required": "Bookings required",
+    "wheelchair_access": "Wheelchair access",
+}

@@ -9,12 +9,21 @@
     "status": "unclaimed",
     "summary": "A converted Easey Street warehouse holding a 39-degree mineral bath, an 80-degree Finnish sauna, a cold plunge and a hammam.",
     "has_image": false,
+    "hours": null,
+    "cost": null,
     "amenities": {
       "magnesium_pool": true,
       "infrared_sauna": false,
       "traditional_sauna": true,
       "cold_plunge": true,
       "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
     }
   }
 ]

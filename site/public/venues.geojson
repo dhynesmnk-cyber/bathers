@@ -24,6 +24,13 @@
           "traditional_sauna": true,
           "cold_plunge": true,
           "led_therapy": false
+        },
+        "facilities": {
+          "parking": false,
+          "towels_provided": false,
+          "changerooms": false,
+          "bookings_required": false,
+          "wheelchair_access": false
         }
       }
     }

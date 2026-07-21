@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
-from admin.config import AMENITY_KEYS, STATES
+from admin.config import AMENITY_KEYS, FACILITY_KEYS, STATES
 
 AU_LATITUDE_BOUNDS = (-44.0, -9.0)
 AU_LONGITUDE_BOUNDS = (112.0, 154.0)
@@ -91,6 +91,25 @@ def validate_frontmatter(data: dict[str, Any]) -> list[FieldError]:
         if non_bool:
             errors.append(FieldError("amenities", f"amenities keys must be boolean: {', '.join(non_bool)}"))
 
+    facilities = data.get("facilities")
+    if facilities is not None:
+        if not isinstance(facilities, dict):
+            errors.append(FieldError("facilities", "facilities must be an object of booleans"))
+        else:
+            extra = [key for key in facilities if key not in FACILITY_KEYS]
+            non_bool = [
+                key for key in FACILITY_KEYS if key in facilities and not isinstance(facilities[key], bool)
+            ]
+            if extra:
+                errors.append(FieldError("facilities", f"facilities has unexpected keys: {', '.join(extra)}"))
+            if non_bool:
+                errors.append(FieldError("facilities", f"facilities keys must be boolean: {', '.join(non_bool)}"))
+
+    for field in ("hours", "cost"):
+        value = data.get(field)
+        if value is not None and not isinstance(value, str):
+            errors.append(FieldError(field, f"'{field}' must be a string"))
+
     status = data.get("status", "unclaimed")
     if status not in ("unclaimed", "claimed"):
         errors.append(FieldError("status", "status must be 'unclaimed' or 'claimed'"))
@@ -133,7 +152,7 @@ def validate_frontmatter(data: dict[str, Any]) -> list[FieldError]:
 
     known_fields = {
         "name", "state", "suburb", "address", "latitude", "longitude", "website",
-        "amenities", "status", "summary", "drafted", "source_url",
+        "amenities", "facilities", "hours", "cost", "status", "summary", "drafted", "source_url",
         "image", "image_source", "image_caption", "faq",
     }
     extra_fields = [key for key in data if key not in known_fields]

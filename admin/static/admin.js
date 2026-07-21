@@ -4,6 +4,7 @@
   const AU_LAT = { min: -44.0, max: -9.0 };
   const AU_LNG = { min: 112.0, max: 154.0 };
   const AMENITY_KEYS = ["magnesium_pool", "infrared_sauna", "traditional_sauna", "cold_plunge", "led_therapy"];
+  const FACILITY_KEYS = ["parking", "towels_provided", "changerooms", "bookings_required", "wheelchair_access"];
   const UNDO_SECONDS = 3;
 
   let queue = [];
@@ -28,6 +29,8 @@
   const fieldWebsite = el("field-website");
   const fieldSummary = el("field-summary");
   const fieldSourceUrl = el("field-source-url");
+  const fieldHours = el("field-hours");
+  const fieldCost = el("field-cost");
   const fieldErrorsEl = el("field-errors");
   const saveStatusEl = el("save-status");
   const coordPin = el("coord-pin");
@@ -172,9 +175,15 @@
     fieldWebsite.value = fm.website || "";
     fieldSummary.value = fm.summary || "";
     fieldSourceUrl.value = fm.source_url || "";
+    fieldHours.value = fm.hours || "";
+    fieldCost.value = fm.cost || "";
     const amenities = fm.amenities || {};
-    document.querySelectorAll(".toggle-chip").forEach((btn) => {
+    document.querySelectorAll(".toggle-chip[data-amenity]").forEach((btn) => {
       btn.classList.toggle("active", !!amenities[btn.dataset.amenity]);
+    });
+    const facilities = fm.facilities || {};
+    document.querySelectorAll(".toggle-chip[data-facility]").forEach((btn) => {
+      btn.classList.toggle("active", !!facilities[btn.dataset.facility]);
     });
     updateCoordPin(fm.latitude, fm.longitude);
     renderFieldErrors(entry.errors || []);
@@ -382,6 +391,8 @@
     website: fieldWebsite,
     summary: fieldSummary,
     source_url: fieldSourceUrl,
+    hours: fieldHours,
+    cost: fieldCost,
     faq: el("faq-section"),
   };
 
@@ -434,6 +445,8 @@
   fieldWebsite.addEventListener("input", () => queuePatch("website", fieldWebsite.value));
   fieldSummary.addEventListener("input", () => queuePatch("summary", fieldSummary.value));
   fieldSourceUrl.addEventListener("input", () => queuePatch("source_url", fieldSourceUrl.value));
+  fieldHours.addEventListener("input", () => queuePatch("hours", fieldHours.value));
+  fieldCost.addEventListener("input", () => queuePatch("cost", fieldCost.value));
   fieldLat.addEventListener("input", () => {
     const v = fieldLat.value === "" ? null : Number(fieldLat.value);
     updateCoordPin(v, fieldLng.value === "" ? null : Number(fieldLng.value));
@@ -445,7 +458,7 @@
     queuePatch("longitude", v);
   });
 
-  document.querySelectorAll(".toggle-chip").forEach((btn) => {
+  document.querySelectorAll(".toggle-chip[data-amenity]").forEach((btn) => {
     btn.addEventListener("click", () => {
       if (!currentEntry) return;
       btn.classList.toggle("active");
@@ -453,6 +466,17 @@
       amenities[btn.dataset.amenity] = btn.classList.contains("active");
       currentEntry.frontmatter.amenities = amenities;
       queuePatch("amenities", amenities);
+    });
+  });
+
+  document.querySelectorAll(".toggle-chip[data-facility]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (!currentEntry) return;
+      btn.classList.toggle("active");
+      const facilities = { ...(currentEntry.frontmatter.facilities || {}) };
+      facilities[btn.dataset.facility] = btn.classList.contains("active");
+      currentEntry.frontmatter.facilities = facilities;
+      queuePatch("facilities", facilities);
     });
   });
 
