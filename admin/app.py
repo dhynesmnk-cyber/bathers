@@ -321,6 +321,11 @@ def api_discover(body: DiscoverBody):
     return [asdict(c) for c in candidates]
 
 
+@app.get("/api/published")
+def api_published():
+    return json.loads(VENUES_JSON_PATH.read_text(encoding="utf-8")) if VENUES_JSON_PATH.exists() else []
+
+
 @app.get("/api/conversions")
 def api_conversions(refresh: bool = False):
     counts = goatcounter.fetch_click_counts() if refresh else (goatcounter.get_cached_counts() or goatcounter.fetch_click_counts())

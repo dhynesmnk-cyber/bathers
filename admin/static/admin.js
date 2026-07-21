@@ -49,6 +49,11 @@
   const conversionsRefreshBtn = el("conversions-refresh-btn");
   const conversionsList = el("conversions-list");
   const conversionsEmpty = el("conversions-empty");
+  const doneToggleBtn = el("done-toggle-btn");
+  const donePanel = el("done-panel");
+  const doneCloseBtn = el("done-close-btn");
+  const doneList = el("done-list");
+  const doneEmpty = el("done-empty");
   const harvestForm = el("harvest-form");
   const harvestUrl = el("harvest-url");
   const harvestSubmit = el("harvest-submit");
@@ -836,6 +841,51 @@
   });
   conversionsRefreshBtn.addEventListener("click", () => fetchConversions(true));
 
+  // ---- Done panel (published venues, read-only) ----
+
+  function renderDone(venues) {
+    doneList.innerHTML = "";
+    if (!venues.length) {
+      doneEmpty.hidden = false;
+      doneEmpty.textContent = "No venues published yet.";
+      return;
+    }
+    doneEmpty.hidden = true;
+    for (const venue of venues) {
+      const li = document.createElement("li");
+      const link = document.createElement("a");
+      link.href = `/spa/${encodeURIComponent(venue.slug)}/`;
+      link.target = "_blank";
+      link.rel = "noopener";
+      const notation = amenityNotation(venue.amenities);
+      link.textContent = `${venue.name} — ${[venue.suburb, venue.state].filter(Boolean).join(", ")}${notation ? " — " + notation : ""}`;
+      li.appendChild(link);
+      doneList.appendChild(li);
+    }
+  }
+
+  async function fetchDone() {
+    doneList.innerHTML = "";
+    doneEmpty.hidden = false;
+    doneEmpty.textContent = "Loading…";
+    const res = await fetch("/api/published");
+    if (!res.ok) {
+      doneEmpty.textContent = `Failed to load — HTTP ${res.status}`;
+      return;
+    }
+    renderDone(await res.json());
+  }
+
+  function toggleDonePanel() {
+    donePanel.hidden = !donePanel.hidden;
+    if (!donePanel.hidden) fetchDone();
+  }
+
+  doneToggleBtn.addEventListener("click", toggleDonePanel);
+  doneCloseBtn.addEventListener("click", () => {
+    donePanel.hidden = true;
+  });
+
   // ---- Keyboard shortcuts ----
 
   document.addEventListener("keydown", (event) => {
@@ -882,6 +932,8 @@
       helpPanel.hidden = true;
     } else if (!conversionsPanel.hidden) {
       conversionsPanel.hidden = true;
+    } else if (!donePanel.hidden) {
+      donePanel.hidden = true;
     }
   });
 
