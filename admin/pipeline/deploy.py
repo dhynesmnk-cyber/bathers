@@ -1,11 +1,12 @@
 """Deploy strip backend (UX.md §1.4): git status summary, diff preview,
 tracked-file guard, and the streamed add -> commit -> push.
 
-Only these are ever committed: `_published/`, the SQLite file, and the
-generated JSON/GeoJSON (venues.json, venues.geojson, forewords.json — all
-pipeline-derived artefacts the build needs). `_staging/`, `_rejected/`,
-`temp_data/`, `.env` must never be tracked at all; the guard refuses to run
-if any of them somehow are (e.g. force-added by hand).
+Only these are ever committed: `_published/`, published images
+(site/public/images/), the SQLite file, and the generated JSON/GeoJSON
+(venues.json, venues.geojson, forewords.json — all pipeline-derived
+artefacts the build needs). `_staging/`, `_rejected/`, `temp_data/`, `.env`
+must never be tracked at all; the guard refuses to run if any of them
+somehow are (e.g. force-added by hand).
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from admin.config import ROOT
 
 ALLOWED_PREFIXES = (
     "site/src/content/spas/_published/",
+    "site/public/images/",
     "data/directory.db",
     "site/src/data/venues.json",
     "site/public/venues.geojson",
