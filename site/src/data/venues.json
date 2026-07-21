@@ -1,5 +1,32 @@
 [
   {
+    "slug": "aurora-spa-bathhouse",
+    "name": "Aurora Spa & Bathhouse",
+    "state": "VIC",
+    "suburb": "Sorrento",
+    "latitude": -38.3396,
+    "longitude": 144.7417,
+    "status": "unclaimed",
+    "summary": "Subterranean bathhouse in Sorrento running an 11-step thermal ritual, with massage and active skincare treatments using the venue's own ASPAR product line.",
+    "has_image": true,
+    "hours": null,
+    "cost": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
     "slug": "sense-of-self",
     "name": "Sense of Self",
     "state": "VIC",
