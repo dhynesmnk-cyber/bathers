@@ -6,5 +6,10 @@
       "traditional_sauna": "Victoria's bathhouse offering with a traditional sauna is, at present, a short list — Sense of Self in Collingwood standing as the single entry. A traditional sauna operates on dry or low-humidity heat, typically wood-fired or electrically heated, distinct from steam rooms or infrared cabinets. Whether the category grows is a matter of record; this page reflects what is documented now."
     },
     "state": "Victoria's bathhouse culture is modest by international measure, though it has been gathering definition in recent years. Sense of Self in Collingwood currently represents the state's indexed offering — a single venue does not make a tradition, but it marks a starting point from which the category can be tracked over time."
+  },
+  "categories": {
+    "bathhouse": "Bathhouses occupy a distinct position among bathing venues: they are typically built around communal water facilities — pools, plunge baths, steam rooms — drawing on Central European and Scandinavian bathing traditions rather than the treatment-room model of a day spa. Both Aurora Spa & Bathhouse in Sorrento and Sense of Self in Collingwood sit within this category, where the water circuit itself is the main event rather than a backdrop to bookable services.",
+    "day_spa": "Day spas sit at the practical end of the bathing spectrum — typically built around treatment rooms rather than communal pools, with an emphasis on booked sessions over open bathing time. This national listing brings together day spas from across Australia, with Chuan Spa in Southbank among those currently indexed.",
+    "thermal_springs": "Thermal springs draw water from underground — geothermal or artesian sources — and the mineral content and temperature of that water varies considerably depending on the geology of the site. Alba Thermal Springs & Spa in Fingal represents Victoria's growing interest in purpose-built bathing facilities centred on naturally sourced water, a form of bathing with a long European and Japanese precedent that has taken root more recently in the Australian context."
   }
 }

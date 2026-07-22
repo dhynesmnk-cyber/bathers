@@ -1,8 +1,38 @@
 [
   {
+    "slug": "alba-thermal-springs-spa",
+    "name": "Alba Thermal Springs & Spa",
+    "state": "VIC",
+    "category": "thermal_springs",
+    "suburb": "Fingal",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Geothermal springs in native bushland on the Mornington Peninsula, with indoor, open-air, and botanical pools, plus treatments and on-site dining.",
+    "has_image": false,
+    "hours": "Daily 7:00 AM – 10:00 PM, closed Christmas Day",
+    "cost": null,
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
     "slug": "aurora-spa-bathhouse",
     "name": "Aurora Spa & Bathhouse",
     "state": "VIC",
+    "category": "bathhouse",
     "suburb": "Sorrento",
     "latitude": -38.3396,
     "longitude": 144.7417,
@@ -31,6 +61,7 @@
     "slug": "chuan-spa",
     "name": "Chuan Spa",
     "state": "VIC",
+    "category": "day_spa",
     "suburb": "Southbank",
     "latitude": -37.8204542,
     "longitude": 144.9657017,
@@ -56,9 +87,39 @@
     }
   },
   {
+    "slug": "peninsula-hot-springs",
+    "name": "Peninsula Hot Springs",
+    "state": "VIC",
+    "category": "thermal_springs",
+    "suburb": "Fingal",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "A sprawling geothermal bathing complex on the Mornington Peninsula with over 50 pools, saunas, cold plunges, and a hilltop pool with 360° views.",
+    "has_image": false,
+    "hours": "Daily 7am–11pm (Mon–Thu & Sun); Fri–Sat 5am–2am",
+    "cost": "Bath House Revitalise from $60–$90; all-site Reset bathing $125–$135",
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
     "slug": "sense-of-self",
     "name": "Sense of Self",
     "state": "VIC",
+    "category": "bathhouse",
     "suburb": "Collingwood",
     "latitude": -37.7965,
     "longitude": 144.9885,

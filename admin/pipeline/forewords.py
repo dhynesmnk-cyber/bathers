@@ -18,6 +18,8 @@ from typing import Any, Callable
 from admin.config import (
     AMENITY_FULL_NAMES,
     AMENITY_KEYS,
+    CATEGORY_KEYS,
+    CATEGORY_LABELS,
     FOREWORDS_JSON_PATH,
     MODEL_ARCHITECT,
     PUBLISHED_DIR,
@@ -55,6 +57,13 @@ def _venues_by_state(published_dir: Path = PUBLISHED_DIR) -> dict[str, list[dict
     return by_state
 
 
+def _venues_by_category(published_dir: Path = PUBLISHED_DIR) -> dict[str, list[dict[str, Any]]]:
+    by_category: dict[str, list[dict[str, Any]]] = {}
+    for slug, data in iter_published(published_dir):
+        by_category.setdefault(data["category"], []).append({"slug": slug, **data})
+    return by_category
+
+
 def _validate_foreword(text: str) -> str:
     text = text.strip().strip('"')
     if not text:
@@ -64,11 +73,14 @@ def _validate_foreword(text: str) -> str:
     return text
 
 
-def _generate_one(state: str, amenity_key: str | None, venues: list[dict[str, Any]], log: LogFn) -> str:
+def _generate_one(
+    state: str | None, amenity_key: str | None, venues: list[dict[str, Any]], log: LogFn, category_key: str | None = None
+) -> str:
     system = agents.load_prompt("foreword.md")
     payload = {
-        "state": STATE_NAMES[state],
+        "state": STATE_NAMES[state] if state else None,
         "amenity": AMENITY_FULL_NAMES[amenity_key] if amenity_key else None,
+        "category": CATEGORY_LABELS[category_key] if category_key else None,
         "venues": [{"name": v["name"], "suburb": v["suburb"]} for v in venues],
     }
     text, usage = agents.call_agent(
@@ -111,6 +123,17 @@ def ensure_forewords(published_dir: Path = PUBLISHED_DIR, log: LogFn = _default_
                 new_keys.append(f"{state}/{key}")
             except (agents.AgentError, agents.MalformedOutput) as exc:
                 log(f"foreword for {state}/{key} failed: {exc}", "error")
+
+    categories_entry = data.setdefault("categories", {})
+    by_category = _venues_by_category(published_dir)
+    for category, venues in by_category.items():
+        if category in categories_entry:
+            continue
+        try:
+            categories_entry[category] = _generate_one(None, None, venues, log, category_key=category)
+            new_keys.append(f"category/{category}")
+        except (agents.AgentError, agents.MalformedOutput) as exc:
+            log(f"foreword for category/{category} failed: {exc}", "error")
 
     if new_keys:
         save_forewords(data)
