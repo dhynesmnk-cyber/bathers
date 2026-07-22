@@ -1,0 +1,65 @@
+---
+// Programmatic category page (UX.md §2.3, TRD.md §4.2, 2026-07-22 addition).
+// Generated only for categories with >=1 published venue — modelled directly
+// on [state]/index.astro, but a single national list rather than per-state.
+import { getCollection } from "astro:content";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import VenueEntry from "../../../components/VenueEntry.astro";
+import { CATEGORIES, CATEGORY_LABELS, STATE_NAMES, categoryUrlSlug } from "../../../config";
+import forewords from "../../../data/forewords.json";
+
+export async function getStaticPaths() {
+  const venues = await getCollection("spas");
+  const categories = CATEGORIES.filter((category) => venues.some((v) => v.data.category === category));
+  return categories.map((category) => ({
+    params: { category: categoryUrlSlug(category) },
+    props: { category, venues: venues.filter((v) => v.data.category === category) },
+  }));
+}
+
+const { category, venues } = Astro.props;
+const foreword: string = (forewords as Record<string, Record<string, string>>).categories?.[category] ?? "";
+const pageTitle = CATEGORY_LABELS[category];
+---
+
+<BaseLayout
+  title={`${pageTitle} — Bathers'`}
+  description={foreword || pageTitle}
+  canonicalPath={`/category/${categoryUrlSlug(category)}/`}
+>
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <header class="mb-16">
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
+        {pageTitle}
+      </h1>
+    </header>
+
+    {
+      foreword && (
+        <section class="reading-spine mb-16">
+          <p>{foreword}</p>
+        </section>
+      )
+    }
+
+    <section aria-labelledby="contents-heading">
+      <div class="mono mb-8 flex items-center gap-4 text-[var(--ink-faded)]">
+        <span>CONTENTS</span>
+        <span class="h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
+      </div>
+      {
+        venues.map((venue) => (
+          <VenueEntry
+            name={venue.data.name}
+            slug={venue.id}
+            suburb={venue.data.suburb}
+            state={venue.data.state}
+            summary={venue.data.summary}
+            amenities={venue.data.amenities}
+            facilities={venue.data.facilities}
+          />
+        ))
+      }
+    </section>
+  </main>
+</BaseLayout>
