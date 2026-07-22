@@ -12,6 +12,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
+import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -326,7 +327,10 @@ class DiscoverBody(BaseModel):
 def api_discover(body: DiscoverBody):
     if not places.GOOGLE_PLACES_API_KEY:
         raise HTTPException(400, "GOOGLE_PLACES_API_KEY is not set — discovery is unavailable")
-    candidates = discovery.discover_venues(body.region, body.keywords)
+    try:
+        candidates = discovery.discover_venues(body.region, body.keywords)
+    except httpx.HTTPError as exc:
+        raise HTTPException(502, f"Places API error — {exc}") from exc
     return [asdict(c) for c in candidates]
 
 

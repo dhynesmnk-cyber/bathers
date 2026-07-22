@@ -13,8 +13,6 @@ import time
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
-import httpx
-
 from admin.config import PUBLISHED_DIR, STAGING_DIR
 from admin.pipeline import places
 from admin.pipeline.staging import split_frontmatter
@@ -73,10 +71,7 @@ def discover_venues(region: str, keywords: list[str] | None = None) -> list[Disc
         for page_num in range(MAX_PAGES):
             if page_num > 0 and page_token:
                 time.sleep(PAGE_TOKEN_DELAY_SECONDS)
-            try:
-                raw_places, page_token = places.search_text(query, page_token=page_token)
-            except (httpx.HTTPError, ValueError):
-                break
+            raw_places, page_token = places.search_text(query, page_token=page_token)
             for place in raw_places:
                 place_id = place.get("id")
                 website = place.get("websiteUri")

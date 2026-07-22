@@ -10,18 +10,22 @@ A single-screen local web app (FastAPI + plain HTML/JS, no SPA framework). The s
 
 ```
 ┌────────────┬──────────────────────────────┬───────────────┐
-│  HARVEST   │        REVIEW QUEUE          │   REVIEW PANE │
-│  (input +  │  (staging list w/ status)    │  (selected    │
-│   live log)│                              │   item)       │
+│  DISCOVER  │        REVIEW QUEUE          │   REVIEW PANE │
+│  HARVEST   │  (staging list w/ status)    │  (selected    │
+│  (input)   │                              │   item)       │
 ├────────────┴──────────────────────────────┴───────────────┤
-│  DEPLOY (isolated footer strip)                           │
+│  PROGRESS (live log, full-width footer row)                │
+├─────────────────────────────────────────────────────────────┤
+│  DEPLOY (footer row, stacked directly below progress)      │
 └───────────────────────────────────────────────────────────┘
 ```
+
+Discover and Harvest share the leftmost column, Discover on top — it's the pre-fill step a reviewer reaches for first. The live log and the Deploy strip together form one unified footer band running the full width of the window, log row on top of the Deploy row, so pipeline output stays visible regardless of which column has focus.
 
 ### 1.1 Harvest panel
 
 - Single URL input + `Fetch venue` button. Button disables while a job runs; input stays editable so the next URL can be queued mentally, not mechanically (one job at a time — no concurrency).
-- **Live log pane** below the input. Every stage streams a line as it happens (SSE or simple polling):
+- **Live log pane** runs the full width of the window as the top row of the footer band (below the three-column layout, above the Deploy strip — not nested inside the Harvest column). Every stage streams a line as it happens (SSE or simple polling):
   ```
   12:04:11  fetching https://…                    ok (34 kB)
   12:04:13  extracting text (trafilatura)          ok (6.2 kB)
@@ -35,7 +39,7 @@ A single-screen local web app (FastAPI + plain HTML/JS, no SPA framework). The s
 
 ### 1.1a Discovery panel
 
-A pre-fill step ahead of the harvest flow above, not a replacement for it (TRD.md §8 exception — admin-side discovery only, never public-site search). Lives directly below the harvest form:
+A pre-fill step ahead of the harvest flow below, not a replacement for it (TRD.md §8 exception — admin-side discovery only, never public-site search). Lives at the top of the Harvest column, directly above the URL input — the first thing a reviewer sees there:
 
 - A state dropdown (reusing the same eight-state enum as everywhere else) and an optional free-text keyword override (defaults to `day spa, bathhouse, hot springs, thermal baths` if left blank). `Search` runs a Google Places Text Search for those terms in that state.
 - Results appear as a checked-by-default list (name + formatted address), already deduplicated against every venue currently published or staged — a venue already in the pipeline never reappears as "new."
@@ -69,7 +73,7 @@ The human-in-the-loop verification surface. Split view:
 
 ### 1.4 Deploy strip
 
-- Isolated at the footer, visually separated. Shows current git status summary: `4 files staged for publish · last deploy 2d ago`.
+- The lower row of the unified bottom footer (§1 wireframe) — the live log/progress row sits directly above it, same full-width band, visually separated from the three-column layout above by its own border. Shows current git status summary: `4 files staged for publish · last deploy 2d ago`.
 - `Deploy` button opens a **diff preview**: the exact file list to be committed. Only `_published/`, the SQLite file, and generated JSON/GeoJSON are ever committed. `_staging/`, `_rejected/`, `temp_data/`, `.env` are gitignored — the deploy script must refuse to run if any of these are somehow tracked.
 - Commit message auto-generated (`Publish: peninsula-hot-springs, aurora-spa (+2 venues)`), editable. Then `add → commit → push`, streaming output to the log pane. Push failure surfaces the actual git error, not "something went wrong."
 

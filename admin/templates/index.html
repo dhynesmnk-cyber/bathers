@@ -20,23 +20,8 @@
 
     <main class="hub-grid">
       <section class="pane harvest-pane" aria-labelledby="harvest-heading">
-        <h2 id="harvest-heading" class="mono pane-heading">HARVEST</h2>
-        <form id="harvest-form" class="harvest-form">
-          <input
-            id="harvest-url"
-            class="mono text-input"
-            type="url"
-            name="url"
-            placeholder="https://venue-site.example/"
-            required
-          />
-          <button id="harvest-submit" type="submit" class="btn btn-thermal">Fetch venue</button>
-        </form>
-        <pre id="harvest-log" class="mono harvest-log" aria-live="polite"></pre>
-        <button id="retry-playwright-btn" type="button" class="btn btn-plain" hidden>Retry with Playwright</button>
-
         <div class="discovery-section">
-          <h3 class="mono pane-heading">DISCOVER</h3>
+          <h2 class="mono pane-heading">DISCOVER</h2>
           <form id="discover-form" class="discover-form">
             <select id="discover-region" class="mono text-input">
               {% for state in states %}
@@ -55,6 +40,19 @@
           <p id="discover-empty" class="mono empty-state" hidden>No new candidates found.</p>
           <button id="discover-queue-btn" type="button" class="btn btn-thermal" hidden>Queue selected</button>
         </div>
+
+        <h2 id="harvest-heading" class="mono pane-heading">HARVEST</h2>
+        <form id="harvest-form" class="harvest-form">
+          <input
+            id="harvest-url"
+            class="mono text-input"
+            type="url"
+            name="url"
+            placeholder="https://venue-site.example/"
+            required
+          />
+          <button id="harvest-submit" type="submit" class="btn btn-thermal">Fetch venue</button>
+        </form>
       </section>
 
       <section class="pane queue-pane" aria-labelledby="queue-heading">
@@ -221,6 +219,11 @@
         </div>
       </section>
     </main>
+
+    <div class="progress-strip">
+      <pre id="harvest-log" class="mono harvest-log" aria-live="polite"></pre>
+      <button id="retry-playwright-btn" type="button" class="btn btn-plain" hidden>Retry with Playwright</button>
+    </div>
 
     <footer class="deploy-strip" aria-labelledby="deploy-heading">
       <h2 id="deploy-heading" class="mono pane-heading">DEPLOY</h2>
