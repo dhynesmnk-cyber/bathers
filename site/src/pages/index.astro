@@ -12,15 +12,20 @@ const byState = STATES.map((state) => ({
   venues: venues.filter((v) => v.data.state === state),
 })).filter((group) => group.venues.length > 0);
 
-const markers = venues.map((v) => ({
-  slug: v.id,
-  name: v.data.name,
-  suburb: v.data.suburb,
-  state: v.data.state,
-  latitude: v.data.latitude,
-  longitude: v.data.longitude,
-  amenities: v.data.amenities,
-}));
+// Venues with no geocoded coordinate (SCHEMA.md §2 — geocoding found no
+// address match) simply don't get a map marker; they still appear in the
+// state contents list below.
+const markers = venues
+  .filter((v) => v.data.latitude != null && v.data.longitude != null)
+  .map((v) => ({
+    slug: v.id,
+    name: v.data.name,
+    suburb: v.data.suburb,
+    state: v.data.state,
+    latitude: v.data.latitude as number,
+    longitude: v.data.longitude as number,
+    amenities: v.data.amenities,
+  }));
 ---
 
 <BaseLayout

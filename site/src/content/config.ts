@@ -1,6 +1,6 @@
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
-import { AMENITY_KEYS, AU_LATITUDE_BOUNDS, AU_LONGITUDE_BOUNDS, FACILITY_KEYS, STATES } from "../config";
+import { AMENITY_KEYS, AU_LATITUDE_BOUNDS, AU_LONGITUDE_BOUNDS, CATEGORIES, FACILITY_KEYS, STATES } from "../config";
 
 // Mirrors SCHEMA.md §2 exactly. Any change to this file must be propagated
 // to the SQLite schema, the Harvester JSON contract, and the admin
@@ -36,10 +36,11 @@ const spasCollection = defineCollection({
     .object({
       name: z.string(),
       state: z.enum(STATES),
+      category: z.enum(CATEGORIES),
       suburb: z.string(),
       address: z.string(),
-      latitude: z.number().min(AU_LATITUDE_BOUNDS.min).max(AU_LATITUDE_BOUNDS.max),
-      longitude: z.number().min(AU_LONGITUDE_BOUNDS.min).max(AU_LONGITUDE_BOUNDS.max),
+      latitude: z.number().min(AU_LATITUDE_BOUNDS.min).max(AU_LATITUDE_BOUNDS.max).nullable().optional(),
+      longitude: z.number().min(AU_LONGITUDE_BOUNDS.min).max(AU_LONGITUDE_BOUNDS.max).nullable().optional(),
       website: z.string().url(),
       amenities: amenitiesSchema,
       facilities: facilitiesSchema,
@@ -49,6 +50,7 @@ const spasCollection = defineCollection({
       status: z.enum(["unclaimed", "claimed"]).default("unclaimed"),
       summary: z.string().max(160),
       drafted: z.date(),
+      verified: z.date(),
       source_url: z.string().url(),
       image: z.string().optional(),
       image_source: z.string().url().optional(),

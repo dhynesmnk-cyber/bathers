@@ -7,8 +7,8 @@ import { AMENITY_KEYS, AMENITY_NOTATION, FACILITY_KEYS, FACILITY_LABELS } from "
 import type { IconKey } from "../icons/paths";
 
 interface Props {
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | null;
+  longitude?: number | null;
   state: string;
   amenities: Record<(typeof AMENITY_KEYS)[number], boolean>;
   facilities?: Partial<Record<(typeof FACILITY_KEYS)[number], boolean>>;
@@ -19,8 +19,8 @@ interface Props {
 
 const { latitude, longitude, state, amenities, facilities, hours, cost, compact = false } = Astro.props;
 
-const latLabel = latitude !== undefined ? `${Math.abs(latitude).toFixed(4)}° S` : null;
-const lngLabel = longitude !== undefined ? `${longitude.toFixed(4)}° E` : null;
+const latLabel = latitude != null ? `${Math.abs(latitude).toFixed(4)}° S` : null;
+const lngLabel = longitude != null ? `${longitude.toFixed(4)}° E` : null;
 
 const presentAmenities = AMENITY_KEYS.filter((key) => amenities[key]);
 const presentFacilities = FACILITY_KEYS.filter((key) => facilities?.[key]);

@@ -35,6 +35,18 @@ export const FACILITY_LABELS: Record<(typeof FACILITY_KEYS)[number], string> = {
   wheelchair_access: "Wheelchair access",
 };
 
+// Venue categories (2026-07-22 addition — see SCHEMA.md §2). Values match the
+// discovery-keyword vocabulary already in use (UX.md §1.1): "day spa,
+// bathhouse, hot springs, thermal baths".
+export const CATEGORIES = ["thermal_springs", "bathhouse", "day_spa", "other"] as const;
+
+export const CATEGORY_LABELS: Record<(typeof CATEGORIES)[number], string> = {
+  thermal_springs: "Thermal springs",
+  bathhouse: "Bathhouse",
+  day_spa: "Day spa",
+  other: "Other",
+};
+
 export const STATES = ["VIC", "NSW", "QLD", "SA", "WA", "TAS", "NT", "ACT"] as const;
 
 export const STATE_NAMES: Record<(typeof STATES)[number], string> = {
@@ -58,6 +70,15 @@ export function amenityUrlSlug(key: (typeof AMENITY_KEYS)[number]): string {
 
 export function amenityFromUrlSlug(segment: string): (typeof AMENITY_KEYS)[number] | undefined {
   return AMENITY_KEYS.find((key) => amenityUrlSlug(key) === segment);
+}
+
+// Category keys are snake_case (SCHEMA.md §2); URL path segments use kebab-case.
+export function categoryUrlSlug(key: (typeof CATEGORIES)[number]): string {
+  return key.replace(/_/g, "-");
+}
+
+export function categoryFromUrlSlug(segment: string): (typeof CATEGORIES)[number] | undefined {
+  return CATEGORIES.find((key) => categoryUrlSlug(key) === segment);
 }
 
 // Blog video embeds (2026-07-21 addition) — external embeds only (YouTube/
