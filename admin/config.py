@@ -52,6 +52,7 @@ FAILED_DIR = TEMP_DATA_DIR / "failed"
 PLACES_DIR = TEMP_DATA_DIR / "places"
 GOATCOUNTER_CACHE_DIR = TEMP_DATA_DIR / "goatcounter"
 BLOG_IMAGES_TEMP_DIR = TEMP_DATA_DIR / "blog_images"
+GEOCODE_CACHE_PATH = TEMP_DATA_DIR / "geocode_cache.json"  # 2026-07-22 — see geocode.py
 
 PROMPTS_DIR = ROOT / "PROMPTS"
 
@@ -93,6 +94,16 @@ AMENITY_KEYS = (
     "cold_plunge",
     "led_therapy",
 )
+
+# Venue categories (2026-07-22 addition) — see SCHEMA.md §2.
+CATEGORY_KEYS = ("thermal_springs", "bathhouse", "day_spa", "other")
+
+CATEGORY_LABELS = {
+    "thermal_springs": "Thermal springs",
+    "bathhouse": "Bathhouse",
+    "day_spa": "Day spa",
+    "other": "Other",
+}
 
 STATES = ("VIC", "NSW", "QLD", "SA", "WA", "TAS", "NT", "ACT")
 

@@ -1,8 +1,6 @@
 (() => {
   "use strict";
 
-  const AU_LAT = { min: -44.0, max: -9.0 };
-  const AU_LNG = { min: 112.0, max: 154.0 };
   const AMENITY_KEYS = ["magnesium_pool", "infrared_sauna", "traditional_sauna", "cold_plunge", "led_therapy"];
   const FACILITY_KEYS = ["parking", "towels_provided", "changerooms", "bookings_required", "wheelchair_access"];
   const UNDO_SECONDS = 3;
@@ -22,10 +20,9 @@
   const previewFrame = el("preview-frame");
   const fieldName = el("field-name");
   const fieldState = el("field-state");
+  const fieldCategory = el("field-category");
   const fieldSuburb = el("field-suburb");
   const fieldAddress = el("field-address");
-  const fieldLat = el("field-latitude");
-  const fieldLng = el("field-longitude");
   const fieldWebsite = el("field-website");
   const fieldSummary = el("field-summary");
   const fieldSourceUrl = el("field-source-url");
@@ -34,7 +31,6 @@
   const fieldAccess = el("field-access");
   const fieldErrorsEl = el("field-errors");
   const saveStatusEl = el("save-status");
-  const coordPin = el("coord-pin");
   const placesCheckEl = el("places-check");
   const actionButtons = el("action-buttons");
   const approveBtn = el("approve-btn");
@@ -169,10 +165,9 @@
     const fm = entry.frontmatter || {};
     fieldName.value = fm.name || "";
     fieldState.value = fm.state || "";
+    fieldCategory.value = fm.category || "";
     fieldSuburb.value = fm.suburb || "";
     fieldAddress.value = fm.address || "";
-    fieldLat.value = fm.latitude ?? "";
-    fieldLng.value = fm.longitude ?? "";
     fieldWebsite.value = fm.website || "";
     fieldSummary.value = fm.summary || "";
     fieldSourceUrl.value = fm.source_url || "";
@@ -187,7 +182,6 @@
     document.querySelectorAll(".toggle-chip[data-facility]").forEach((btn) => {
       btn.classList.toggle("active", !!facilities[btn.dataset.facility]);
     });
-    updateCoordPin(fm.latitude, fm.longitude);
     renderFieldErrors(entry.errors || []);
     renderImageSection(entry);
     renderPlacesCheck(entry.places_check);
@@ -363,33 +357,12 @@
     commitFaqChange();
   });
 
-  function updateCoordPin(lat, lng) {
-    if (lat === null || lat === undefined || lng === null || lng === undefined || lat === "" || lng === "") {
-      coordPin.setAttribute("cx", "-10");
-      coordPin.setAttribute("cy", "-10");
-      return;
-    }
-    lat = Number(lat);
-    lng = Number(lng);
-    const latFrac = (lat - AU_LAT.max) / (AU_LAT.min - AU_LAT.max);
-    const lngFrac = (lng - AU_LNG.min) / (AU_LNG.max - AU_LNG.min);
-    const clampedLatFrac = Math.min(1, Math.max(0, latFrac));
-    const clampedLngFrac = Math.min(1, Math.max(0, lngFrac));
-    const x = 4 + clampedLngFrac * 152;
-    const y = 4 + clampedLatFrac * 132;
-    coordPin.setAttribute("cx", String(x));
-    coordPin.setAttribute("cy", String(y));
-    const outOfBounds = latFrac < 0 || latFrac > 1 || lngFrac < 0 || lngFrac > 1;
-    coordPin.style.fill = outOfBounds ? "var(--oxide)" : "var(--thermal)";
-  }
-
   const FIELD_INPUT_MAP = {
     name: fieldName,
     state: fieldState,
+    category: fieldCategory,
     suburb: fieldSuburb,
     address: fieldAddress,
-    latitude: fieldLat,
-    longitude: fieldLng,
     website: fieldWebsite,
     summary: fieldSummary,
     source_url: fieldSourceUrl,
@@ -443,6 +416,7 @@
 
   fieldName.addEventListener("input", () => queuePatch("name", fieldName.value));
   fieldState.addEventListener("change", () => queuePatch("state", fieldState.value));
+  fieldCategory.addEventListener("change", () => queuePatch("category", fieldCategory.value));
   fieldSuburb.addEventListener("input", () => queuePatch("suburb", fieldSuburb.value));
   fieldAddress.addEventListener("input", () => queuePatch("address", fieldAddress.value));
   fieldWebsite.addEventListener("input", () => queuePatch("website", fieldWebsite.value));
@@ -451,16 +425,6 @@
   fieldHours.addEventListener("input", () => queuePatch("hours", fieldHours.value));
   fieldCost.addEventListener("input", () => queuePatch("cost", fieldCost.value));
   fieldAccess.addEventListener("input", () => queuePatch("access", fieldAccess.value));
-  fieldLat.addEventListener("input", () => {
-    const v = fieldLat.value === "" ? null : Number(fieldLat.value);
-    updateCoordPin(v, fieldLng.value === "" ? null : Number(fieldLng.value));
-    queuePatch("latitude", v);
-  });
-  fieldLng.addEventListener("input", () => {
-    const v = fieldLng.value === "" ? null : Number(fieldLng.value);
-    updateCoordPin(fieldLat.value === "" ? null : Number(fieldLat.value), v);
-    queuePatch("longitude", v);
-  });
 
   document.querySelectorAll(".toggle-chip[data-amenity]").forEach((btn) => {
     btn.addEventListener("click", () => {

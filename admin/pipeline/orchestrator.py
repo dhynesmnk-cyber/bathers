@@ -96,6 +96,7 @@ def _finalize_frontmatter(gate_fm: dict, harvester_data: dict, coords: tuple[flo
         # page from `url`, the same assumption already made for source_url.
         final["website"] = url
     final["drafted"] = datetime.date.today()
+    final["verified"] = datetime.date.today()
     final.setdefault("status", "unclaimed")
     # Amenities are the Harvester's finding, not the Architect/Gatekeeper's —
     # enforce that rather than trusting it survived two rewrite passes intact.
@@ -207,7 +208,13 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False, allow_existing_
         yield from drain()
 
     places_result = places.check_listing(name, harvester_data.get("suburb"), harvester_data.get("state"))
-    places.save_check(slug, places_result)
+    # Google's Place ID is stable across harvest runs even when the Harvester
+    # extracts a different display name (and therefore a different slug) for
+    # the same physical venue — key temp_data storage on it when available so
+    # a later re-harvest doesn't orphan the first run's Places/image data.
+    image_key = places_result.place_id if (places_result.found and places_result.place_id) else slug
+    places.record_slug_key(slug, image_key)
+    places.save_check(image_key, places_result)
     if places_result.skipped:
         log("Google Places check skipped — GOOGLE_PLACES_API_KEY not set")
     elif places_result.error:
@@ -292,9 +299,10 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False, allow_existing_
         log(f"Google Places supplied {len(places_result.photos)} candidate photo(s)")
         yield from drain()
     if candidate_urls:
-        candidates = images.download_candidates(candidate_urls, slug, attributions=attributions)
+        images.record_slug_key(slug, image_key)
+        candidates = images.download_candidates(candidate_urls, image_key, attributions=attributions)
         if candidates:
-            log(f"downloaded {len(candidates)} candidate image(s) → temp_data/images/{slug}/")
+            log(f"downloaded {len(candidates)} candidate image(s) → temp_data/images/{image_key}/")
             yield from drain()
 
 

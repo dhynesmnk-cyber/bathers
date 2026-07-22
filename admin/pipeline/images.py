@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from html.parser import HTMLParser
+from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 
 import httpx
@@ -93,11 +94,36 @@ def discover_image_urls(html: str, base_url: str) -> list[str]:
     return urls
 
 
+_SLUG_INDEX_PATH = IMAGES_DIR / "_slug_index.json"
+
+
+def record_slug_key(slug: str, key: str) -> None:
+    """See places.record_slug_key — same mechanism, kept as a separate index
+    since images and Places checks are cleaned up independently."""
+    if slug == key:
+        return
+    IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+    index = json.loads(_SLUG_INDEX_PATH.read_text(encoding="utf-8")) if _SLUG_INDEX_PATH.exists() else {}
+    index[slug] = key
+    _SLUG_INDEX_PATH.write_text(json.dumps(index, indent=2), encoding="utf-8")
+
+
+def resolve_key(slug: str) -> str:
+    if not _SLUG_INDEX_PATH.exists():
+        return slug
+    index = json.loads(_SLUG_INDEX_PATH.read_text(encoding="utf-8"))
+    return index.get(slug, slug)
+
+
+def resolve_image_dir(slug: str) -> Path:
+    return IMAGES_DIR / resolve_key(slug)
+
+
 def download_candidates(
-    urls: list[str], slug: str, attributions: dict[str, str] | None = None
+    urls: list[str], key: str, attributions: dict[str, str] | None = None
 ) -> list[Candidate]:
-    slug_dir = IMAGES_DIR / slug
-    slug_dir.mkdir(parents=True, exist_ok=True)
+    key_dir = IMAGES_DIR / key
+    key_dir.mkdir(parents=True, exist_ok=True)
     attributions = attributions or {}
     candidates: list[Candidate] = []
     for url in urls:
@@ -112,19 +138,19 @@ def download_candidates(
             ext = content_type.split("/")[-1].split(";")[0] or "jpg"
             index = len(candidates)
             filename = f"{index}.{ext}"
-            (slug_dir / filename).write_bytes(response.content)
+            (key_dir / filename).write_bytes(response.content)
             candidates.append(
                 Candidate(index=index, filename=filename, source_url=url, attribution=attributions.get(url))
             )
         except httpx.HTTPError:
             continue
-    manifest = {"slug": slug, "candidates": [c.__dict__ for c in candidates]}
-    (slug_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    manifest = {"slug": key, "candidates": [c.__dict__ for c in candidates]}
+    (key_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return candidates
 
 
 def list_candidates(slug: str) -> list[Candidate]:
-    manifest_path = IMAGES_DIR / slug / "manifest.json"
+    manifest_path = resolve_image_dir(slug) / "manifest.json"
     if not manifest_path.exists():
         return []
     data = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -139,7 +165,7 @@ def publish_image(slug: str, candidate_index: int, caption: str) -> dict[str, st
     if candidate is None:
         raise FileNotFoundError(f"no candidate {candidate_index} for {slug}")
 
-    source_path = IMAGES_DIR / slug / candidate.filename
+    source_path = resolve_image_dir(slug) / candidate.filename
     SITE_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
     dest_path = SITE_IMAGES_DIR / f"{slug}.webp"
 

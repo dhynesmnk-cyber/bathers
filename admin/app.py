@@ -22,7 +22,7 @@ from starlette.requests import Request
 from admin.config import (
     ADMIN_PASSWORD,
     ADMIN_USERNAME,
-    IMAGES_DIR,
+    CATEGORY_LABELS,
     SITE_BLOG_IMAGES_DIR,
     SITE_DIST_DIR,
     SITE_FONTS_DIR,
@@ -40,8 +40,10 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 app = FastAPI(title="Bathers' Admin")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="admin-static")
-if SITE_DIST_DIR.exists():
-    app.mount("/site-dist", StaticFiles(directory=str(SITE_DIST_DIR)), name="site-dist")
+# Mounted unconditionally (dir created if missing) so a later `npm run build`
+# becomes visible on the next request with no admin restart required.
+SITE_DIST_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/site-dist", StaticFiles(directory=str(SITE_DIST_DIR)), name="site-dist")
 if SITE_FONTS_DIR.exists():
     app.mount("/fonts", StaticFiles(directory=str(SITE_FONTS_DIR)), name="admin-fonts")
 SITE_BLOG_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
@@ -68,13 +70,11 @@ async def require_basic_auth(request: Request, call_next):
     return await call_next(request)
 
 
-def _site_css_href() -> str | None:
-    if not SITE_DIST_DIR.exists():
-        return None
-    matches = sorted((SITE_DIST_DIR / "_astro").glob("*.css")) if (SITE_DIST_DIR / "_astro").exists() else []
-    if not matches:
-        return None
-    return f"/site-dist/_astro/{matches[0].name}"
+def _site_css_hrefs() -> list[str]:
+    astro_dir = SITE_DIST_DIR / "_astro"
+    if not astro_dir.exists():
+        return []
+    return [f"/site-dist/_astro/{path.name}" for path in sorted(astro_dir.glob("*.css"))]
 
 
 def _entry_summary(entry: staging.StagingEntry) -> dict[str, Any]:
@@ -114,7 +114,7 @@ def _entry_detail(entry: staging.StagingEntry) -> dict[str, Any]:
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
-    return templates.TemplateResponse(request, "index.html", {"states": STATES})
+    return templates.TemplateResponse(request, "index.html", {"states": STATES, "categories": CATEGORY_LABELS})
 
 
 @app.get("/blog", response_class=HTMLResponse)
@@ -134,7 +134,7 @@ def preview(request: Request, slug: str):
         {
             "data": entry.frontmatter,
             "body_html": render_body_html(entry.body),
-            "css_href": _site_css_href(),
+            "css_hrefs": _site_css_hrefs(),
         },
     )
 
@@ -236,7 +236,7 @@ def api_image_file(slug: str, index: int):
     candidate = next((c for c in images.list_candidates(slug) if c.index == index), None)
     if candidate is None:
         raise HTTPException(404, "no such candidate image")
-    path = IMAGES_DIR / slug / candidate.filename
+    path = images.resolve_image_dir(slug) / candidate.filename
     if not path.exists():
         raise HTTPException(404, "candidate image file missing")
     return FileResponse(path)

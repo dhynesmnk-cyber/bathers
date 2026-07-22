@@ -27,16 +27,17 @@ from admin.config import (
     VENUES_JSON_PATH,
 )
 
-REQUIRED_FIELDS = ("name", "state", "suburb", "latitude", "longitude", "summary", "amenities")
+REQUIRED_FIELDS = ("name", "state", "category", "suburb", "summary", "amenities")
 
 SCHEMA_SQL = """
 CREATE TABLE venues (
   slug TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   state TEXT NOT NULL,
+  category TEXT NOT NULL,
   suburb TEXT NOT NULL,
-  latitude REAL NOT NULL,
-  longitude REAL NOT NULL,
+  latitude REAL,
+  longitude REAL,
   status TEXT NOT NULL DEFAULT 'unclaimed',
   summary TEXT NOT NULL,
   has_image INTEGER NOT NULL DEFAULT 0,
@@ -98,10 +99,10 @@ def create_schema(conn: sqlite3.Connection) -> None:
 def upsert_venue(conn: sqlite3.Connection, slug: str, data: dict[str, Any]) -> None:
     conn.execute(
         """
-        INSERT INTO venues (slug, name, state, suburb, latitude, longitude, status, summary, has_image, hours, cost, access)
-        VALUES (:slug, :name, :state, :suburb, :latitude, :longitude, :status, :summary, :has_image, :hours, :cost, :access)
+        INSERT INTO venues (slug, name, state, category, suburb, latitude, longitude, status, summary, has_image, hours, cost, access)
+        VALUES (:slug, :name, :state, :category, :suburb, :latitude, :longitude, :status, :summary, :has_image, :hours, :cost, :access)
         ON CONFLICT(slug) DO UPDATE SET
-          name = excluded.name, state = excluded.state, suburb = excluded.suburb,
+          name = excluded.name, state = excluded.state, category = excluded.category, suburb = excluded.suburb,
           latitude = excluded.latitude, longitude = excluded.longitude,
           status = excluded.status, summary = excluded.summary, has_image = excluded.has_image,
           hours = excluded.hours, cost = excluded.cost, access = excluded.access
@@ -110,9 +111,10 @@ def upsert_venue(conn: sqlite3.Connection, slug: str, data: dict[str, Any]) -> N
             "slug": slug,
             "name": data["name"],
             "state": data["state"],
+            "category": data["category"],
             "suburb": data["suburb"],
-            "latitude": data["latitude"],
-            "longitude": data["longitude"],
+            "latitude": data.get("latitude"),
+            "longitude": data.get("longitude"),
             "status": data.get("status", "unclaimed"),
             "summary": data["summary"],
             "has_image": 1 if data.get("image") else 0,
@@ -156,7 +158,7 @@ def upsert_venue(conn: sqlite3.Connection, slug: str, data: dict[str, Any]) -> N
 def fetch_all_venues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     rows = conn.execute(
         """
-        SELECT v.slug, v.name, v.state, v.suburb, v.latitude, v.longitude,
+        SELECT v.slug, v.name, v.state, v.category, v.suburb, v.latitude, v.longitude,
                v.status, v.summary, v.has_image, v.hours, v.cost, v.access,
                a.magnesium_pool, a.infrared_sauna, a.traditional_sauna, a.cold_plunge, a.led_therapy,
                f.parking, f.towels_provided, f.changerooms, f.bookings_required, f.wheelchair_access
@@ -168,7 +170,7 @@ def fetch_all_venues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     ).fetchall()
     venues = []
     for (
-        slug, name, state, suburb, latitude, longitude, status, summary, has_image, hours, cost, access,
+        slug, name, state, category, suburb, latitude, longitude, status, summary, has_image, hours, cost, access,
         mg, ir, sa, cp, led,
         parking, towels, changerooms, bookings, wheelchair,
     ) in rows:
@@ -177,6 +179,7 @@ def fetch_all_venues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
                 "slug": slug,
                 "name": name,
                 "state": state,
+                "category": category,
                 "suburb": suburb,
                 "latitude": latitude,
                 "longitude": longitude,
@@ -211,6 +214,9 @@ def write_venues_json(venues: list[dict[str, Any]], path: Path) -> None:
 
 
 def write_venues_geojson(venues: list[dict[str, Any]], path: Path) -> None:
+    # A null coordinate (geocoding found no match, SCHEMA.md §2) means "no map
+    # marker" — a Point with a null coordinate is invalid GeoJSON, so those
+    # venues are omitted here entirely; they still appear in venues.json.
     geojson = {
         "type": "FeatureCollection",
         "features": [
@@ -221,6 +227,7 @@ def write_venues_geojson(venues: list[dict[str, Any]], path: Path) -> None:
                     "slug": v["slug"],
                     "name": v["name"],
                     "state": v["state"],
+                    "category": v["category"],
                     "suburb": v["suburb"],
                     "status": v["status"],
                     "summary": v["summary"],
@@ -230,6 +237,7 @@ def write_venues_geojson(venues: list[dict[str, Any]], path: Path) -> None:
                 },
             }
             for v in venues
+            if v["latitude"] is not None and v["longitude"] is not None
         ],
     }
     path.parent.mkdir(parents=True, exist_ok=True)

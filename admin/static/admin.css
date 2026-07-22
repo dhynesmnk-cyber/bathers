@@ -354,26 +354,6 @@ textarea.text-input {
   resize: vertical;
 }
 
-.coord-thumb {
-  width: 100%;
-  max-width: 220px;
-  margin-bottom: 0.75rem;
-}
-
-.coord-box {
-  fill: var(--paper-raised);
-  stroke: color-mix(in srgb, var(--ink-faded) 40%, transparent);
-}
-
-.coord-label {
-  fill: var(--ink-faded);
-  font-size: 8px;
-}
-
-.coord-pin {
-  fill: var(--thermal);
-}
-
 .amenity-toggles {
   border: none;
   padding: 0;

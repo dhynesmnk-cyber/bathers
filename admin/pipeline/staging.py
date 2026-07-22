@@ -22,8 +22,8 @@ from admin.pipeline import data_store, forewords, images, places
 from admin.schema import FieldError, count_prose_words, staging_status, validate_frontmatter
 
 FRONTMATTER_FIELD_ORDER = (
-    "name", "state", "suburb", "address", "latitude", "longitude", "website",
-    "amenities", "facilities", "hours", "cost", "status", "summary", "drafted", "source_url",
+    "name", "state", "category", "suburb", "address", "latitude", "longitude", "website",
+    "amenities", "facilities", "hours", "cost", "access", "status", "summary", "drafted", "verified", "source_url",
     "image", "image_source", "image_caption", "faq",
 )
 AMENITY_FIELD_ORDER = (

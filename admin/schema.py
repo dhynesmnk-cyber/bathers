@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
-from admin.config import AMENITY_KEYS, FACILITY_KEYS, STATES
+from admin.config import AMENITY_KEYS, CATEGORY_KEYS, FACILITY_KEYS, STATES
 
 AU_LATITUDE_BOUNDS = (-44.0, -9.0)
 AU_LONGITUDE_BOUNDS = (112.0, 154.0)
@@ -58,17 +58,26 @@ def validate_frontmatter(data: dict[str, Any]) -> list[FieldError]:
     if state not in STATES:
         errors.append(FieldError("state", f"state must be one of {', '.join(STATES)}"))
 
+    category = data.get("category")
+    if category not in CATEGORY_KEYS:
+        errors.append(FieldError("category", f"category must be one of {', '.join(CATEGORY_KEYS)}"))
+
+    # 2026-07-22: no longer required — null means "geocoding found no match,
+    # venue excluded from the map only" (SCHEMA.md §2). Still bounds-checked
+    # when present, as defense-in-depth on the auto-geocoded value.
     latitude = data.get("latitude")
-    if not _is_number(latitude):
-        errors.append(FieldError("latitude", "latitude is required and must be a number"))
-    elif not (AU_LATITUDE_BOUNDS[0] <= latitude <= AU_LATITUDE_BOUNDS[1]):
-        errors.append(FieldError("latitude", "latitude out of range for AU"))
+    if latitude is not None:
+        if not _is_number(latitude):
+            errors.append(FieldError("latitude", "latitude must be a number"))
+        elif not (AU_LATITUDE_BOUNDS[0] <= latitude <= AU_LATITUDE_BOUNDS[1]):
+            errors.append(FieldError("latitude", "latitude out of range for AU"))
 
     longitude = data.get("longitude")
-    if not _is_number(longitude):
-        errors.append(FieldError("longitude", "longitude is required and must be a number"))
-    elif not (AU_LONGITUDE_BOUNDS[0] <= longitude <= AU_LONGITUDE_BOUNDS[1]):
-        errors.append(FieldError("longitude", "longitude out of range for AU"))
+    if longitude is not None:
+        if not _is_number(longitude):
+            errors.append(FieldError("longitude", "longitude must be a number"))
+        elif not (AU_LONGITUDE_BOUNDS[0] <= longitude <= AU_LONGITUDE_BOUNDS[1]):
+            errors.append(FieldError("longitude", "longitude out of range for AU"))
 
     for field in URL_FIELDS:
         value = data.get(field)
@@ -125,6 +134,11 @@ def validate_frontmatter(data: dict[str, Any]) -> list[FieldError]:
     if not isinstance(drafted_str, str) or not _DATE_RE.match(drafted_str):
         errors.append(FieldError("drafted", "drafted must be a date (YYYY-MM-DD)"))
 
+    verified = data.get("verified")
+    verified_str = verified.isoformat() if isinstance(verified, date) else verified
+    if not isinstance(verified_str, str) or not _DATE_RE.match(verified_str):
+        errors.append(FieldError("verified", "verified must be a date (YYYY-MM-DD)"))
+
     image = data.get("image")
     if image:
         if not _is_url(data.get("image_source")):
@@ -151,8 +165,8 @@ def validate_frontmatter(data: dict[str, Any]) -> list[FieldError]:
                     errors.append(FieldError("faq", f"faq[{i}].answer is required"))
 
     known_fields = {
-        "name", "state", "suburb", "address", "latitude", "longitude", "website",
-        "amenities", "facilities", "hours", "cost", "access", "status", "summary", "drafted", "source_url",
+        "name", "state", "category", "suburb", "address", "latitude", "longitude", "website",
+        "amenities", "facilities", "hours", "cost", "access", "status", "summary", "drafted", "verified", "source_url",
         "image", "image_source", "image_caption", "faq",
     }
     extra_fields = [key for key in data if key not in known_fields]

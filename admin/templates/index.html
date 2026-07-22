@@ -76,14 +76,24 @@
                 <span class="mono field-label">Name</span>
                 <input id="field-name" class="text-input" type="text" data-field="name" />
               </label>
-              <label class="field">
-                <span class="mono field-label">State</span>
-                <select id="field-state" class="text-input" data-field="state">
-                  {% for state in states %}
-                  <option value="{{ state }}">{{ state }}</option>
-                  {% endfor %}
-                </select>
-              </label>
+              <div class="field-row">
+                <label class="field">
+                  <span class="mono field-label">State</span>
+                  <select id="field-state" class="text-input" data-field="state">
+                    {% for state in states %}
+                    <option value="{{ state }}">{{ state }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label class="field">
+                  <span class="mono field-label">Category</span>
+                  <select id="field-category" class="text-input" data-field="category">
+                    {% for key, label in categories.items() %}
+                    <option value="{{ key }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+              </div>
               <div class="field-row">
                 <label class="field">
                   <span class="mono field-label">Suburb</span>
@@ -94,24 +104,6 @@
                   <input id="field-address" class="text-input" type="text" data-field="address" />
                 </label>
               </div>
-              <div class="field-row">
-                <label class="field">
-                  <span class="mono field-label">Latitude</span>
-                  <input id="field-latitude" class="text-input mono" type="number" step="any" data-field="latitude" />
-                </label>
-                <label class="field">
-                  <span class="mono field-label">Longitude</span>
-                  <input id="field-longitude" class="text-input mono" type="number" step="any" data-field="longitude" />
-                </label>
-              </div>
-              <svg id="coord-thumb" class="coord-thumb" viewBox="0 0 160 140" aria-hidden="true">
-                <rect x="4" y="4" width="152" height="132" class="coord-box" />
-                <text x="8" y="16" class="mono coord-label">-9°</text>
-                <text x="8" y="132" class="mono coord-label">-44°</text>
-                <text x="4" y="140" class="mono coord-label" text-anchor="start">112°E</text>
-                <text x="156" y="140" class="mono coord-label" text-anchor="end">154°E</text>
-                <circle id="coord-pin" class="coord-pin" r="4" cx="-10" cy="-10" />
-              </svg>
 
               <fieldset class="field amenity-toggles">
                 <legend class="mono field-label">Amenities</legend>

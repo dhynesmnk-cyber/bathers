@@ -9,6 +9,13 @@ A venue with no discoverable listing is not treated as "doesn't exist" if
 the check itself failed (network error, bad response) — only a confirmed
 empty result flags it. This mirrors the Gatekeeper's own rule: never invent
 a negative finding from an inconclusive one.
+
+rating/userRatingCount/reviews (2026-07-22) ride the same call and feed the
+Architect's optional review-signal sentence (PROMPTS/architect.md, SCHEMA.md
+§4) — note `places.reviews` is a higher-cost field on top of the base Places
+Text Search call, and carries its own Places API attribution/display terms
+distinct from the basic fields above; this was a deliberate, confirmed
+trade-off, not an oversight.
 """
 
 from __future__ import annotations
@@ -32,10 +39,15 @@ FIELD_MASK = ",".join(
         "places.websiteUri",
         "places.googleMapsUri",
         "places.photos",
+        "places.primaryType",
+        "places.rating",
+        "places.userRatingCount",
+        "places.reviews",
     ]
 )
 REQUEST_TIMEOUT = 10.0
 MAX_CANDIDATE_PHOTOS = 5  # matches images.MAX_CANDIDATES — combined pool is capped there
+MAX_REVIEW_SNIPPETS = 3  # rating/count/reviews are a higher-cost Places SKU — kept terse
 
 
 @dataclass
@@ -48,6 +60,7 @@ class PlacesPhoto:
 class PlacesResult:
     skipped: bool
     found: bool
+    place_id: str | None = None
     name: str | None = None
     formatted_address: str | None = None
     phone: str | None = None
@@ -55,6 +68,10 @@ class PlacesResult:
     website: str | None = None
     maps_url: str | None = None
     photos: list[PlacesPhoto] | None = None
+    primary_type: str | None = None
+    rating: float | None = None
+    user_rating_count: int | None = None
+    reviews: list[str] | None = None  # snippet text only — no reviewer names/photos carried
     error: str | None = None
 
 
@@ -96,6 +113,15 @@ def _photos_from_place(place: dict) -> list[PlacesPhoto]:
     return photos
 
 
+def _review_snippets(place: dict) -> list[str] | None:
+    snippets = []
+    for review in (place.get("reviews") or [])[:MAX_REVIEW_SNIPPETS]:
+        text = ((review.get("text") or {}).get("text") or "").strip()
+        if text:
+            snippets.append(text)
+    return snippets or None
+
+
 def check_listing(name: str, suburb: str | None, state: str | None) -> PlacesResult:
     if not GOOGLE_PLACES_API_KEY:
         return PlacesResult(skipped=True, found=False)
@@ -114,6 +140,7 @@ def check_listing(name: str, suburb: str | None, state: str | None) -> PlacesRes
     return PlacesResult(
         skipped=False,
         found=True,
+        place_id=place.get("id"),
         name=(place.get("displayName") or {}).get("text"),
         formatted_address=place.get("formattedAddress"),
         phone=place.get("nationalPhoneNumber"),
@@ -121,20 +148,48 @@ def check_listing(name: str, suburb: str | None, state: str | None) -> PlacesRes
         website=place.get("websiteUri"),
         maps_url=place.get("googleMapsUri"),
         photos=_photos_from_place(place) or None,
+        primary_type=place.get("primaryType"),
+        rating=place.get("rating"),
+        user_rating_count=place.get("userRatingCount"),
+        reviews=_review_snippets(place),
     )
 
 
-def _check_path(slug: str):
-    return PLACES_DIR / f"{slug}.json"
+_SLUG_INDEX_PATH = PLACES_DIR / "_slug_index.json"
 
 
-def save_check(slug: str, result: PlacesResult) -> None:
+def record_slug_key(slug: str, key: str) -> None:
+    """Remembers which storage key a content slug's Places/image data lives
+    under. The Harvester's extracted name (and therefore slug) can differ
+    between runs on the same physical venue; the key (a stable Google Place
+    ID when available) doesn't, so this is how a later slug-based lookup
+    finds data saved under an earlier run's key."""
+    if slug == key:
+        return
     PLACES_DIR.mkdir(parents=True, exist_ok=True)
-    _check_path(slug).write_text(json.dumps(asdict(result), indent=2), encoding="utf-8")
+    index = json.loads(_SLUG_INDEX_PATH.read_text(encoding="utf-8")) if _SLUG_INDEX_PATH.exists() else {}
+    index[slug] = key
+    _SLUG_INDEX_PATH.write_text(json.dumps(index, indent=2), encoding="utf-8")
+
+
+def resolve_key(slug: str) -> str:
+    if not _SLUG_INDEX_PATH.exists():
+        return slug
+    index = json.loads(_SLUG_INDEX_PATH.read_text(encoding="utf-8"))
+    return index.get(slug, slug)
+
+
+def _check_path(key: str):
+    return PLACES_DIR / f"{key}.json"
+
+
+def save_check(key: str, result: PlacesResult) -> None:
+    PLACES_DIR.mkdir(parents=True, exist_ok=True)
+    _check_path(key).write_text(json.dumps(asdict(result), indent=2), encoding="utf-8")
 
 
 def load_check(slug: str) -> PlacesResult | None:
-    path = _check_path(slug)
+    path = _check_path(resolve_key(slug))
     if not path.exists():
         return None
     data = json.loads(path.read_text(encoding="utf-8"))
