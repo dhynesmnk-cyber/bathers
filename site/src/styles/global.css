@@ -153,6 +153,15 @@ a:focus-visible {
   max-width: 65ch;
 }
 
+/* DESIGN.md §4/§5b (2026-07-22 exception) — a single hairline frame around
+   the whole page, scrolling with the content (not fixed). Same hairline
+   idiom as section dividers, just applied once at the layout level. */
+.page-frame {
+  min-height: calc(100vh - 1rem);
+  margin: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
+}
+
 .mono {
   font-family: var(--font-mono);
   font-size: 13px;

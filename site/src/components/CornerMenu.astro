@@ -1,0 +1,118 @@
+---
+// Fixed corner menu (UX.md §3 / DESIGN.md §5b, 2026-07-22 exception) — the
+// site's one deliberate departure from "never fixed, never floating".
+// Rendered once from BaseLayout so it appears on every page.
+import { getCollection } from "astro:content";
+import { CATEGORIES, CATEGORY_LABELS, STATE_NAMES, STATES, categoryUrlSlug } from "../config";
+
+const venues = await getCollection("spas");
+const presentStates = STATES.filter((state) => venues.some((v) => v.data.state === state));
+const presentCategories = CATEGORIES.filter((category) => venues.some((v) => v.data.category === category));
+---
+
+<div class="corner-menu">
+  <button
+    type="button"
+    id="corner-menu-btn"
+    class="mono corner-menu-btn"
+    aria-haspopup="true"
+    aria-expanded="false"
+    aria-controls="corner-menu-panel"
+  >
+    MENU
+  </button>
+  <nav id="corner-menu-panel" class="mono corner-menu-panel" aria-label="Site menu" hidden>
+    <a href="/">Home</a>
+    <span class="corner-menu-heading">States</span>
+    {presentStates.map((state) => <a href={`/${state.toLowerCase()}/`}>{STATE_NAMES[state]}</a>)}
+    <span class="corner-menu-heading">Categories</span>
+    {presentCategories.map((category) => <a href={`/category/${categoryUrlSlug(category)}/`}>{CATEGORY_LABELS[category]}</a>)}
+    <span class="corner-menu-heading">More</span>
+    <a href="/glossary/">Glossary</a>
+    <a href="/blog/">Journal</a>
+  </nav>
+</div>
+
+<script is:inline>
+  (function () {
+    var btn = document.getElementById("corner-menu-btn");
+    var panel = document.getElementById("corner-menu-panel");
+    if (!btn || !panel) return;
+
+    function setOpen(open) {
+      panel.hidden = !open;
+      btn.setAttribute("aria-expanded", String(open));
+    }
+
+    btn.addEventListener("click", function () {
+      setOpen(panel.hidden);
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !panel.hidden) {
+        setOpen(false);
+        btn.focus();
+      }
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!panel.hidden && e.target !== btn && !panel.contains(e.target)) {
+        setOpen(false);
+      }
+    });
+  })();
+</script>
+
+<style>
+  .corner-menu {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 60;
+  }
+
+  .corner-menu-btn {
+    background: var(--paper-raised);
+    border: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
+    color: var(--ink);
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+  }
+
+  .corner-menu-btn:hover,
+  .corner-menu-btn:focus-visible {
+    color: var(--thermal);
+  }
+
+  .corner-menu-panel {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 0.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-width: 12rem;
+    max-height: 70vh;
+    overflow-y: auto;
+    background: var(--paper-raised);
+    border: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
+    padding: 1rem 1.25rem;
+  }
+
+  .corner-menu-heading {
+    display: block;
+    margin-top: 0.4rem;
+    color: var(--ink-faded);
+  }
+
+  .corner-menu-panel a {
+    display: block;
+    text-decoration-color: transparent;
+  }
+
+  .corner-menu-panel a:hover,
+  .corner-menu-panel a:focus-visible {
+    text-decoration-color: var(--thermal);
+  }
+</style>
