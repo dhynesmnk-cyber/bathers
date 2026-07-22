@@ -35,13 +35,16 @@ One repo, two clearly separated applications sharing a content directory. No Pyt
         /_published       # approved MDX (the only content Astro builds from)
       /blog
         /_published       # published posts (2026-07-21, SCHEMA.md §7)
-    /components           # Map.astro, VenueEntry.astro, Features.astro, Icon.astro, Pull.astro, TippedPhoto.astro
+    /components           # Map.astro, VenueEntry.astro, Features.astro, Icon.astro, Pull.astro, TippedPhoto.astro, CornerMenu.astro
     /icons/paths.ts        # hand-authored inline SVG icon set (DESIGN.md §6)
     /data/venues.json     # generated on approve — committed
     /pages
       index.astro
       /[state]/index.astro
       /[state]/[amenity].astro
+      /category/[category]/index.astro  # 2026-07-22
+      /glossary/index.astro              # 2026-07-22
+      /glossary/[key]/index.astro        # 2026-07-22
       /spa/[slug].astro
       /blog/index.astro
       /blog/[slug].astro
@@ -62,7 +65,7 @@ One repo, two clearly separated applications sharing a content directory. No Pyt
 ## 4. Frontend Requirements
 
 1. Content collection `spas` with a strict zod schema per SCHEMA.md. Build must fail on any schema violation.
-2. Routes: `/` (index), `/spa/[slug]` (venue), `/[state]/`, `/[state]/[amenity]/` — programmatic pages generated **only** for combinations with ≥1 venue.
+2. Routes: `/` (index), `/spa/[slug]` (venue), `/[state]/`, `/[state]/[amenity]/`, `/category/[category]/` *(2026-07-22)* — programmatic pages generated **only** for combinations with ≥1 venue.
 3. All layout, ordering, interaction, and no-JS behaviour per UX.md §2–3. All visual decisions per DESIGN.md — including the venue-feature icon system (DESIGN.md §6, superseding the earlier field-notation system as a 2026-07-21 user-approved exception), which is a build requirement, not a suggestion.
 4. Map data comes from the generated GeoJSON; venue lists and filters from `venues.json`/frontmatter at build time. The public site performs zero runtime data fetching except map tiles.
 5. `<Pull>` MDX component for pull-quotes; `<TippedPhoto>` for the single optional image, implementing the treatment in DESIGN.md §4.
@@ -75,7 +78,7 @@ One repo, two clearly separated applications sharing a content directory. No Pyt
 
 ## 6. Admin App Requirements
 
-Implement UX.md §1 in full: harvest panel with streaming log, review queue with status chips, review pane (rendered preview using the public site's actual CSS, frontmatter editor, coordinate map thumbnail, amenity toggle chips, debounced autosave), approve/reject with keyboard shortcuts and 3-second undo, deploy strip with diff preview and tracked-file guard, and **every failure state in the UX.md §1.5 table**. The image pipeline is UX.md §4 verbatim: candidate images are staging-only, publishing an image is a separate action, max one image per venue, attribution mandatory, one-click removal.
+Implement UX.md §1 in full: harvest panel with streaming log, review queue with status chips, review pane (rendered preview using the public site's actual CSS, frontmatter editor, amenity toggle chips, debounced autosave), approve/reject with keyboard shortcuts and 3-second undo, deploy strip with diff preview and tracked-file guard, and **every failure state in the UX.md §1.5 table**. The image pipeline is UX.md §4 verbatim: candidate images are staging-only, publishing an image is a separate action, max one image per venue, attribution mandatory, one-click removal.
 
 Also implement UX.md §6 (2026-07-21) — the `/blog` authoring screen and its own create/update/publish/image-upload flow.
 

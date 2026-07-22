@@ -32,10 +32,11 @@ Practical/logistics info, distinct from the bathing-experience amenities above �
 |---|---|---|---|
 | `name` | string | ✓ | Venue's actual trading name. |
 | `state` | enum | ✓ | One of `VIC NSW QLD SA WA TAS NT ACT`. |
+| `category` | enum | ✓ | *(2026-07-22)* One of `thermal_springs`, `bathhouse`, `day_spa`, `other` — matches the discovery-keyword vocabulary in UX.md §1.1. Set by the Architect from the Google Places block's `primaryType` or editorial judgement; reviewer-editable. |
 | `suburb` | string | ✓ | |
 | `address` | string | ✓ | Street address, single line. |
-| `latitude` | number | ✓ | −44.0 … −9.0 (AU bounds; build fails outside). |
-| `longitude` | number | ✓ | 112.0 … 154.0. |
+| `latitude` | number | – | *(2026-07-22: no longer required)* −44.0 … −9.0 (AU bounds when present; build fails outside). Null when geocoding the address found no match — the venue simply doesn't appear on the map, it is not blocked from publishing. No manual entry UI; see §4. |
+| `longitude` | number | – | *(2026-07-22: no longer required)* 112.0 … 154.0 when present. Same null handling as `latitude`. |
 | `website` | string (url) | ✓ | The venue's own site. |
 | `amenities` | object | ✓ | Exactly the five boolean keys from §1, all required, no extras (zod `.strict()`). |
 | `facilities` | object | – | *(2026-07-21)* The five boolean keys from §1a. Optional — omit entirely on venues where none are known; individual keys default `false`. |
@@ -45,6 +46,7 @@ Practical/logistics info, distinct from the bathing-experience amenities above �
 | `status` | enum | ✓ | `unclaimed` \| `claimed`. Default `unclaimed`. |
 | `summary` | string | ✓ | ≤160 chars. Index one-liner + meta description. Written by the Architect, in register. |
 | `drafted` | date (YYYY-MM-DD) | ✓ | Date the draft was generated. |
+| `verified` | date (YYYY-MM-DD) | ✓ | *(2026-07-22)* Date of the most recent harvest/verification pass. Set alongside `drafted` at initial draft time, and re-set on every subsequent re-harvest — unlike `drafted`, which is meant to stay fixed. Rendered content only; not stored in SQLite (see §3). |
 | `source_url` | string (url) | ✓ | The URL harvested from. |
 | `image` | string | – | Path to published image asset. Present only after the separate image-publish action (UX.md §4). |
 | `image_source` | string (url) | –* | *Required if `image` present (zod refinement). |
@@ -60,9 +62,10 @@ CREATE TABLE venues (
   slug TEXT PRIMARY KEY,          -- matches MDX filename; no separate UUID
   name TEXT NOT NULL,
   state TEXT NOT NULL,
+  category TEXT NOT NULL,         -- 2026-07-22
   suburb TEXT NOT NULL,
-  latitude REAL NOT NULL,
-  longitude REAL NOT NULL,
+  latitude REAL,                  -- 2026-07-22: nullable — null means "no map marker", not invalid
+  longitude REAL,
   status TEXT NOT NULL DEFAULT 'unclaimed',
   summary TEXT NOT NULL,
   has_image INTEGER NOT NULL DEFAULT 0,
@@ -118,11 +121,15 @@ The Harvester agent must emit **only** this object — no prose, no markdown fen
 }
 ```
 
-Rules: amenity `true` only on explicit evidence in the scraped text; unknown scalar → `null`, never guessed. Coordinates are almost never on venue sites — the pipeline geocodes `address` if possible, else leaves null for the reviewer to fill (the review pane's map thumbnail makes this a 10-second fix). `facts` holds raw material for the Architect; empty arrays are fine.
+Rules: amenity `true` only on explicit evidence in the scraped text; unknown scalar → `null`, never guessed. Coordinates are almost never on venue sites — the Harvester always leaves them `null`; the pipeline geocodes `address` automatically downstream (Nominatim, `admin/pipeline/geocode.py`) and, since 2026-07-22, that's the *only* source — if geocoding finds no match, coordinates stay `null` and the venue is simply excluded from the map (see §2). `facts` holds raw material for the Architect; empty arrays are fine.
 
 **Note on FAQ:** the Harvester's JSON contract does not carry an `faq` key. FAQ answers are the Architect's synthesis, drafted only from the `facts` object above — adding a duplicate `faq` key to the Harvester's output would just re-derive the same facts one step early. See `PROMPTS/architect.md`.
 
 **Note on `hours`/`cost`/`facilities`/`access` (2026-07-21):** same division of labour — the Harvester's JSON contract is unchanged; `facts.hours` and `facts.pricing` already exist and are reused as the Architect's source material for the frontmatter `hours`/`cost` strings, and `facts` generally for `facilities` and `access` (there's no dedicated Harvester bucket for "who can book" — guest/member-access details typically land in `facts.setting` or `facts.other` when a venue's own site mentions them). No new Harvester fields.
+
+**Note on `category`/`verified` (2026-07-22):** same division of labour again — no new Harvester fields. `category` is an Architect-level judgement call like `hours`/`cost`/`access`, drawn from the appended Google Places verification block's `primaryType` when present, else from the harvested facts; it is required, so unlike those optional fields it must never be left blank (default to `other` only when genuinely ambiguous). `verified` is set by the pipeline at finalize time (`admin/pipeline/orchestrator.py`), not by any agent.
+
+**Note on review-signal prose (2026-07-22):** when the appended Google Places verification block carries `rating`/`user_rating_count` (and optionally `reviews`), the Architect may write one brief, non-negative-leaning sentence characterising the review signal, grounded only in that real data — never inventing sentiment. Omitted entirely when no review data exists, same "omit if thin" posture as everything else in this section. This is body prose; there is no dedicated frontmatter field for it.
 
 ## 5. Sample MDX (place in `_published` at Gate 1)
 
@@ -130,6 +137,7 @@ Rules: amenity `true` only on explicit evidence in the scraped text; unknown sca
 ---
 name: "Sense of Self"
 state: "VIC"
+category: "bathhouse"
 suburb: "Collingwood"
 address: "30–32 Easey Street, Collingwood VIC 3066"
 latitude: -37.7965
@@ -152,6 +160,7 @@ cost: "$65 per two-hour sitting"
 status: "unclaimed"
 summary: "A converted Easey Street warehouse holding a 39-degree mineral bath, an 80-degree Finnish sauna, a cold plunge and a hammam."
 drafted: 2026-07-17
+verified: 2026-07-22
 source_url: "https://www.sos-senseofself.com/"
 ---
 

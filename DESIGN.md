@@ -67,8 +67,8 @@ Rules:
 This is what separates "dark editorial" from "dark dashboard":
 
 - **Grain:** a full-page noise overlay — SVG `feTurbulence` fractal noise, ~3% opacity, `mix-blend-mode: overlay`, fixed position, pointer-events none. Subtle enough that you only notice it when it's gone. **Light mode (2026-07-21):** the same technique, but `overlay` blend against a light `--paper` reads differently than against a near-black one — tune opacity/blend-mode independently per mode rather than assuming the dark-mode values carry over; verify visually before locking in.
-- **Rules, not borders:** dividers are 1px hairlines in `--ink-faded` at 25% opacity. No boxed borders around content blocks. No border-radius above 2px anywhere on the public site. No box-shadows on the public site, ever.
-- **The tipped-in photograph** (see §6, Signature): when a venue has an image, it is treated as a physical photo tipped into a diary — inset, not full-bleed; 2–4px `--paper-raised` mount border; rotated between −1.2° and +1.2° (derive deterministically from the slug hash so it's stable per venue); mono caption beneath, e.g. `PLATE I. — THE MAGNESIUM POOL, LOOKING SOUTH.`
+- **Rules, not borders:** dividers are 1px hairlines in `--ink-faded` at 25% opacity. No boxed borders around content blocks. No border-radius above 2px anywhere on the public site. No box-shadows on the public site, ever. **Exception (user-approved, 2026-07-22):** a single hairline frame now runs around the whole page at the layout level — see §5b. This is page-level chrome, not a "boxed border around a content block" in the sense this rule bans; individual sections/cards remain unbordered.
+- **The tipped-in photograph** (see §6, Signature): when a venue has an image, it is treated as a physical photo tipped into a diary — inset, not full-bleed; 2–4px `--paper-raised` mount border; mono caption beneath, e.g. `PLATE I. — THE MAGNESIUM POOL, LOOKING SOUTH.` **2026-07-22 removal:** the photo previously rotated −1.2°…+1.2° (deterministic per venue, derived from the slug hash) — this has been removed at the user's request; the photo now sits flat. Mount border/padding/caption treatment is unchanged.
 - **Section openers:** small-caps mono eyebrow + hairline, in the manner of a pamphlet chapter head. No icons.
 
 ---
@@ -92,6 +92,15 @@ A narrow, deliberate exception to the site's otherwise icon-free, toggle-free ch
 - Auto-detects the visitor's OS preference (`prefers-color-scheme`) by default; a click/keyboard-activated override persists via `localStorage` across the visit.
 - No animated transition on switch — a plain state change, consistent with the site's restrained motion posture (§9) and `prefers-reduced-motion`.
 - Admin app: auto (`prefers-color-scheme`) only, no manual toggle — it's a private, single-operator workbench (§8), not a visitor-facing surface.
+
+## 5b. Corner Menu (2026-07-22 exception)
+
+**Exception (user-approved, 2026-07-22).** A small fixed navigation control, superseding §3/§5a's "never fixed, never floating" rule — narrowly, for this one control only. Everything else in §3/§5a still holds: no modals, no toasts, no other floating chrome.
+
+- A single button fixed to the bottom-right corner of the viewport on every page, labelled `MENU` in mono text (no new icon — matches the "filters are text" idiom of §5 rather than adding an 11th icon to the set in §6).
+- Click/tap opens a panel listing: Home, every state with ≥1 published venue, every category with ≥1 published venue, and links to the glossary and journal. Click-to-open, not hover-only, for touch/mobile parity.
+- The panel itself keeps the rest of the visual system exactly: `--paper-raised` background, hairline `--ink-faded` border, no border-radius above 2px, no box-shadow, no banned colours or gradients (§2/§4).
+- Keyboard-operable: reachable by Tab, opens on Enter/Space, closes on `Escape` (focus returns to the button), same posture as any other interactive control on the site.
 
 ---
 

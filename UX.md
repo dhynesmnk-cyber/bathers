@@ -56,8 +56,8 @@ The human-in-the-loop verification surface. Split view:
 
 - **Left: rendered preview** of the MDX using the *actual public venue-page styles* (import the same CSS). Reviewing in a different skin from what ships is how errors slip through.
 - **Right: structured frontmatter editor.**
-  - Text fields (name, state) as inputs.
-  - Coordinates as a pair of inputs **plus a small static map thumbnail** showing the pin — a wrong coordinate is invisible as a number and obvious on a map.
+  - Text fields (name, state) as inputs, plus a `category` dropdown (SCHEMA.md §2, 2026-07-22: `thermal_springs`/`bathhouse`/`day_spa`/`other`).
+  - **No coordinate inputs (2026-07-22 removal).** Coordinates are geocoded from `address` automatically (Nominatim, cached) and are no longer reviewer-editable — a failed geocode just means the venue publishes with no map marker rather than blocking approval. The old paired lat/long inputs and static pin thumbnail are gone.
   - Amenity booleans as toggle chips using the field-notation abbreviations (`Mg` `IR` `SA` `CP` `LED`). Toggling updates frontmatter in place. This is where the reviewer corrects the AI's amenity extraction before it becomes canonical.
   - `Hours` and `Cost` as freeform text inputs (SCHEMA.md §2, 2026-07-21) — drafted by the Architect from harvested facts, reviewer-editable, left blank rather than guessed when undocumented.
   - `Facilities` as a second toggle-chip fieldset alongside amenities, covering the five logistics keys (SCHEMA.md §1a): parking, towels provided, changerooms, bookings required, wheelchair access.
@@ -107,9 +107,9 @@ Content order (top to bottom): masthead → editorial foreword → **the map cha
 
 ### 2.3 Programmatic SEO pages
 
-- Routes: `/[state]/`, `/[state]/[amenity]/` — statically generated only for combinations with ≥1 venue. No empty pages, ever.
-- Each carries a build-time-generated foreword paragraph (drafted once by the pipeline, stored in a `forewords.json`, human-editable — not regenerated every build, or the copy churns).
-- Canonical tags, descriptive titles in the notation register (`Bathhouses of Victoria — Mg · CP`), and cross-links: venue pages link to their state page; state pages link to amenity subsets.
+- Routes: `/[state]/`, `/[state]/[amenity]/`, `/category/[category]/` *(2026-07-22)* — statically generated only for combinations with ≥1 venue. No empty pages, ever.
+- Each carries a build-time-generated foreword paragraph (drafted once by the pipeline, stored in a `forewords.json`, human-editable — not regenerated every build, or the copy churns). Category forewords are generated the same way, keyed under a separate `categories` bucket in the same file.
+- Canonical tags, descriptive titles in the notation register (`Bathhouses of Victoria — Mg · CP`), and cross-links: venue pages link to their state page and to their category page; state pages link to amenity subsets.
 
 ---
 
@@ -126,7 +126,7 @@ Content order (top to bottom): masthead → editorial foreword → **the map cha
 
 ## 3. Interaction Rules (site-wide)
 
-- No modals, no toasts, no cookie banners, no floating buttons on the public site.
+- No modals, no toasts, no cookie banners, no floating buttons on the public site. **Exception (user-approved, 2026-07-22):** a small fixed corner menu (bottom-right, click/tap-to-open, listing states/categories/glossary/journal) — see DESIGN.md §5b. Scoped narrowly to this one navigation control; it does not reopen the door to modals, toasts, or banners generally.
 - Transitions: none beyond link underline colour and map marker states. `prefers-reduced-motion` disables even those.
 - All interactive elements reachable and operable by keyboard; focus order follows reading order.
 
