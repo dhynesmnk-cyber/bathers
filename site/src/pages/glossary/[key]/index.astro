@@ -1,0 +1,49 @@
+---
+// Amenity/facility glossary page (UX.md §2.3, DESIGN.md §5b, 2026-07-22
+// addition) — one page per icon, explaining what it means in plain
+// language. Hand-authored copy (site/src/data/glossary.ts), not pipeline
+// output — see that file's header note.
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Icon from "../../../components/Icon.astro";
+import { AMENITY_KEYS, AMENITY_NOTATION, FACILITY_KEYS, FACILITY_LABELS } from "../../../config";
+import { GLOSSARY } from "../../../data/glossary.ts";
+import type { IconKey } from "../../../icons/paths";
+
+const LABELS: Record<string, string> = {
+  ...Object.fromEntries(AMENITY_KEYS.map((key) => [key, AMENITY_NOTATION[key].full])),
+  ...FACILITY_LABELS,
+};
+
+// Astro's getStaticPaths is extracted and run in isolation from the rest of
+// this module, so it can only see its own imports — no outer-scope consts.
+export async function getStaticPaths() {
+  return [...AMENITY_KEYS, ...FACILITY_KEYS].map((key) => ({
+    params: { key: key.replace(/_/g, "-") },
+  }));
+}
+
+const ALL_KEYS = [...AMENITY_KEYS, ...FACILITY_KEYS];
+const { key: keySlug } = Astro.params;
+const key = ALL_KEYS.find((k) => k.replace(/_/g, "-") === keySlug) as string;
+const label = LABELS[key];
+const description = GLOSSARY[key as keyof typeof GLOSSARY];
+---
+
+<BaseLayout title={`${label} — Bathers'`} description={description} canonicalPath={`/glossary/${keySlug}/`}>
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <header class="mb-12 flex items-center gap-3">
+      <Icon name={key as IconKey} size={28} />
+      <h1 class="font-display font-light" style="font-size: clamp(2rem, 5vw, 3.5rem);">
+        {label}
+      </h1>
+    </header>
+
+    <section class="reading-spine">
+      <p>{description}</p>
+    </section>
+
+    <p class="mono mt-16">
+      <a href="/glossary/">All terms</a>
+    </p>
+  </main>
+</BaseLayout>
