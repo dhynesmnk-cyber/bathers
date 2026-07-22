@@ -1,4 +1,7 @@
 ---
+// Rotation removed 2026-07-22 (DESIGN.md §4) — mount border/padding
+// treatment unchanged, photo now sits flat. `slug` is kept in Props since
+// staging.py's <TippedPhoto> tag always passes it.
 interface Props {
   slug: string;
   src: string;
@@ -7,23 +10,10 @@ interface Props {
   sourceUrl: string;
 }
 
-const { slug, src, alt, caption, sourceUrl } = Astro.props;
-
-// Deterministic rotation in [-1.2deg, 1.2deg], derived from the slug so it's
-// stable per venue rather than random per render.
-function hashSlug(value: string): number {
-  let hash = 0;
-  for (let i = 0; i < value.length; i++) {
-    hash = (hash * 31 + value.charCodeAt(i)) | 0;
-  }
-  return hash;
-}
-
-const hash = hashSlug(slug);
-const rotation = ((Math.abs(hash) % 240) / 100 - 1.2).toFixed(2);
+const { src, alt, caption, sourceUrl } = Astro.props;
 ---
 
-<figure class="my-12 flex flex-col items-start" style={`transform: rotate(${rotation}deg);`}>
+<figure class="my-12 flex flex-col items-start">
   <div class="p-1 pb-8" style="background: var(--paper-raised); border: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);">
     <img src={src} alt={alt} class="block max-w-full" loading="lazy" />
   </div>
