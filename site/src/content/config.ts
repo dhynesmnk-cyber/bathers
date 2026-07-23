@@ -44,17 +44,17 @@ const spasCollection = defineCollection({
       website: z.string().url(),
       amenities: amenitiesSchema,
       facilities: facilitiesSchema,
-      hours: z.string().optional(),
-      cost: z.string().optional(),
-      access: z.string().optional(),
+      hours: z.string().nullable().optional(),
+      cost: z.string().nullable().optional(),
+      access: z.string().nullable().optional(),
       status: z.enum(["unclaimed", "claimed"]).default("unclaimed"),
       summary: z.string().max(160),
       drafted: z.date(),
       verified: z.date(),
       source_url: z.string().url(),
-      image: z.string().optional(),
-      image_source: z.string().url().optional(),
-      image_caption: z.string().optional(),
+      image: z.string().nullable().optional(),
+      image_source: z.string().url().nullable().optional(),
+      image_caption: z.string().nullable().optional(),
       faq: z
         .array(z.object({ question: z.string(), answer: z.string() }))
         .max(8)
