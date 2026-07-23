@@ -9,10 +9,11 @@ image/image_source/image_caption frontmatter fields — never automatic.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 import httpx
 from PIL import Image
@@ -157,6 +158,30 @@ def list_candidates(slug: str) -> list[Candidate]:
     return [Candidate(**c) for c in data.get("candidates", [])]
 
 
+# A candidate's source_url may be a Places Photo media URL, which carries
+# `key=<GOOGLE_PLACES_API_KEY>` (places.fetch_photo_media_url — the key is
+# required for the download). That URL must never be persisted into content:
+# image_source ends up as a public link in the built HTML (TippedPhoto's
+# "image source" anchor), which leaks the key.
+_PLACES_PHOTO_RE = re.compile(r"^https://places\.googleapis\.com/v1/places/([^/]+)/photos/")
+_SECRET_QUERY_PARAMS = {"key", "apikey", "api_key"}
+
+
+def _public_source_url(url: str) -> str:
+    """Attribution-safe form of a candidate source URL.
+
+    Places Photo media URLs are rewritten to the venue's Google Maps place
+    page (a keyless media URL just 403s, so the place page is the honest
+    attribution target). Any other URL gets key-style query params stripped
+    as a belt-and-braces guard."""
+    match = _PLACES_PHOTO_RE.match(url)
+    if match:
+        return f"https://www.google.com/maps/place/?q=place_id:{match.group(1)}"
+    parts = urlsplit(url)
+    query = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True) if k.lower() not in _SECRET_QUERY_PARAMS]
+    return urlunsplit(parts._replace(query=urlencode(query)))
+
+
 def publish_image(slug: str, candidate_index: int, caption: str) -> dict[str, str]:
     """Resize/re-encode the chosen candidate to webp in site/public/images/,
     return the frontmatter fields to merge in (UX.md §4.3)."""
@@ -176,7 +201,7 @@ def publish_image(slug: str, candidate_index: int, caption: str) -> dict[str, st
 
     return {
         "image": f"/images/{slug}.webp",
-        "image_source": candidate.source_url,
+        "image_source": _public_source_url(candidate.source_url),
         "image_caption": caption,
     }
 
