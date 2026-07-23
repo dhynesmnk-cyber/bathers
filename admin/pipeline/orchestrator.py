@@ -159,6 +159,26 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False, allow_existing_
             f"Body text:\n{result.text}"
         )
 
+    # Pricing usually lives off the homepage (2026-07-23 — see
+    # harvest.find_pricing_links). Follow the strongest 1–2 internal pricing
+    # links and append their text as labelled blocks, so `facts.pricing`
+    # can be populated from the venue's own published rates. Failures are
+    # non-fatal — the harvest proceeds on the main page alone.
+    for link in harvest.find_pricing_links(result.html, url):
+        try:
+            extra = harvest.harvest(link)
+        except (harvest.RobotsDisallowed, harvest.ScrapeError) as exc:
+            log(f"pricing link {link} — fetch failed ({exc})", "warn")
+            yield from drain()
+            continue
+        if len(extra.text) < 200:
+            log(f"pricing link {link} — thin extraction, ignored", "warn")
+            yield from drain()
+            continue
+        harvester_input += f"\n\nAdditional page from the same site ({link}):\n{extra.text[:6000]}"
+        log(f"followed pricing link {link}  ok ({len(extra.text)} chars)")
+        yield from drain()
+
     try:
         harvester_data, _usage = agents.call_agent(
             model=MODEL_HARVESTER,

@@ -141,7 +141,12 @@ def _print_diff(old: dict, new_path) -> None:
             print(f"    diff {field}: {_short(old.get(field))} → {_short(new.get(field))}")
 
 
-def reharvest(slugs: list[str] | None, dry_run: bool, playwright_fallback: bool) -> dict[str, list[str]]:
+def reharvest(
+    slugs: list[str] | None,
+    dry_run: bool,
+    playwright_fallback: bool,
+    overwrite_staged: bool = False,
+) -> dict[str, list[str]]:
     selected = select_venues(slugs)
     outcomes: dict[str, list[str]] = {"staged": [], "skipped": [], "failed": []}
     print(f"{len(selected)} venue(s) selected for re-harvest")
@@ -155,7 +160,7 @@ def reharvest(slugs: list[str] | None, dry_run: bool, playwright_fallback: bool)
         if dry_run:
             print(f"    would re-harvest {source_url}")
             continue
-        if (STAGING_DIR / f"{slug}.mdx").exists():
+        if (STAGING_DIR / f"{slug}.mdx").exists() and not overwrite_staged:
             print("    [warn] already has an unreviewed staged draft — skipping")
             outcomes["skipped"].append(slug)
             continue
@@ -203,11 +208,21 @@ def main() -> None:
         action="store_true",
         help="do not retry thin extractions with Playwright",
     )
+    parser.add_argument(
+        "--overwrite-staged",
+        action="store_true",
+        help="regenerate over an existing unreviewed staged draft instead of skipping it",
+    )
     args = parser.parse_args()
     slugs = [s.strip() for s in args.slugs.split(",") if s.strip()] if args.slugs else None
 
     started = datetime.datetime.now()
-    outcomes = reharvest(slugs, dry_run=args.dry_run, playwright_fallback=not args.no_playwright_fallback)
+    outcomes = reharvest(
+        slugs,
+        dry_run=args.dry_run,
+        playwright_fallback=not args.no_playwright_fallback,
+        overwrite_staged=args.overwrite_staged,
+    )
     if args.dry_run:
         print("\ndry run — nothing harvested")
         return

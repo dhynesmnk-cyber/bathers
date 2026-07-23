@@ -6,6 +6,7 @@ user-triggered fallback (UX.md §1.5 "Retry with Playwright"), never automatic.
 
 from __future__ import annotations
 
+import re
 import urllib.robotparser
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlsplit
@@ -79,6 +80,50 @@ def extract_metadata(html: str, url: str) -> tuple[str | None, str | None]:
     if doc is None:
         return None, None
     return doc.title or None, doc.description or None
+
+
+# ---- Pricing-link discovery (2026-07-23) ----
+#
+# Most venue homepages don't publish prices — pricing lives on a separate
+# /pricing, /rates or booking page, so single-page harvests leave `cost`
+# honestly empty. These helpers find the 1–2 most likely internal pricing
+# links in the fetched HTML; the orchestrator fetches them through the same
+# robots/timeout machinery and appends their text to the Harvester input.
+
+_PRICING_STRONG = ("pricing", "prices", "price", "rates", "admission", "tariff", "fees", "cost")
+_PRICING_WEAK = ("bathe", "bathing", "book", "experience", "package", "treatment", "menu")
+_ANCHOR_RE = re.compile(r"<a\b[^>]*?href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a>", re.I | re.S)
+_SKIP_EXTENSIONS_RE = re.compile(r"\.(pdf|jpe?g|png|webp|svg|gif|zip|docx?)$", re.I)
+
+
+def find_pricing_links(html: str, base_url: str, limit: int = 2) -> list[str]:
+    """Same-host links whose path or anchor text suggests a pricing page,
+    strongest matches first. Never leaves the venue's own site."""
+    base = urlsplit(base_url)
+    base_host = base.netloc.lower().removeprefix("www.")
+    scored: dict[str, int] = {}
+    for match in _ANCHOR_RE.finditer(html):
+        absolute = urljoin(base_url, match.group(1)).split("#")[0]
+        parts = urlsplit(absolute)
+        if parts.scheme not in ("http", "https"):
+            continue
+        if parts.netloc.lower().removeprefix("www.") != base_host:
+            continue
+        if parts.path.rstrip("/") == base.path.rstrip("/"):
+            continue  # the page we already have
+        if _SKIP_EXTENSIONS_RE.search(parts.path):
+            continue
+        anchor_text = re.sub(r"<[^>]+>", " ", match.group(2)).lower()
+        haystack = f"{parts.path.lower()} {anchor_text}"
+        if any(keyword in haystack for keyword in _PRICING_STRONG):
+            score = 2
+        elif any(keyword in haystack for keyword in _PRICING_WEAK):
+            score = 1
+        else:
+            continue
+        scored[absolute] = max(scored.get(absolute, 0), score)
+    ranked = sorted(scored, key=lambda link: (-scored[link], len(link)))
+    return ranked[:limit]
 
 
 def harvest(url: str) -> ScrapeResult:
