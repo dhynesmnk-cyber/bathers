@@ -90,8 +90,13 @@ def extract_metadata(html: str, url: str) -> tuple[str | None, str | None]:
 # links in the fetched HTML; the orchestrator fetches them through the same
 # robots/timeout machinery and appends their text to the Harvester input.
 
-_PRICING_STRONG = ("pricing", "prices", "price", "rates", "admission", "tariff", "fees", "cost")
-_PRICING_WEAK = ("bathe", "bathing", "book", "experience", "package", "treatment", "menu")
+_PRICING_STRONG = {"pricing", "prices", "price", "rates", "admission", "tariff", "fees", "cost"}
+_PRICING_WEAK = {"bathe", "bathing", "book", "experience", "package", "packages",
+                 "treatment", "treatments", "menu", "service", "services"}
+# Generic pages that share a keyword ("terms-of-service", "privacy-policy") but
+# never carry pricing — presence of any of these tokens disqualifies a link.
+_PRICING_NOISE = {"terms", "privacy", "policy", "cookie", "cookies", "contact",
+                  "about", "careers", "blog", "news", "faq", "gift", "voucher"}
 _ANCHOR_RE = re.compile(r"<a\b[^>]*?href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a>", re.I | re.S)
 _SKIP_EXTENSIONS_RE = re.compile(r"\.(pdf|jpe?g|png|webp|svg|gif|zip|docx?)$", re.I)
 
@@ -114,10 +119,15 @@ def find_pricing_links(html: str, base_url: str, limit: int = 2) -> list[str]:
         if _SKIP_EXTENSIONS_RE.search(parts.path):
             continue
         anchor_text = re.sub(r"<[^>]+>", " ", match.group(2)).lower()
-        haystack = f"{parts.path.lower()} {anchor_text}"
-        if any(keyword in haystack for keyword in _PRICING_STRONG):
+        # Whole-word tokens from the path and anchor, so "service" matches
+        # /services but "terms-of-service" is caught by the noise set below
+        # (and "prices" doesn't fire on an unrelated "enterprises").
+        tokens = set(re.findall(r"[a-z]+", f"{parts.path.lower()} {anchor_text}"))
+        if tokens & _PRICING_NOISE:
+            continue
+        if tokens & _PRICING_STRONG:
             score = 2
-        elif any(keyword in haystack for keyword in _PRICING_WEAK):
+        elif tokens & _PRICING_WEAK:
             score = 1
         else:
             continue
@@ -151,7 +161,13 @@ def harvest_with_playwright(url: str) -> ScrapeResult:
         browser = p.chromium.launch()
         try:
             page = browser.new_page(user_agent=USER_AGENT)
-            page.goto(url, timeout=TIMEOUT_SECONDS * 1000, wait_until="networkidle")
+            # "load" not "networkidle": many venue sites carry live chat widgets
+            # or analytics beacons that never let the network fall idle, so
+            # networkidle reliably times out even once the page is fully
+            # rendered. "load" fires on the load event; a short settle gives
+            # late client-rendered content (pricing tables) time to paint.
+            page.goto(url, timeout=TIMEOUT_SECONDS * 1000, wait_until="load")
+            page.wait_for_timeout(1500)
             html = page.content()
         finally:
             browser.close()
