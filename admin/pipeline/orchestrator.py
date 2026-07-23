@@ -167,6 +167,15 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False, allow_existing_
     for link in harvest.find_pricing_links(result.html, url):
         try:
             extra = harvest.harvest(link)
+            if len(extra.text) < 200 and use_playwright:
+                # The run is already browser-backed (user-triggered, so still
+                # within the "Playwright fallback only" rule) — give a
+                # JS-rendered pricing page the same treatment as the main page.
+                try:
+                    extra = harvest.harvest_with_playwright(link)
+                except Exception as exc:
+                    log(f"pricing link {link} — Playwright retry failed ({exc})", "warn")
+                    yield from drain()
         except (harvest.RobotsDisallowed, harvest.ScrapeError) as exc:
             log(f"pricing link {link} — fetch failed ({exc})", "warn")
             yield from drain()

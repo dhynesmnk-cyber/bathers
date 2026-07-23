@@ -146,6 +146,7 @@ def reharvest(
     dry_run: bool,
     playwright_fallback: bool,
     overwrite_staged: bool = False,
+    playwright: bool = False,
 ) -> dict[str, list[str]]:
     selected = select_venues(slugs)
     outcomes: dict[str, list[str]] = {"staged": [], "skipped": [], "failed": []}
@@ -167,9 +168,9 @@ def reharvest(
 
         before = _staging_state()
         try:
-            log_lines = _drain(source_url, use_playwright=False)
+            log_lines = _drain(source_url, use_playwright=playwright)
             thin = any("thin extraction" in line.text for line in log_lines)
-            if thin and playwright_fallback:
+            if thin and playwright_fallback and not playwright:
                 print("    [info] retrying with Playwright fallback")
                 log_lines = _drain(source_url, use_playwright=True)
         except Exception as exc:  # keep the batch going; one venue's crash isn't the run's
@@ -213,6 +214,11 @@ def main() -> None:
         action="store_true",
         help="regenerate over an existing unreviewed staged draft instead of skipping it",
     )
+    parser.add_argument(
+        "--playwright",
+        action="store_true",
+        help="fetch with Playwright from the start (also lets thin pricing pages retry in-browser)",
+    )
     args = parser.parse_args()
     slugs = [s.strip() for s in args.slugs.split(",") if s.strip()] if args.slugs else None
 
@@ -222,6 +228,7 @@ def main() -> None:
         dry_run=args.dry_run,
         playwright_fallback=not args.no_playwright_fallback,
         overwrite_staged=args.overwrite_staged,
+        playwright=args.playwright,
     )
     if args.dry_run:
         print("\ndry run — nothing harvested")
