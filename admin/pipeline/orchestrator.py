@@ -164,18 +164,14 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False, allow_existing_
     # links and append their text as labelled blocks, so `facts.pricing`
     # can be populated from the venue's own published rates. Failures are
     # non-fatal — the harvest proceeds on the main page alone.
+    # On a browser-backed run (user-triggered, so still within the
+    # "Playwright fallback only" rule) the pricing links get the same
+    # fetcher as the main page — a site whose main page needed JS rendering
+    # renders its pricing pages the same way.
+    fetch_extra = harvest.harvest_with_playwright if use_playwright else harvest.harvest
     for link in harvest.find_pricing_links(result.html, url):
         try:
-            extra = harvest.harvest(link)
-            if len(extra.text) < 200 and use_playwright:
-                # The run is already browser-backed (user-triggered, so still
-                # within the "Playwright fallback only" rule) — give a
-                # JS-rendered pricing page the same treatment as the main page.
-                try:
-                    extra = harvest.harvest_with_playwright(link)
-                except Exception as exc:
-                    log(f"pricing link {link} — Playwright retry failed ({exc})", "warn")
-                    yield from drain()
+            extra = fetch_extra(link)
         except (harvest.RobotsDisallowed, harvest.ScrapeError) as exc:
             log(f"pricing link {link} — fetch failed ({exc})", "warn")
             yield from drain()
