@@ -29,6 +29,8 @@
   const fieldHours = el("field-hours");
   const fieldCost = el("field-cost");
   const fieldAccess = el("field-access");
+  const fieldVerified = el("field-verified");
+  const verifyTodayBtn = el("verify-today-btn");
   const fieldErrorsEl = el("field-errors");
   const saveStatusEl = el("save-status");
   const placesCheckEl = el("places-check");
@@ -174,6 +176,8 @@
     fieldHours.value = fm.hours || "";
     fieldCost.value = fm.cost || "";
     fieldAccess.value = fm.access || "";
+    fieldVerified.textContent = fm.verified || "not yet verified";
+    fieldVerified.classList.toggle("verified-missing", !fm.verified);
     const amenities = fm.amenities || {};
     document.querySelectorAll(".toggle-chip[data-amenity]").forEach((btn) => {
       btn.classList.toggle("active", !!amenities[btn.dataset.amenity]);
@@ -294,6 +298,22 @@
     await fetchQueue();
   });
 
+  // ---- Verified date (SCHEMA.md §2 — re-set on every re-harvest; a
+  // deliberate reviewer action rather than automatic, so an edit that isn't
+  // a real re-verification doesn't silently bump the date) ----
+
+  verifyTodayBtn.addEventListener("click", async () => {
+    if (!selectedSlug) return;
+    const res = await fetch(`/api/queue/${encodeURIComponent(selectedSlug)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ patch: { verified: todayDateString() } }),
+    });
+    if (!res.ok) return;
+    currentEntry = await res.json();
+    populateFields(currentEntry);
+  });
+
   // ---- FAQ (AI-drafted, human-editable — same debounced autosave as other fields) ----
 
   function currentFaqPairs() {
@@ -369,6 +389,7 @@
     hours: fieldHours,
     cost: fieldCost,
     access: fieldAccess,
+    verified: fieldVerified,
     faq: el("faq-section"),
   };
 
@@ -548,6 +569,13 @@
     return new Date().toLocaleTimeString("en-AU", { hour12: false });
   }
 
+  function todayDateString() {
+    const d = new Date();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${d.getFullYear()}-${mm}-${dd}`;
+  }
+
   async function runHarvest(url, usePlaywright) {
     if (!url) return;
     lastHarvestUrl = url;
@@ -658,6 +686,8 @@
       }
       discoverCandidates = await res.json();
       renderDiscoverResults();
+    } catch (err) {
+      appendLogLine(nowTime(), "error", `discovery failed — ${err.message}`);
     } finally {
       discoverSubmit.disabled = false;
       discoverSubmit.textContent = originalLabel;

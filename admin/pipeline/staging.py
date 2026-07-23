@@ -8,6 +8,7 @@ how Gate 2 already guarantees idempotency.
 
 from __future__ import annotations
 
+import datetime
 import json
 import re
 import time
@@ -240,6 +241,14 @@ def approve(slug: str) -> int:
         raise FileNotFoundError(slug)
     staged_text = src.read_text(encoding="utf-8")
     data, body = split_frontmatter(staged_text, slug)
+    if not data.get("verified"):
+        # Backstop for drafts that never passed through orchestrator.py's
+        # finalize step (hand-placed staging files, or ones drafted before
+        # `verified` existed, SCHEMA.md §2 2026-07-22) — re-harvest updates
+        # get their own re-verify date from the reviewer instead (the
+        # "Verify with today's date" editor action), so this only fires once.
+        data["verified"] = datetime.date.today()
+        staged_text = render_mdx(data, body)
     errors = validate_frontmatter(data)
     if errors:
         raise ValidationFailed(errors)

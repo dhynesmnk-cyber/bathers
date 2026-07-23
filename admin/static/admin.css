@@ -442,6 +442,22 @@ textarea.text-input {
   flex: 1;
 }
 
+.verified-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.verified-date {
+  color: var(--ink-faded);
+  font-size: 12px;
+}
+
+.verified-date.verified-missing,
+.verified-date.field-invalid {
+  color: var(--oxide);
+}
+
 .places-check {
   font-size: 11px;
   line-height: 1.6;
