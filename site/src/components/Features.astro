@@ -25,12 +25,25 @@ const lngLabel = longitude != null ? `${longitude.toFixed(4)}° E` : null;
 const presentAmenities = AMENITY_KEYS.filter((key) => amenities[key]);
 const presentFacilities = FACILITY_KEYS.filter((key) => facilities?.[key]);
 
-type Feature = { icon: IconKey; label: string };
+// Amenity/facility chips link to their glossary page (UX.md §2.3) — the
+// glossary was previously reachable only via the corner menu. hours/cost
+// have no glossary entries and stay plain spans. Key→segment conversion
+// matches amenityUrlSlug (snake_case → kebab-case).
+type Feature = { icon: IconKey; label: string; glossaryHref?: string };
+const glossaryHref = (key: string) => `/glossary/${key.replace(/_/g, "-")}/`;
 const features: Feature[] = [
-  ...presentAmenities.map((key) => ({ icon: key as IconKey, label: AMENITY_NOTATION[key].full })),
+  ...presentAmenities.map((key) => ({
+    icon: key as IconKey,
+    label: AMENITY_NOTATION[key].full,
+    glossaryHref: glossaryHref(key),
+  })),
   ...(hours ? [{ icon: "hours" as IconKey, label: hours }] : []),
   ...(cost ? [{ icon: "cost" as IconKey, label: cost }] : []),
-  ...presentFacilities.map((key) => ({ icon: key as IconKey, label: FACILITY_LABELS[key] })),
+  ...presentFacilities.map((key) => ({
+    icon: key as IconKey,
+    label: FACILITY_LABELS[key],
+    glossaryHref: glossaryHref(key),
+  })),
 ];
 ---
 
@@ -42,20 +55,46 @@ const features: Feature[] = [
   }
   <span class="mono text-[var(--ink-faded)]">{state}</span>
   {
-    features.map((feature) => (
-      <span
-        class="feature-chip inline-flex items-center gap-1 text-[var(--ink)]"
-        title={feature.label}
-      >
-        <Icon name={feature.icon} size={compact ? 14 : 16} />
-        {!compact && <span class="mono text-sm">{feature.label}</span>}
-      </span>
-    ))
+    features.map((feature) =>
+      feature.glossaryHref ? (
+        <a
+          href={feature.glossaryHref}
+          class="feature-chip inline-flex items-center gap-1 text-[var(--ink)]"
+          title={feature.label}
+        >
+          <Icon name={feature.icon} size={compact ? 14 : 16} />
+          {!compact && <span class="mono text-sm">{feature.label}</span>}
+        </a>
+      ) : (
+        <span
+          class="feature-chip inline-flex items-center gap-1 text-[var(--ink)]"
+          title={feature.label}
+        >
+          <Icon name={feature.icon} size={compact ? 14 : 16} />
+          {!compact && <span class="mono text-sm">{feature.label}</span>}
+        </span>
+      ),
+    )
   }
 </div>
 
 <style>
   .feature-chip svg {
     flex-shrink: 0;
+  }
+
+  /* Same link idiom as the rest of the site: underline reserved for
+     hover/focus, thermal accent — no new visual furniture. */
+  a.feature-chip {
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+
+  a.feature-chip:hover,
+  a.feature-chip:focus-visible {
+    color: var(--thermal);
+    text-decoration-color: var(--thermal);
   }
 </style>

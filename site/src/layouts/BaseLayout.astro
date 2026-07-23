@@ -32,6 +32,15 @@ const canonicalHref = canonicalPath ?? Astro.url.pathname;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalHref} />
+    {/* Inline SVG favicon — the map's thermal marker ring (DESIGN.md §5),
+        no asset file or extra request. SVGs can't read CSS custom
+        properties, so the two thermal hexes are restated here; the embedded
+        media query tracks the OS scheme for the tab icon. */}
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cstyle%3Ecircle%7Bstroke:%233f6b5b%7D@media(prefers-color-scheme:dark)%7Bcircle%7Bstroke:%237fb5a4%7D%7D%3C/style%3E%3Ccircle cx='8' cy='8' r='5.5' fill='none' stroke-width='2.5'/%3E%3C/svg%3E"
+    />
     <title>{title}</title>
   </head>
   <body>
