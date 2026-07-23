@@ -66,7 +66,7 @@ One repo, two clearly separated applications sharing a content directory. No Pyt
 
 1. Content collection `spas` with a strict zod schema per SCHEMA.md. Build must fail on any schema violation.
 2. Routes: `/` (index), `/spa/[slug]` (venue), `/[state]/`, `/[state]/[amenity]/`, `/category/[category]/` *(2026-07-22)* — programmatic pages generated **only** for combinations with ≥1 venue.
-3. All layout, ordering, interaction, and no-JS behaviour per UX.md §2–3. All visual decisions per DESIGN.md — including the venue-feature icon system (DESIGN.md §6, superseding the earlier field-notation system as a 2026-07-21 user-approved exception), which is a build requirement, not a suggestion.
+3. All layout, ordering, interaction, and no-JS behaviour per UX.md §2–3. All visual decisions per DESIGN.md — including the venue-feature icon system (DESIGN.md §6, superseding the earlier field-notation system as a 2026-07-21 user-approved exception) and the homepage chooser section plus repositioned corner menu (DESIGN.md §5/§6/§7/§5b, UX.md §2.1/§3, 2026-07-23 user-approved exception) — which are build requirements, not suggestions.
 4. Map data comes from the generated GeoJSON; venue lists and filters from `venues.json`/frontmatter at build time. The public site performs zero runtime data fetching except map tiles.
 5. `<Pull>` MDX component for pull-quotes; `<TippedPhoto>` for the single optional image, implementing the treatment in DESIGN.md §4.
 

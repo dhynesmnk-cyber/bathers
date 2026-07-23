@@ -97,8 +97,9 @@ Empty states are directions, not moods: an empty queue says `No drafts staged. H
 
 ### 2.1 Index
 
-Content order (top to bottom): masthead → editorial foreword → **the map chapter** → state-grouped contents list. Behaviour:
+Content order (top to bottom): masthead → editorial foreword → a chooser section *(2026-07-23 exception, DESIGN.md §5/§7)* → **the map chapter** → state-grouped contents list. Behaviour:
 
+- **Chooser section** *(2026-07-23)*: one short line of plain-prose usage guidance, then two ways into the directory. State links (plain mono text) navigate straight to `/{state}/`. Amenity triggers (large icon+label, DESIGN.md §6) are plain anchor links to `/?amenities={key}#map-heading` — the same `amenities` URL query parameter the inline filter bar already reads on load — so clicking one lands back on the index pre-filtered to that amenity, scrolled to the map. This extends the existing filter mechanism rather than opening a second one, and needs no extra script: it's a normal link, so it degrades correctly without JavaScript (the destination page still renders; live filtering itself still depends on JS, same as the map/filter bar today).
 - Map (Leaflet, clustered): clicking a marker does **not** open a popup/modal — it highlights and scrolls to that venue's entry in the contents list below (`scroll-margin-top` respected). The entry link takes you to the venue page. One interaction model, no floating UI.
 - Amenity filter toggles (inline text, per DESIGN.md §5) filter both the list and the map markers simultaneously. Filter state syncs to the URL query string so filtered views are shareable/bookmarkable.
 - Everything except the map works with JavaScript disabled. The map container without JS shows a static styled fallback line: `Map requires JavaScript — the full index is below.`
@@ -139,7 +140,7 @@ Content order (top to bottom): masthead → editorial foreword → **the map cha
 
 ## 3. Interaction Rules (site-wide)
 
-- No modals, no toasts, no cookie banners, no floating buttons on the public site. **Exception (user-approved, 2026-07-22):** a small fixed corner menu (bottom-right, click/tap-to-open, listing states/categories/glossary/journal) — see DESIGN.md §5b. Scoped narrowly to this one navigation control; it does not reopen the door to modals, toasts, or banners generally.
+- No modals, no toasts, no cookie banners, no floating buttons on the public site. **Exception (user-approved, 2026-07-22, repositioned 2026-07-23):** a small fixed corner menu (top-right, click/tap-to-open, listing states/categories/glossary/journal) — see DESIGN.md §5b. Scoped narrowly to this one navigation control; it does not reopen the door to modals, toasts, or banners generally.
 - Transitions: none beyond link underline colour and map marker states. `prefers-reduced-motion` disables even those.
 - All interactive elements reachable and operable by keyboard; focus order follows reading order.
 

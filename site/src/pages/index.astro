@@ -3,7 +3,8 @@ import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Map from "../components/Map.astro";
 import VenueEntry from "../components/VenueEntry.astro";
-import { SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES } from "../config";
+import Icon from "../components/Icon.astro";
+import { AMENITY_KEYS, AMENITY_NOTATION, SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES } from "../config";
 
 const venues = await getCollection("spas");
 
@@ -38,20 +39,25 @@ function firstAppearance(slug: string): boolean {
   return true;
 }
 
-// Venues with no geocoded coordinate (SCHEMA.md §2 — geocoding found no
-// address match) simply don't get a map marker; they still appear in the
-// state contents list below.
-const markers = venues
-  .filter((v) => v.data.latitude != null && v.data.longitude != null)
-  .map((v) => ({
-    slug: v.id,
-    name: v.data.name,
-    suburb: v.data.suburb,
-    state: v.data.state,
-    latitude: v.data.latitude as number,
-    longitude: v.data.longitude as number,
-    amenities: v.data.amenities,
-  }));
+// Homepage chooser (DESIGN.md §5/§6/§7, 2026-07-23 exception) — amenities
+// with at least one published venue, same "present only" rule as the corner
+// menu's state/category lists.
+const presentAmenities = AMENITY_KEYS.filter((key) => venues.some((v) => v.data.amenities?.[key]));
+
+// All venues go to the map component — those with no geocoded coordinate
+// (SCHEMA.md §2 — geocoding found no address match) get no marker, but the
+// amenity filter still needs their amenities so it can keep them visible in
+// the contents list below (filtering must never hide a venue just because
+// it lacks a marker).
+const markers = venues.map((v) => ({
+  slug: v.id,
+  name: v.data.name,
+  suburb: v.data.suburb,
+  state: v.data.state,
+  latitude: v.data.latitude ?? null,
+  longitude: v.data.longitude ?? null,
+  amenities: v.data.amenities,
+}));
 ---
 
 <BaseLayout
@@ -83,6 +89,46 @@ const markers = venues
       </p>
     </section>
 
+    <section class="chooser mb-24" aria-labelledby="chooser-heading">
+      <div class="mono mb-6 flex items-center gap-4 text-[var(--ink-faded)]">
+        <span id="chooser-heading">START HERE</span>
+        <span class="h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
+      </div>
+      <p class="reading-spine mb-10">
+        Start with a state if you know where you're headed, or an amenity if
+        you know what you're after — magnesium water, a proper sweat, a cold
+        shock. Picking an amenity filters the map and list below to venues
+        that have it.
+      </p>
+      <div class="chooser-groups">
+        <div class="chooser-group">
+          <h3 class="mono chooser-group-label">By state</h3>
+          <ul class="chooser-states">
+            {byState.map((group) => (
+              <li>
+                <a class="mono chooser-state-link" href={`/${group.state.toLowerCase()}/`}>
+                  {STATE_NAMES[group.state]}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div class="chooser-group">
+          <h3 class="mono chooser-group-label">By amenity</h3>
+          <ul class="chooser-amenities">
+            {presentAmenities.map((key) => (
+              <li>
+                <a class="chooser-amenity-link" href={`/?amenities=${key}#map-heading`}>
+                  <Icon name={key} size={32} />
+                  <span class="mono chooser-amenity-label">{AMENITY_NOTATION[key].full}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+
     <Map venues={markers} />
 
     <section aria-labelledby="contents-heading">
@@ -92,7 +138,7 @@ const markers = venues
       </div>
       {
         poolTypeGroups.map((group) => (
-          <div class="mb-12">
+          <div class="mb-12" data-venue-group>
             <h2 class="mono mb-2 text-[var(--ink-faded)]">{group.label}</h2>
             {group.venues.map((venue) => (
               <VenueEntry
@@ -112,3 +158,76 @@ const markers = venues
     </section>
   </main>
 </BaseLayout>
+
+<style>
+  .chooser-groups {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .chooser-groups {
+      grid-template-columns: 1fr 2fr;
+    }
+  }
+
+  .chooser-group-label {
+    color: var(--ink-faded);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .chooser-states {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .chooser-state-link {
+    font-size: 15px;
+    text-decoration-color: transparent;
+  }
+
+  .chooser-state-link:hover,
+  .chooser-state-link:focus-visible {
+    text-decoration-color: var(--thermal);
+  }
+
+  .chooser-amenities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem 2rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .chooser-amenity-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    width: 6.5rem;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .chooser-amenity-link:hover,
+  .chooser-amenity-link:focus-visible {
+    color: var(--thermal);
+  }
+
+  .chooser-amenity-label {
+    text-align: center;
+    color: var(--ink-faded);
+  }
+
+  .chooser-amenity-link:hover .chooser-amenity-label,
+  .chooser-amenity-link:focus-visible .chooser-amenity-label {
+    color: var(--thermal);
+  }
+</style>

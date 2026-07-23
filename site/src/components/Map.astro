@@ -12,8 +12,10 @@ interface VenueMarker {
   name: string;
   suburb: string;
   state: string;
-  latitude: number;
-  longitude: number;
+  // Null when geocoding found no match (SCHEMA.md §2) — the venue gets no
+  // marker but still participates in amenity filtering of the list.
+  latitude: number | null;
+  longitude: number | null;
   amenities: Record<(typeof AMENITY_KEYS)[number], boolean>;
 }
 
@@ -50,8 +52,8 @@ const { venues } = Astro.props;
     name: string;
     suburb: string;
     state: string;
-    latitude: number;
-    longitude: number;
+    latitude: number | null;
+    longitude: number | null;
     amenities: Record<string, boolean>;
   }
 
@@ -216,6 +218,7 @@ const { venues } = Astro.props;
     }
 
     for (const v of venues) {
+      if (v.latitude == null || v.longitude == null) continue; // no coordinate — no marker
       const marker = L.marker([v.latitude, v.longitude], { icon: venueIcon(false) });
       marker.on("click", () => {
         setActiveMarker(v.slug);
@@ -236,19 +239,33 @@ const { venues } = Astro.props;
       for (const v of venues) {
         if (!matches(v)) continue;
         visibleSlugs.add(v.slug);
-        cluster.addLayer(markerBySlug.get(v.slug)!);
+        const marker = markerBySlug.get(v.slug);
+        if (marker) cluster.addLayer(marker); // coordinate-less venues have no marker
       }
       document.querySelectorAll("[data-venue-slug]").forEach((el) => {
         const slug = (el as HTMLElement).dataset.venueSlug!;
         (el as HTMLElement).hidden = !visibleSlugs.has(slug);
+      });
+      // Group wrappers (the homepage's pool-type sections) whose entries are
+      // all filtered out would otherwise leave a bare heading behind.
+      document.querySelectorAll("[data-venue-group]").forEach((el) => {
+        const entries = el.querySelectorAll("[data-venue-slug]");
+        (el as HTMLElement).hidden =
+          entries.length > 0 && !Array.from(entries).some((entry) => !(entry as HTMLElement).hidden);
       });
     }
 
     map.addLayer(cluster);
     applyFilter();
 
-    if (venues.length > 0) {
-      const bounds = L.latLngBounds(venues.map((v) => [v.latitude, v.longitude] as [number, number]));
+    // Fit the filtered subset when a shared/chooser URL carries filters, so
+    // the arrival view frames those venues rather than the whole country;
+    // fall back to all mappable venues when the filter matches none of them.
+    const mappable = venues.filter((v) => v.latitude != null && v.longitude != null);
+    const fitTargets = active.size > 0 ? mappable.filter(matches) : mappable;
+    const boundsSource = fitTargets.length > 0 ? fitTargets : mappable;
+    if (boundsSource.length > 0) {
+      const bounds = L.latLngBounds(boundsSource.map((v) => [v.latitude!, v.longitude!] as [number, number]));
       map.fitBounds(bounds, { padding: [24, 24], maxZoom: 10 });
     }
   }

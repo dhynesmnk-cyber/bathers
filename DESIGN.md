@@ -81,6 +81,8 @@ This is what separates "dark editorial" from "dark dashboard":
 - **Filters are text.** Amenity filters render as inline mono toggles (`magnesium pool · infrared · cold plunge`); active state = thermal underline. No sidebar, no checkboxes, no pills.
 - The map (Leaflet) is a chapter within the index page, not the hero. Tiles must be styled/filtered to sit in the palette (CSS filter to warm-dark, or a dark tile theme with a warm overlay). Default markers replaced with a small thermal ring; active marker fills. **Light mode (2026-07-21):** dark mode keeps the warm-dark tile treatment; light mode uses a light basemap with little to no filter rather than the same dark-tile-plus-filter approach — the tile source itself is chosen at map-init time based on the active mode, not styled after the fact.
 
+**Exception (user-approved, 2026-07-23).** The homepage carries one icon-based chooser section (§6, §7) between the foreword and the map chapter — a narrow, scoped departure from "never centred symmetric hero layouts" and "filters are text... no pills" above. It stays inside the reading-spine rhythm (asymmetric, not full-bleed, not centred) so it reads as the next section of the pamphlet rather than a hero banner, and it fronts the site's existing plain-text amenity filter and state pages rather than replacing either. Everything else covered by these two rules — the inline amenity-filter toggle bar, state/amenity page nav, and all venue listings — is unaffected and stays plain mono text and card-free.
+
 ---
 
 ## 5a. Theme Toggle (2026-07-21 addition)
@@ -97,7 +99,7 @@ A narrow, deliberate exception to the site's otherwise icon-free, toggle-free ch
 
 **Exception (user-approved, 2026-07-22).** A small fixed navigation control, superseding §3/§5a's "never fixed, never floating" rule — narrowly, for this one control only. Everything else in §3/§5a still holds: no modals, no toasts, no other floating chrome.
 
-- A single button fixed to the bottom-right corner of the viewport on every page, labelled `MENU` in mono text (no new icon — matches the "filters are text" idiom of §5 rather than adding an 11th icon to the set in §6).
+- A single button fixed to the top-right corner of the viewport on every page (*2026-07-23: moved from bottom-right at the user's request; no other change to this control*), labelled `MENU` in mono text (no new icon — matches the "filters are text" idiom of §5 rather than adding an 11th icon to the set in §6).
 - Click/tap opens a panel listing: Home, every state with ≥1 published venue, every category with ≥1 published venue, and links to the glossary and journal. Click-to-open, not hover-only, for touch/mobile parity.
 - The panel itself keeps the rest of the visual system exactly: `--paper-raised` background, hairline `--ink-faded` border, no border-radius above 2px, no box-shadow, no banned colours or gradients (§2/§4).
 - Keyboard-operable: reachable by Tab, opens on Enter/Space, closes on `Escape` (focus returns to the button), same posture as any other interactive control on the site.
@@ -117,13 +119,15 @@ Icon rules:
 - Full-size context (venue page) shows icon + label text; compact context (index/list entries) shows icon only with a `title` attribute for the full label, keeping list rows to one line.
 - No icon package/font — every icon is hand-authored inline SVG, kept to simple primitives (circles, rects, short paths) for visual consistency across the set.
 
+**Second icon-rendering context (2026-07-23 exception).** The homepage chooser section (§7) reuses this exact renderer and these exact rules — 24×24 viewBox, stroke-only, `currentColor`, no fill — at a single larger size, 32px, roughly double the largest existing usage (16px, full-size venue-page context). This is the only place icons render above 18px; nowhere else on the site should adopt this larger size without a further documented exception.
+
 Superseded text, kept for record: amenities were previously recorded as a naturalist's notation — a two-to-three-letter mono abbreviation (`Mg` magnesium pool · `IR` infrared sauna · `SA` traditional sauna · `CP` cold plunge · `LED` light therapy), expanding to the full name on hover/focus. That system is no longer in use for venue-feature display as of 2026-07-21.
 
 ---
 
 ## 7. Page-Specific Notes
 
-- **Index:** masthead first — site name in large Fraunces with a one-line mono subtitle (like a pamphlet title page), then a short editorial foreword (real prose, 2–3 paragraphs), then the map chapter, then the state-grouped contents list.
+- **Index:** masthead first — site name in large Fraunces with a one-line mono subtitle (like a pamphlet title page), then a short editorial foreword (real prose, 2–3 paragraphs), then a chooser section (*2026-07-23 exception, see §5*) — one short line of plain-prose usage guidance, plus two ways into the directory: by state (plain mono text links) and by amenity (large icon+label triggers, §6) — then the map chapter, then the state-grouped contents list.
 - **Venue page:** name → dateline/notation row → prose with 1–2 pull-quotes → tipped-in photo if one exists (mid-article, never top) → FAQ (if present) → appendix block (`--paper-raised`, mono, hairline-topped) with address, the Book Now button, hours, and the claim-this-listing button (*2026-07-23: upgraded from a plain mailto line to a `.book-now-btn`-styled button linking to `/claim/[slug]/`, hidden once `status` is `claimed`*). FAQ sits above the appendix, not inside it — it's still editorial content ("what is this place like"), while the appendix is the page's practical/logistics close and should stay a stable landing spot regardless of how much FAQ content exists.
 - **Claim page** (*2026-07-23 addition*): same shell and prose register as a venue page — no pricing-table/SaaS treatment. Ends in a second usage of `.book-now-btn` (§7a) as its mailto CTA. See UX.md §2.5.
 - **Programmatic pages** (state × amenity): identical shell; generated foreword paragraph; contents-style list. Must be indistinguishable in quality from the index.
