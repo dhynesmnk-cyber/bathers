@@ -13,13 +13,17 @@ force-added by hand).
 
 from __future__ import annotations
 
+import shutil
 import subprocess
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 
-from admin.config import ROOT
+import httpx
+
+from admin.config import NETLIFY_AUTH_TOKEN, NETLIFY_SITE_ID, ROOT, SITE_DIR
 
 ALLOWED_PREFIXES = (
     "site/src/content/spas/_published/",
@@ -142,7 +146,78 @@ def status_summary() -> dict:
     }
 
 
+NETLIFY_POLL_INTERVAL_SECONDS = 10
+NETLIFY_POLL_TIMEOUT_SECONDS = 360
+BUILD_LOG_TAIL_LINES = 15
+
+
+def _site_build_gate() -> Iterator[LogLine]:
+    """Pre-push `npm run build` — refuses the deploy (via DeployRefused)
+    rather than letting broken content reach Netlify, where the failure is
+    silent from the admin's point of view. Skips with a warning where npm
+    isn't available."""
+    if shutil.which("npm") is None:
+        yield LogLine(_now(), "warn", "npm not available — skipping pre-push build check; Netlify will still build on push")
+        return
+    yield LogLine(_now(), "info", "verifying site build (npm run build)")
+    result = subprocess.run(
+        ["npm", "run", "build"], cwd=SITE_DIR, capture_output=True, text=True, timeout=600
+    )
+    if result.returncode == 0:
+        yield LogLine(_now(), "info", "site build ok")
+        return
+    output = (result.stdout + "\n" + result.stderr).strip().splitlines()
+    for line in output[-BUILD_LOG_TAIL_LINES:]:
+        yield LogLine(_now(), "error", line)
+    raise DeployRefused("site build failed — fix the content above before deploying")
+
+
+def _poll_netlify(commit_sha: str) -> Iterator[LogLine]:
+    """After push, watch the resulting Netlify build until it's ready or
+    errors — closing the gap where 'push ok' looked like a successful deploy
+    while the site build failed. No token configured → informational only."""
+    if not NETLIFY_AUTH_TOKEN:
+        yield LogLine(_now(), "info", "pushed — Netlify builds automatically; set NETLIFY_AUTH_TOKEN in .env for build status here")
+        return
+    url = f"https://api.netlify.com/api/v1/sites/{NETLIFY_SITE_ID}/deploys"
+    headers = {"Authorization": f"Bearer {NETLIFY_AUTH_TOKEN}"}
+    deadline = time.monotonic() + NETLIFY_POLL_TIMEOUT_SECONDS
+    last_state = None
+    while time.monotonic() < deadline:
+        try:
+            resp = httpx.get(url, headers=headers, params={"per_page": 10}, timeout=15)
+            resp.raise_for_status()
+        except httpx.HTTPError as exc:
+            yield LogLine(_now(), "warn", f"netlify status check failed — {exc}; check app.netlify.com")
+            return
+        deploy = next((d for d in resp.json() if (d.get("commit_ref") or "").startswith(commit_sha)), None)
+        state = deploy.get("state") if deploy else None
+        if state != last_state and state is not None:
+            yield LogLine(_now(), "info", f"netlify: {state}")
+            last_state = state
+        if state == "ready":
+            yield LogLine(_now(), "info", f"netlify: live — {deploy.get('ssl_url') or deploy.get('url') or ''}")
+            return
+        if state == "error":
+            message = deploy.get("error_message") or "build failed"
+            if "no content change" in message:
+                yield LogLine(_now(), "info", "netlify: skipped build — no site content changed")
+            else:
+                yield LogLine(_now(), "error", f"netlify: {message}")
+            return
+        time.sleep(NETLIFY_POLL_INTERVAL_SECONDS)
+    yield LogLine(_now(), "warn", "netlify: build still running after 6 min — check app.netlify.com")
+
+
 def run_deploy(commit_message: str) -> Iterator[LogLine]:
+    # Sync first — the Fly checkout (or a local one) may be behind origin,
+    # which would reject the push at the end.
+    yield LogLine(_now(), "info", "git pull --ff-only")
+    pull = _run_git("pull", "--ff-only")
+    if pull.returncode != 0:
+        yield LogLine(_now(), "error", f"git pull failed — {(pull.stderr or pull.stdout).strip()}")
+        return
+
     preview = build_preview()
 
     if preview.guard_violations:
@@ -153,6 +228,15 @@ def run_deploy(commit_message: str) -> Iterator[LogLine]:
         return
     if not preview.files:
         yield LogLine(_now(), "warn", "nothing to deploy — no changes in the publish set")
+        return
+
+    try:
+        yield from _site_build_gate()
+    except DeployRefused as exc:
+        yield LogLine(_now(), "error", f"refused — {exc}")
+        return
+    except subprocess.TimeoutExpired:
+        yield LogLine(_now(), "error", "refused — site build timed out after 10 minutes")
         return
 
     yield LogLine(_now(), "info", f"add {len(preview.files)} file(s)")
@@ -176,3 +260,6 @@ def run_deploy(commit_message: str) -> Iterator[LogLine]:
         yield LogLine(_now(), "error", f"git push failed — {(push.stderr or push.stdout).strip()}")
         return
     yield LogLine(_now(), "info", "push ok")
+
+    sha = _run_git("rev-parse", "HEAD").stdout.strip()
+    yield from _poll_netlify(sha)

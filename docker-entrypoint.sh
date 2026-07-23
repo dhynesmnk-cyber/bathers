@@ -47,10 +47,24 @@ GOATCOUNTER_SITE=${GOATCOUNTER_SITE:-}
 ADMIN_USERNAME=${ADMIN_USERNAME:-}
 ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
 SITE_URL=${SITE_URL:-}
+NETLIFY_AUTH_TOKEN=${NETLIFY_AUTH_TOKEN:-}
+NETLIFY_SITE_ID=${NETLIFY_SITE_ID:-}
 EOF
 
 # Safety net for requirements.txt drift between this image's build time and
 # whatever's now on the branch just pulled — no-op if nothing changed.
 pip install --no-cache-dir -q -r admin/requirements.txt
+
+# Build the public site so the admin has preview CSS and /site-dist views
+# (node_modules persists on the volume, so this is fast after first boot).
+# Non-fatal: a broken content file must never keep the admin itself down —
+# that's the tool used to fix it.
+if command -v npm >/dev/null 2>&1; then
+  echo "building site (npm ci + npm run build)"
+  (cd site && npm ci --no-audit --no-fund && npm run build) \
+    || echo "WARNING: site build failed — preview styles and /site-dist views unavailable until fixed" >&2
+else
+  echo "WARNING: npm not available in this image — skipping site build" >&2
+fi
 
 exec uvicorn admin.app:app --host 0.0.0.0 --port "${ADMIN_PORT:-8787}"

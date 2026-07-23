@@ -34,6 +34,7 @@ SITE_IMAGES_DIR = SITE_DIR / "public" / "images"
 PUBLISHED_DIR = ROOT / "site" / "src" / "content" / "spas" / "_published"
 STAGING_DIR = ROOT / "content-staging" / "_staging"
 REJECTED_DIR = ROOT / "content-staging" / "_rejected"
+DELETED_DIR = ROOT / "content-staging" / "_deleted"  # 2026-07-23 — delete-listing action parks removed venues here
 
 # Blog (2026-07-21 addition) — mirrors the venue staging/published split:
 # drafts live outside site/src/content until Publish moves them across.
@@ -86,10 +87,17 @@ GEOCODER_USER_AGENT = _ENV.get("GEOCODER_USER_AGENT", "")
 GOOGLE_PLACES_API_KEY = _ENV.get("GOOGLE_PLACES_API_KEY", "")
 GOATCOUNTER_API_TOKEN = _ENV.get("GOATCOUNTER_API_TOKEN", "")
 GOATCOUNTER_SITE = _ENV.get("GOATCOUNTER_SITE", "")
-# Deployed public-site origin (e.g. https://bathers.example.com) — the Done
-# panel's "view live" links target it. When empty, those links fall back to
-# the last local build served at /site-dist.
-SITE_URL = _ENV.get("SITE_URL", "").rstrip("/")
+# Deployed public-site origin — the Done panel's "view" links target it.
+# Defaults to the Netlify production URL; override in .env (e.g. once a
+# custom domain exists), or set empty to fall back to /site-dist.
+SITE_URL = (_ENV.get("SITE_URL") or "https://bathers-directory.netlify.app").rstrip("/")
+
+# Netlify deploy verification (the site host — repo-connected, builds on
+# push to main). The site id isn't secret (.netlify/state.json is just
+# gitignored); the token is, and lives only in .env / Fly secrets. With no
+# token the deploy strip still pushes — it just can't confirm the build.
+NETLIFY_SITE_ID = _ENV.get("NETLIFY_SITE_ID", "e710bf24-5877-4f2e-b564-034ce83b2400")
+NETLIFY_AUTH_TOKEN = _ENV.get("NETLIFY_AUTH_TOKEN", "")
 
 AMENITY_KEYS = (
     "magnesium_pool",

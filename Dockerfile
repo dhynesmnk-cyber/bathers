@@ -5,7 +5,15 @@
 FROM mcr.microsoft.com/playwright/python:v1.48.0-jammy
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git ca-certificates \
+    && apt-get install -y --no-install-recommends git ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Node 20 (NodeSource — jammy's packaged node is too old for Astro 5). The
+# entrypoint builds the site on the volume checkout at boot, which gives the
+# admin its preview CSS, working /site-dist views, and the deploy strip's
+# pre-push `npm run build` gate.
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
