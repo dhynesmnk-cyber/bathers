@@ -27,6 +27,7 @@ from admin.config import (
     SITE_BLOG_IMAGES_DIR,
     SITE_DIST_DIR,
     SITE_FONTS_DIR,
+    SITE_URL,
     STAGING_DIR,
     STATES,
     VENUES_JSON_PATH,
@@ -43,8 +44,10 @@ app = FastAPI(title="Bathers' Admin")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="admin-static")
 # Mounted unconditionally (dir created if missing) so a later `npm run build`
 # becomes visible on the next request with no admin restart required.
+# html=True so directory URLs (/site-dist/spa/<slug>/) serve their index.html —
+# the Done panel's "view live" fallback when SITE_URL is unset.
 SITE_DIST_DIR.mkdir(parents=True, exist_ok=True)
-app.mount("/site-dist", StaticFiles(directory=str(SITE_DIST_DIR)), name="site-dist")
+app.mount("/site-dist", StaticFiles(directory=str(SITE_DIST_DIR), html=True), name="site-dist")
 if SITE_FONTS_DIR.exists():
     app.mount("/fonts", StaticFiles(directory=str(SITE_FONTS_DIR)), name="admin-fonts")
 SITE_BLOG_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
@@ -115,7 +118,9 @@ def _entry_detail(entry: staging.StagingEntry) -> dict[str, Any]:
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
-    return templates.TemplateResponse(request, "index.html", {"states": STATES, "categories": CATEGORY_LABELS})
+    return templates.TemplateResponse(
+        request, "index.html", {"states": STATES, "categories": CATEGORY_LABELS, "site_url": SITE_URL}
+    )
 
 
 @app.get("/blog", response_class=HTMLResponse)
@@ -128,7 +133,10 @@ def preview(request: Request, slug: str):
     try:
         entry = staging.get_staging(slug)
     except FileNotFoundError:
-        raise HTTPException(404, f"no staged draft for '{slug}'")
+        try:
+            entry = staging.get_published(slug)
+        except FileNotFoundError:
+            raise HTTPException(404, f"no draft or published venue for '{slug}'")
     return templates.TemplateResponse(
         request,
         "preview.html",
@@ -266,11 +274,31 @@ def api_remove_staged_image(slug: str):
     return _entry_detail(entry)
 
 
+@app.get("/api/venues/{slug}")
+def api_get_published_venue(slug: str):
+    try:
+        entry = staging.get_published(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"no published venue '{slug}'")
+    return _entry_detail(entry)
+
+
+@app.patch("/api/venues/{slug}")
+def api_update_published_venue(slug: str, body: PatchBody):
+    try:
+        entry = staging.update_published(slug, body.patch)
+    except FileNotFoundError:
+        raise HTTPException(404, f"no published venue '{slug}'")
+    except ValidationFailed as exc:
+        raise HTTPException(422, detail={"errors": [asdict(e) for e in exc.errors]})
+    return _entry_detail(entry)
+
+
 @app.post("/api/venues/{slug}/remove-image")
 def api_remove_published_image(slug: str):
-    # UX.md §4.4 takedown/claim action — no UI surfaces this yet (the claim
-    # workflow itself is out of scope per TRD.md §8), but the single admin
-    # action itself is required regardless of who triggers it.
+    # UX.md §4.4 takedown/claim action (the claim workflow itself is out of
+    # scope per TRD.md §8) — wired into the Done panel's edit view alongside
+    # general editing.
     try:
         staging.remove_published_image(slug)
     except FileNotFoundError:

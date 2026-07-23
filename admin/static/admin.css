@@ -367,6 +367,27 @@ textarea.text-input {
   resize: vertical;
 }
 
+.field-body {
+  min-height: 220px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.field-hint {
+  display: block;
+  color: var(--ink-faded);
+  font-size: 11px;
+  margin-top: 0.25rem;
+}
+
+.review-mode-badge {
+  display: inline-block;
+  color: var(--oxide);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  margin: -0.5rem 0 0.75rem;
+}
+
 .amenity-toggles {
   border: none;
   padding: 0;
@@ -729,4 +750,17 @@ textarea.text-input {
   margin-right: 0.5rem;
   min-width: 2.5rem;
   display: inline-block;
+}
+
+.done-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.done-item a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

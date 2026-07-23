@@ -6,7 +6,7 @@
     <title>Bathers' — Admin</title>
     <link rel="stylesheet" href="/static/admin.css" />
   </head>
-  <body>
+  <body data-site-url="{{ site_url }}">
     <header class="hub-header">
       <span class="mono eyebrow">BATHERS' — ADMIN</span>
       <p id="undo-banner" class="mono undo-banner" hidden>
@@ -63,6 +63,7 @@
 
       <section class="pane review-pane" aria-labelledby="review-heading">
         <h2 id="review-heading" class="mono pane-heading">REVIEW PANE</h2>
+        <span id="review-mode-badge" class="mono review-mode-badge" hidden>Published — editing live listing</span>
         <div id="review-empty" class="mono empty-state">Select a draft from the queue to review it.</div>
         <div id="review-content" hidden>
           <div class="review-split">
@@ -219,6 +220,12 @@
                 <div id="faq-list" class="faq-list"></div>
                 <button id="faq-add-btn" type="button" class="btn btn-plain">Add question</button>
               </div>
+
+              <label class="field">
+                <span class="mono field-label">Body</span>
+                <textarea id="field-body" class="text-input mono field-body" data-field="body" rows="12"></textarea>
+                <span class="mono field-hint">Raw MDX prose — &lt;Pull&gt; and &lt;TippedPhoto&gt; tags are literal markup here, edit with care.</span>
+              </label>
 
               <div id="field-errors" class="field-errors mono"></div>
               <p id="save-status" class="mono save-status" aria-live="polite"></p>

@@ -32,6 +32,7 @@ AMENITY_FIELD_ORDER = (
 )
 FACILITY_FIELD_ORDER = (
     "parking", "towels_provided", "changerooms", "bookings_required", "wheelchair_access",
+    "outdoor_pool", "indoor_pool", "natural_spring",
 )
 
 UNDO_WINDOW_SECONDS = 10  # client shows a 3s undo affordance; server keeps a wider grace window
@@ -76,6 +77,19 @@ def split_frontmatter(text: str, slug: str) -> tuple[dict[str, Any], str]:
     return data, body.strip("\n")
 
 
+def _coerce_date(value: Any) -> Any:
+    """Date fields arriving through the JSON PATCH API are strings; safe_dump
+    would quote them ('2026-07-23') to preserve the string type, and Astro's
+    frontmatter parser then reads a string where the zod schema demands
+    z.date() — breaking the site build. Coerce so dates always dump unquoted."""
+    if isinstance(value, str):
+        try:
+            return datetime.date.fromisoformat(value)
+        except ValueError:
+            return value
+    return value
+
+
 def render_frontmatter(data: dict[str, Any]) -> str:
     ordered: dict[str, Any] = {}
     for key in FRONTMATTER_FIELD_ORDER:
@@ -85,6 +99,8 @@ def render_frontmatter(data: dict[str, Any]) -> str:
             ordered[key] = {ak: data[key].get(ak) for ak in AMENITY_FIELD_ORDER if ak in data[key]}
         elif key == "facilities" and isinstance(data[key], dict):
             ordered[key] = {fk: data[key].get(fk) for fk in FACILITY_FIELD_ORDER if fk in data[key]}
+        elif key in ("drafted", "verified"):
+            ordered[key] = _coerce_date(data[key])
         else:
             ordered[key] = data[key]
     return yaml.safe_dump(ordered, sort_keys=False, allow_unicode=True, default_flow_style=False)
@@ -181,15 +197,42 @@ def get_staging(slug: str) -> StagingEntry:
     return _entry_from_path(path)
 
 
-def update_staging(slug: str, patch: dict[str, Any]) -> StagingEntry:
-    path = STAGING_DIR / f"{slug}.mdx"
+def _apply_patch(dir_path: Path, slug: str, patch: dict[str, Any], *, validate: bool) -> StagingEntry:
+    path = dir_path / f"{slug}.mdx"
     if not path.exists():
         raise FileNotFoundError(slug)
-    text = path.read_text(encoding="utf-8")
-    data, body = split_frontmatter(text, slug)
+    data, body = split_frontmatter(path.read_text(encoding="utf-8"), slug)
+    patch = dict(patch)
+    if "body" in patch:
+        body = patch.pop("body")
     data.update(patch)
+    if validate:
+        errors = validate_frontmatter(data)
+        if errors:
+            raise ValidationFailed(errors)
     path.write_text(render_mdx(data, body), encoding="utf-8")
     return _entry_from_path(path)
+
+
+def update_staging(slug: str, patch: dict[str, Any]) -> StagingEntry:
+    return _apply_patch(STAGING_DIR, slug, patch, validate=False)
+
+
+def get_published(slug: str) -> StagingEntry:
+    path = PUBLISHED_DIR / f"{slug}.mdx"
+    if not path.exists():
+        raise FileNotFoundError(slug)
+    return _entry_from_path(path)
+
+
+def update_published(slug: str, patch: dict[str, Any]) -> StagingEntry:
+    """General published-venue editing (as opposed to `remove_published_image`'s
+    narrow field-removal): validated on every save, unlike staging drafts,
+    so `_published/` never holds a file that would fail the schema check
+    `approve()` already guarantees on the way in."""
+    entry = _apply_patch(PUBLISHED_DIR, slug, patch, validate=True)
+    data_store.rebuild()
+    return entry
 
 
 def publish_image_fields(slug: str, fields: dict[str, str]) -> StagingEntry:

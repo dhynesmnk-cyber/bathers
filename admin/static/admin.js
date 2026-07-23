@@ -17,6 +17,7 @@
   let queue = [];
   let selectedSlug = null;
   let currentEntry = null;
+  let reviewMode = "staging"; // "staging" | "published" — which API/actions the review pane targets
   let pendingPatch = {};
   let autosaveTimer = null;
   let undoTimer = null;
@@ -40,6 +41,8 @@
   const fieldAccess = el("field-access");
   const fieldVerified = el("field-verified");
   const verifyTodayBtn = el("verify-today-btn");
+  const fieldBody = el("field-body");
+  const reviewModeBadge = el("review-mode-badge");
   const fieldErrorsEl = el("field-errors");
   const saveStatusEl = el("save-status");
   const placesCheckEl = el("places-check");
@@ -96,6 +99,14 @@
   let selectedImageIndex = null;
   let lastHarvestUrl = "";
 
+  // SITE_URL (.env) when configured, else the last local build served at
+  // /site-dist — never /spa/... on this origin, which has no such route.
+  const siteUrlBase = document.body.dataset.siteUrl || "/site-dist";
+
+  function liveVenueUrl(slug) {
+    return `${siteUrlBase}/spa/${encodeURIComponent(slug)}/`;
+  }
+
   function isEditableTarget(target) {
     return ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
   }
@@ -113,9 +124,12 @@
     queueEmpty.hidden = queue.length > 0;
     for (const entry of queue) {
       const li = document.createElement("li");
-      li.className = "queue-item" + (entry.slug === selectedSlug ? " selected" : "");
+      // A published-mode edit can share a slug with a staged re-harvest —
+      // only highlight the row when the pane actually shows the staged copy.
+      const isSelected = reviewMode === "staging" && entry.slug === selectedSlug;
+      li.className = "queue-item" + (isSelected ? " selected" : "");
       li.setAttribute("role", "option");
-      li.setAttribute("aria-selected", entry.slug === selectedSlug ? "true" : "false");
+      li.setAttribute("aria-selected", isSelected ? "true" : "false");
       li.dataset.slug = entry.slug;
 
       const name = document.createElement("div");
@@ -153,20 +167,37 @@
 
   async function selectSlug(slug) {
     selectedSlug = slug;
+    reviewMode = "staging"; // before renderQueue — the highlight depends on it
     renderQueue();
     hideRejectForm();
-    await loadReviewPane(slug);
+    await loadReviewPane(slug, "staging");
+  }
+
+  async function selectPublishedSlug(slug) {
+    selectedSlug = slug;
+    reviewMode = "published"; // before renderQueue — the highlight depends on it
+    renderQueue();
+    donePanel.hidden = true;
+    await loadReviewPane(slug, "published");
   }
 
   // ---- Review pane ----
 
-  async function loadReviewPane(slug) {
-    const res = await fetch(`/api/queue/${encodeURIComponent(slug)}`);
+  function entryUrl(slug) {
+    return reviewMode === "published" ? `/api/venues/${encodeURIComponent(slug)}` : `/api/queue/${encodeURIComponent(slug)}`;
+  }
+
+  async function loadReviewPane(slug, mode) {
+    reviewMode = mode;
+    const res = await fetch(entryUrl(slug));
     if (!res.ok) return;
     currentEntry = await res.json();
     pendingPatch = {};
     reviewEmpty.hidden = true;
     reviewContent.hidden = false;
+    reviewModeBadge.hidden = mode !== "published";
+    actionButtons.hidden = mode === "published";
+    rejectForm.hidden = true;
     populateFields(currentEntry);
     previewFrame.src = `/preview/${encodeURIComponent(slug)}?t=${Date.now()}`;
     saveStatusEl.textContent = "";
@@ -187,6 +218,7 @@
     fieldAccess.value = fm.access || "";
     fieldVerified.textContent = fm.verified || "not yet verified";
     fieldVerified.classList.toggle("verified-missing", !fm.verified);
+    fieldBody.value = entry.body || "";
     const amenities = fm.amenities || {};
     document.querySelectorAll(".toggle-chip[data-amenity]").forEach((btn) => {
       btn.classList.toggle("active", !!amenities[btn.dataset.amenity]);
@@ -256,7 +288,7 @@
     }
 
     imageRemoveBtn.hidden = true;
-    const candidates = entry.image_candidates || [];
+    const candidates = reviewMode === "published" ? [] : entry.image_candidates || [];
     if (candidates.length === 0) {
       imagePublishRow.hidden = true;
       return;
@@ -300,6 +332,12 @@
 
   imageRemoveBtn.addEventListener("click", async () => {
     if (!selectedSlug) return;
+    if (reviewMode === "published") {
+      const res = await fetch(`/api/venues/${encodeURIComponent(selectedSlug)}/remove-image`, { method: "POST" });
+      if (!res.ok) return;
+      await loadReviewPane(selectedSlug, "published");
+      return;
+    }
     const res = await fetch(`/api/queue/${encodeURIComponent(selectedSlug)}/images/remove`, { method: "POST" });
     if (!res.ok) return;
     currentEntry = await res.json();
@@ -313,7 +351,11 @@
 
   verifyTodayBtn.addEventListener("click", async () => {
     if (!selectedSlug) return;
-    const res = await fetch(`/api/queue/${encodeURIComponent(selectedSlug)}`, {
+    // Flush queued edits first — populateFields() below rewrites every input
+    // from the server response, which would visually drop unflushed keystrokes.
+    clearTimeout(autosaveTimer);
+    await flushAutosave();
+    const res = await fetch(entryUrl(selectedSlug), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ patch: { verified: todayDateString() } }),
@@ -399,6 +441,7 @@
     cost: fieldCost,
     access: fieldAccess,
     verified: fieldVerified,
+    body: fieldBody,
     faq: el("faq-section"),
   };
 
@@ -426,11 +469,28 @@
     if (!selectedSlug || Object.keys(pendingPatch).length === 0) return;
     const patch = pendingPatch;
     pendingPatch = {};
-    const res = await fetch(`/api/queue/${encodeURIComponent(selectedSlug)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ patch }),
-    });
+    let res;
+    try {
+      res = await fetch(entryUrl(selectedSlug), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ patch }),
+      });
+    } catch (err) {
+      // Network failure — put the patch back (under any newer keystrokes,
+      // which win per-field) and retry rather than silently losing edits.
+      pendingPatch = { ...patch, ...pendingPatch };
+      saveStatusEl.textContent = "save failed — retrying";
+      clearTimeout(autosaveTimer);
+      autosaveTimer = setTimeout(flushAutosave, 2000);
+      return;
+    }
+    if (res.status === 422) {
+      const errBody = await res.json();
+      renderFieldErrors((errBody.detail && errBody.detail.errors) || []);
+      saveStatusEl.textContent = "not saved — fix the highlighted field";
+      return;
+    }
     if (!res.ok) return;
     currentEntry = await res.json();
     renderFieldErrors(currentEntry.errors || []);
@@ -455,6 +515,7 @@
   fieldHours.addEventListener("input", () => queuePatch("hours", fieldHours.value));
   fieldCost.addEventListener("input", () => queuePatch("cost", fieldCost.value));
   fieldAccess.addEventListener("input", () => queuePatch("access", fieldAccess.value));
+  fieldBody.addEventListener("input", () => queuePatch("body", fieldBody.value));
 
   document.querySelectorAll(".toggle-chip[data-amenity]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -626,6 +687,8 @@
         }
       }
       await fetchQueue();
+    } catch (err) {
+      appendLogLine(nowTime(), "error", `harvest failed — ${err.message}`);
     } finally {
       harvestSubmit.disabled = false;
     }
@@ -872,7 +935,7 @@
   });
   conversionsRefreshBtn.addEventListener("click", () => fetchConversions(true));
 
-  // ---- Done panel (published venues, read-only) ----
+  // ---- Done panel (published venues) ----
 
   function renderDone(venues) {
     doneList.innerHTML = "";
@@ -884,13 +947,20 @@
     doneEmpty.hidden = true;
     for (const venue of venues) {
       const li = document.createElement("li");
+      li.className = "done-item";
       const link = document.createElement("a");
-      link.href = `/spa/${encodeURIComponent(venue.slug)}/`;
+      link.href = liveVenueUrl(venue.slug);
       link.target = "_blank";
       link.rel = "noopener";
       const notation = amenityNotation(venue.amenities);
       link.textContent = `${venue.name} — ${[venue.suburb, venue.state].filter(Boolean).join(", ")}${notation ? " — " + notation : ""}`;
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "btn btn-plain";
+      editBtn.textContent = "Edit";
+      editBtn.addEventListener("click", () => selectPublishedSlug(venue.slug));
       li.appendChild(link);
+      li.appendChild(editBtn);
       doneList.appendChild(li);
     }
   }
@@ -944,7 +1014,7 @@
       return;
     }
 
-    if (!selectedSlug || !rejectForm.hidden) return;
+    if (!selectedSlug || !rejectForm.hidden || reviewMode !== "staging") return;
 
     if (event.key === "a" || event.key === "A") {
       event.preventDefault();

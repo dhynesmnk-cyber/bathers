@@ -86,6 +86,10 @@ GEOCODER_USER_AGENT = _ENV.get("GEOCODER_USER_AGENT", "")
 GOOGLE_PLACES_API_KEY = _ENV.get("GOOGLE_PLACES_API_KEY", "")
 GOATCOUNTER_API_TOKEN = _ENV.get("GOATCOUNTER_API_TOKEN", "")
 GOATCOUNTER_SITE = _ENV.get("GOATCOUNTER_SITE", "")
+# Deployed public-site origin (e.g. https://bathers.example.com) — the Done
+# panel's "view live" links target it. When empty, those links fall back to
+# the last local build served at /site-dist.
+SITE_URL = _ENV.get("SITE_URL", "").rstrip("/")
 
 AMENITY_KEYS = (
     "magnesium_pool",
