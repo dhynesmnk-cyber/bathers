@@ -448,6 +448,38 @@
     }
   },
   {
+    "slug": "mornington-peninsula-hot-springs",
+    "name": "Peninsula Hot Springs",
+    "state": "VIC",
+    "category": "thermal_springs",
+    "suburb": "Fingal",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Geothermal mineral-rich bathing on the Mornington Peninsula, with separate family and adults-only precincts, spa treatments, dining, and on-site accommodation.",
+    "has_image": true,
+    "hours": "Mon–Thu 7:00 AM – 11:00 PM; Fri 7:00 AM – 2:00 AM; Sat 5:00 AM – 2:00 AM; Sun 5:00 AM – 11:00 PM",
+    "cost": null,
+    "access": null,
+    "amenities": {
+      "magnesium_pool": true,
+      "infrared_sauna": false,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": true,
+      "towels_provided": true,
+      "changerooms": true,
+      "bookings_required": true,
+      "wheelchair_access": true,
+      "outdoor_pool": true,
+      "indoor_pool": true,
+      "natural_spring": true
+    }
+  },
+  {
     "slug": "peninsula-hot-springs",
     "name": "Peninsula Hot Springs",
     "state": "VIC",
