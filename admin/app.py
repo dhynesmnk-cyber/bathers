@@ -93,6 +93,7 @@ def _entry_summary(entry: staging.StagingEntry) -> dict[str, Any]:
         "word_count": entry.word_count,
         "errors": [asdict(e) for e in entry.errors],
         "saved_at": entry.saved_at,
+        "duplicates": staging.find_duplicates(entry.slug, data),
     }
 
 
@@ -116,10 +117,23 @@ def _entry_detail(entry: staging.StagingEntry) -> dict[str, Any]:
     }
 
 
+def _static_version() -> int:
+    """Cache-buster for /static includes — stale browser-cached admin.js
+    running against a newer template silently breaks the editor."""
+    return max(int((BASE_DIR / "static" / name).stat().st_mtime) for name in ("admin.js", "admin.css"))
+
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse(
-        request, "index.html", {"states": STATES, "categories": CATEGORY_LABELS, "site_url": SITE_URL}
+        request,
+        "index.html",
+        {
+            "states": STATES,
+            "categories": CATEGORY_LABELS,
+            "site_url": SITE_URL,
+            "static_version": _static_version(),
+        },
     )
 
 
@@ -292,6 +306,15 @@ def api_update_published_venue(slug: str, body: PatchBody):
     except ValidationFailed as exc:
         raise HTTPException(422, detail={"errors": [asdict(e) for e in exc.errors]})
     return _entry_detail(entry)
+
+
+@app.delete("/api/venues/{slug}")
+def api_delete_published_venue(slug: str):
+    try:
+        staging.delete_published(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"no published venue '{slug}'")
+    return {"ok": True}
 
 
 @app.post("/api/venues/{slug}/remove-image")

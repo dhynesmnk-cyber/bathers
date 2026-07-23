@@ -43,6 +43,12 @@
   const verifyTodayBtn = el("verify-today-btn");
   const fieldBody = el("field-body");
   const reviewModeBadge = el("review-mode-badge");
+  const duplicateWarningEl = el("duplicate-warning");
+  const deleteActions = el("delete-actions");
+  const deleteBtn = el("delete-btn");
+  const deleteConfirm = el("delete-confirm");
+  const deleteConfirmBtn = el("delete-confirm-btn");
+  const deleteCancelBtn = el("delete-cancel-btn");
   const fieldErrorsEl = el("field-errors");
   const saveStatusEl = el("save-status");
   const placesCheckEl = el("places-check");
@@ -152,6 +158,14 @@
       chip.textContent = entry.status;
       meta.appendChild(chip);
 
+      if ((entry.duplicates || []).length > 0) {
+        const dupeChip = document.createElement("span");
+        dupeChip.className = "status-chip status-DUPE";
+        dupeChip.textContent = "DUPE?";
+        dupeChip.title = entry.duplicates.map((d) => `${d.name} (${d.location}) — ${d.reason}`).join("\n");
+        meta.appendChild(dupeChip);
+      }
+
       li.appendChild(meta);
       li.addEventListener("click", () => selectSlug(entry.slug));
       queueList.appendChild(li);
@@ -198,9 +212,22 @@
     reviewModeBadge.hidden = mode !== "published";
     actionButtons.hidden = mode === "published";
     rejectForm.hidden = true;
+    deleteActions.hidden = mode !== "published";
+    deleteConfirm.hidden = true;
+    renderDuplicateWarning(currentEntry.duplicates || []);
     populateFields(currentEntry);
     previewFrame.src = `/preview/${encodeURIComponent(slug)}?t=${Date.now()}`;
     saveStatusEl.textContent = "";
+  }
+
+  function renderDuplicateWarning(duplicates) {
+    duplicateWarningEl.innerHTML = "";
+    duplicateWarningEl.hidden = duplicates.length === 0;
+    for (const d of duplicates) {
+      const line = document.createElement("div");
+      line.textContent = `Possible duplicate of ${d.name} (${d.location}: ${d.slug}) — ${d.reason}`;
+      duplicateWarningEl.appendChild(line);
+    }
   }
 
   function populateFields(entry) {
@@ -597,6 +624,35 @@
 
   approveBtn.addEventListener("click", performApprove);
 
+  // ---- Delete published listing (2026-07-23) — inline two-step confirm,
+  // same idiom as reject; only reachable in published-edit mode ----
+
+  deleteBtn.addEventListener("click", () => {
+    deleteActions.hidden = true;
+    deleteConfirm.hidden = false;
+  });
+
+  deleteCancelBtn.addEventListener("click", () => {
+    deleteConfirm.hidden = true;
+    deleteActions.hidden = false;
+  });
+
+  deleteConfirmBtn.addEventListener("click", async () => {
+    if (!selectedSlug || reviewMode !== "published") return;
+    const res = await fetch(`/api/venues/${encodeURIComponent(selectedSlug)}`, { method: "DELETE" });
+    if (!res.ok) {
+      saveStatusEl.textContent = `delete failed — HTTP ${res.status}`;
+      return;
+    }
+    deleteConfirm.hidden = true;
+    selectedSlug = null;
+    currentEntry = null;
+    reviewContent.hidden = true;
+    reviewEmpty.hidden = false;
+    await fetchDeployStatus(); // the removal is now a pending site change
+    if (!donePanel.hidden) await fetchDone();
+  });
+
   rejectBtn.addEventListener("click", () => {
     actionButtons.hidden = true;
     rejectForm.hidden = false;
@@ -948,19 +1004,22 @@
     for (const venue of venues) {
       const li = document.createElement("li");
       li.className = "done-item";
-      const link = document.createElement("a");
-      link.href = liveVenueUrl(venue.slug);
-      link.target = "_blank";
-      link.rel = "noopener";
+      // Name opens the listing in the review pane for editing; the separate
+      // "view ↗" anchor goes to the live site (SITE_URL, /site-dist fallback).
+      const nameBtn = document.createElement("button");
+      nameBtn.type = "button";
+      nameBtn.className = "done-item-name";
       const notation = amenityNotation(venue.amenities);
-      link.textContent = `${venue.name} — ${[venue.suburb, venue.state].filter(Boolean).join(", ")}${notation ? " — " + notation : ""}`;
-      const editBtn = document.createElement("button");
-      editBtn.type = "button";
-      editBtn.className = "btn btn-plain";
-      editBtn.textContent = "Edit";
-      editBtn.addEventListener("click", () => selectPublishedSlug(venue.slug));
-      li.appendChild(link);
-      li.appendChild(editBtn);
+      nameBtn.textContent = `${venue.name} — ${[venue.suburb, venue.state].filter(Boolean).join(", ")}${notation ? " — " + notation : ""}`;
+      nameBtn.addEventListener("click", () => selectPublishedSlug(venue.slug));
+      const viewLink = document.createElement("a");
+      viewLink.href = liveVenueUrl(venue.slug);
+      viewLink.target = "_blank";
+      viewLink.rel = "noopener";
+      viewLink.className = "done-item-view";
+      viewLink.textContent = "view ↗";
+      li.appendChild(nameBtn);
+      li.appendChild(viewLink);
       doneList.appendChild(li);
     }
   }

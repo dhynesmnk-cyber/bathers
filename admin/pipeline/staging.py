@@ -18,7 +18,7 @@ from typing import Any
 
 import yaml
 
-from admin.config import PUBLISHED_DIR, REJECTED_DIR, STAGING_DIR
+from admin.config import DELETED_DIR, PUBLISHED_DIR, REJECTED_DIR, SITE_IMAGES_DIR, STAGING_DIR
 from admin.pipeline import data_store, forewords, images, places
 from admin.schema import FieldError, count_prose_words, staging_status, validate_frontmatter
 
@@ -190,6 +190,65 @@ def list_staging() -> list[StagingEntry]:
     return [_entry_from_path(p) for p in paths]
 
 
+# ---- Duplicate detection (2026-07-23) ----
+#
+# The same venue harvested twice under different slugs produces a second
+# listing (it happened: mornington-peninsula-hot-springs duplicated
+# peninsula-hot-springs). Matching is on normalised website domain+path and
+# normalised name across published venues and other staged drafts. Warn-only
+# by design — the reviewer decides; approve is never blocked.
+
+
+def _normalise_website(url: Any) -> str:
+    if not isinstance(url, str):
+        return ""
+    url = url.strip().lower()
+    url = re.sub(r"^https?://", "", url)
+    url = re.sub(r"^www\.", "", url)
+    return url.rstrip("/")
+
+
+def _normalise_name(name: Any) -> str:
+    if not isinstance(name, str):
+        return ""
+    return re.sub(r"[^a-z0-9]+", " ", name.lower()).strip()
+
+
+def find_duplicates(slug: str, frontmatter: dict[str, Any]) -> list[dict[str, str]]:
+    """Possible duplicates of the given entry among published venues and
+    other staged drafts. Returns [{slug, name, location, reason}]."""
+    website = _normalise_website(frontmatter.get("website"))
+    name = _normalise_name(frontmatter.get("name"))
+    duplicates: list[dict[str, str]] = []
+    for location, directory in (("published", PUBLISHED_DIR), ("staged", STAGING_DIR)):
+        if not directory.exists():
+            continue
+        for path in sorted(directory.glob("*.mdx")):
+            if location == "staged" and path.stem == slug:
+                continue  # not a duplicate of itself
+            if location == "published" and path.stem == slug:
+                continue  # re-harvest of the same slug is an update, not a dupe
+            try:
+                other, _ = split_frontmatter(path.read_text(encoding="utf-8"), path.stem)
+            except ValueError:
+                continue
+            reasons = []
+            if website and _normalise_website(other.get("website")) == website:
+                reasons.append("same website")
+            if name and _normalise_name(other.get("name")) == name:
+                reasons.append("same name")
+            if reasons:
+                duplicates.append(
+                    {
+                        "slug": path.stem,
+                        "name": other.get("name") or path.stem,
+                        "location": location,
+                        "reason": ", ".join(reasons),
+                    }
+                )
+    return duplicates
+
+
 def get_staging(slug: str) -> StagingEntry:
     path = STAGING_DIR / f"{slug}.mdx"
     if not path.exists():
@@ -310,6 +369,31 @@ def approve(slug: str) -> int:
         previous_published_text=previous_published_text,
     )
     return count
+
+
+def delete_published(slug: str) -> None:
+    """Delete-listing action (2026-07-23): parks the MDX in
+    content-staging/_deleted/ (timestamped, never destroyed) rather than
+    unlinking, removes the venue's published image file if it has one, and
+    rebuilds the derived data. The deploy strip then carries the removal to
+    the site as a normal content change."""
+    path = PUBLISHED_DIR / f"{slug}.mdx"
+    if not path.exists():
+        raise FileNotFoundError(slug)
+    text = path.read_text(encoding="utf-8")
+    data, _body = split_frontmatter(text, slug)
+
+    DELETED_DIR.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    (DELETED_DIR / f"{slug}.{stamp}.mdx").write_text(text, encoding="utf-8")
+    path.unlink()
+
+    image = data.get("image")
+    if isinstance(image, str) and image.startswith("/images/"):
+        image_path = SITE_IMAGES_DIR / Path(image).name
+        image_path.unlink(missing_ok=True)
+
+    data_store.rebuild()
 
 
 def remove_published_image(slug: str) -> None:

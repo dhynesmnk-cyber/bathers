@@ -13,7 +13,7 @@ from dataclasses import asdict, dataclass
 from typing import Iterator
 
 from admin.config import AMENITY_KEYS, FAILED_DIR, MODEL_ARCHITECT, MODEL_GATEKEEPER, MODEL_HARVESTER, PUBLISHED_DIR, ROOT, STAGING_DIR
-from admin.pipeline import agents, geocode, harvest, images, places
+from admin.pipeline import agents, geocode, harvest, images, places, staging
 from admin.pipeline.staging import render_mdx, split_frontmatter
 
 HARVESTER_REQUIRED_KEYS = (
@@ -287,6 +287,8 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False, allow_existing_
     STAGING_DIR.mkdir(parents=True, exist_ok=True)
     (STAGING_DIR / f"{slug}.mdx").write_text(render_mdx(final_fm, gate_body), encoding="utf-8")
     log(f"saved → _staging/{slug}.mdx")
+    for dupe in staging.find_duplicates(slug, final_fm):
+        log(f"possible duplicate of {dupe['name']} ({dupe['location']}: {dupe['slug']}) — {dupe['reason']}", "warn")
     yield from drain()
 
     candidate_urls = images.discover_image_urls(result.html, url)

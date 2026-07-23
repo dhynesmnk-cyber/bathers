@@ -291,6 +291,11 @@ body {
   border-color: var(--ink-faded);
 }
 
+.status-chip.status-DUPE {
+  color: var(--oxide);
+  border-color: var(--oxide);
+}
+
 /* Review pane */
 
 .review-split {
@@ -759,8 +764,40 @@ textarea.text-input {
   gap: 0.5rem;
 }
 
-.done-item a {
+/* Name opens the editor — styled as a link, not a button box. */
+.done-item-name {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.done-item-name:hover,
+.done-item-name:focus-visible {
+  color: var(--thermal);
+  text-decoration-color: var(--thermal);
+}
+
+.done-item-view {
+  flex-shrink: 0;
+  color: var(--ink-faded);
+  font-size: 11px;
+}
+
+.duplicate-warning {
+  color: var(--oxide);
+  border: 1px solid var(--oxide);
+  border-radius: 2px;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.75rem;
+  font-size: 12px;
 }

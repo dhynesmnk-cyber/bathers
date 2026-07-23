@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bathers' — Admin</title>
-    <link rel="stylesheet" href="/static/admin.css" />
+    <link rel="stylesheet" href="/static/admin.css?v={{ static_version }}" />
   </head>
   <body data-site-url="{{ site_url }}">
     <header class="hub-header">
@@ -64,6 +64,7 @@
       <section class="pane review-pane" aria-labelledby="review-heading">
         <h2 id="review-heading" class="mono pane-heading">REVIEW PANE</h2>
         <span id="review-mode-badge" class="mono review-mode-badge" hidden>Published — editing live listing</span>
+        <div id="duplicate-warning" class="mono duplicate-warning" hidden></div>
         <div id="review-empty" class="mono empty-state">Select a draft from the queue to review it.</div>
         <div id="review-content" hidden>
           <div class="review-split">
@@ -242,6 +243,14 @@
               <button type="submit" class="btn btn-oxide">Confirm reject</button>
               <button type="button" id="reject-cancel" class="btn btn-plain">Cancel</button>
             </form>
+            <div id="delete-actions" class="action-buttons" hidden>
+              <button id="delete-btn" type="button" class="btn btn-oxide">Delete listing</button>
+            </div>
+            <div id="delete-confirm" class="action-buttons" hidden>
+              <span class="mono">Remove this listing from the site?</span>
+              <button id="delete-confirm-btn" type="button" class="btn btn-oxide">Confirm delete</button>
+              <button id="delete-cancel-btn" type="button" class="btn btn-plain">Cancel</button>
+            </div>
           </div>
         </div>
       </section>
@@ -276,6 +285,6 @@
     {% include "partials/conversions_panel.html" %}
     {% include "partials/done_panel.html" %}
 
-    <script src="/static/admin.js"></script>
+    <script src="/static/admin.js?v={{ static_version }}"></script>
   </body>
 </html>
