@@ -91,13 +91,15 @@ Also implement UX.md §6 (2026-07-21) — the `/blog` authoring screen and its o
 
 ## 8. Out of Scope (v1)
 
-Accounts/auth, venue claiming beyond a mailto line, reviews by users, search, analytics, image galleries (one image max), any hosted database, any serverless functions.
+Accounts/auth, reviews by users, search, analytics, image galleries (one image max), any hosted database, any serverless functions.
 
 **Exception (user-approved, 2026-07-20):** a minimal, single-purpose exception to the "analytics" exclusion above — GoatCounter click tracking on the Book Now button only (no page-view analytics, no dashboards beyond a simple admin read-back of per-venue click counts). See `admin/pipeline/goatcounter.py`. Nothing else in this list is affected; general site analytics remains out of scope.
 
 **Exception (user-approved, 2026-07-20):** admin-side venue *discovery* (finding candidate URLs via Google Places Text Search, reviewed by a human before harvesting) is in scope. Public-facing site search remains out of scope — this exception does not add a search feature to the published site. See `admin/pipeline/discovery.py`.
 
 **Exception (user-approved, 2026-07-21):** a hand-authored blog/journal is in scope — a new Astro content collection (`site/src/content/blog/`, SCHEMA.md §7) with list/post pages, and an admin authoring screen (`/blog`) with a Quill.js rich-text editor (vendored locally, `admin/static/vendor/quill/` — no CDN, no build step; see UX.md §6), inline image upload, and external YouTube/Vimeo video embeds (no self-hosted video, no new backend dependency). Unlike venues, posts are not part of the AI pipeline — no Harvester/Architect/Gatekeeper, no SQLite table.
+
+**Exception (user-approved, 2026-07-23):** venue claiming beyond a mailto line is in scope, specifically — a per-venue `/claim/[slug]` detail page (UX.md §2.5) explaining two paid options for a venue owner to request content updates (a one-off processing fee, or a monthly subscription for ongoing access), ending in a `mailto:` CTA. This remains a static page with a mailto link only: no accounts, no forms, no payment gateway, no hosted database. Fee collection and request review happen manually over email, not through the site.
 
 ## 9. Execution
 

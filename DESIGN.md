@@ -124,17 +124,18 @@ Superseded text, kept for record: amenities were previously recorded as a natura
 ## 7. Page-Specific Notes
 
 - **Index:** masthead first — site name in large Fraunces with a one-line mono subtitle (like a pamphlet title page), then a short editorial foreword (real prose, 2–3 paragraphs), then the map chapter, then the state-grouped contents list.
-- **Venue page:** name → dateline/notation row → prose with 1–2 pull-quotes → tipped-in photo if one exists (mid-article, never top) → FAQ (if present) → appendix block (`--paper-raised`, mono, hairline-topped) with address, the Book Now button, hours, and the claim-this-listing line. FAQ sits above the appendix, not inside it — it's still editorial content ("what is this place like"), while the appendix is the page's practical/logistics close and should stay a stable landing spot regardless of how much FAQ content exists.
+- **Venue page:** name → dateline/notation row → prose with 1–2 pull-quotes → tipped-in photo if one exists (mid-article, never top) → FAQ (if present) → appendix block (`--paper-raised`, mono, hairline-topped) with address, the Book Now button, hours, and the claim-this-listing button (*2026-07-23: upgraded from a plain mailto line to a `.book-now-btn`-styled button linking to `/claim/[slug]/`, hidden once `status` is `claimed`*). FAQ sits above the appendix, not inside it — it's still editorial content ("what is this place like"), while the appendix is the page's practical/logistics close and should stay a stable landing spot regardless of how much FAQ content exists.
+- **Claim page** (*2026-07-23 addition*): same shell and prose register as a venue page — no pricing-table/SaaS treatment. Ends in a second usage of `.book-now-btn` (§7a) as its mailto CTA. See UX.md §2.5.
 - **Programmatic pages** (state × amenity): identical shell; generated foreword paragraph; contents-style list. Must be indistinguishable in quality from the index.
 - **Zero-image default:** every page must look complete and intentional with no images at all. Images are garnish, never load-bearing. (See UX.md §4 for the image approval pipeline.)
 - **Blog (2026-07-21 addition):** same typographic-entries list style as the index (no cards, no thumbnails in the list — DESIGN.md §5). A post's cover image is a plain full-width image with a `--paper-raised` mount border, deliberately *not* the tipped-in/rotated/`PLATE I.` treatment (§4) — that treatment is the venue page's specimen-photograph signature; a blog cover image functions more like a banner than a mid-article aside, so it gets a plainer, undecorated treatment instead. In-body Quill images render at their natural HTML size with no special framing.
 
 ### 7a. Interactive elements — the Book Now button
 
-The public site has exactly one button-styled element: the venue page's "Book now" link out to the venue's own website. It must look like a stamped instruction, not a SaaS CTA:
+The public site has exactly one button *style* (`.book-now-btn`), used in two places: the venue page's "Book now" link out to the venue's own website, and (*2026-07-23*) the "Claim this listing" button and the claim page's mailto CTA — the same class, not a second style. It must look like a stamped instruction, not a SaaS CTA:
 
 - Element: a real `<a>` styled as a button (it navigates, so not `<button>`).
-- Sits inline in the page flow, inside the appendix block, alongside the address and claim-this-listing lines — never fixed or floating (UX.md §3 already bans floating buttons site-wide).
+- Sits inline in the page flow, inside the appendix block, alongside the address and claim-this-listing button — never fixed or floating (UX.md §3 already bans floating buttons site-wide).
 - Typography: IBM Plex Mono, uppercase, letterspaced 0.05em, 13px — matches the appendix block's existing mono register, not the display face.
 - Colour: 1px solid `--thermal` border, `--thermal` text; background stays `--paper-raised` (the appendix block's own surface) — no filled thermal background, which would exceed the "<5% of screen" thermal budget on a page that may also show thermal in the notation row and links. Hover/focus keeps the border and text thermal-only (no colour-flip, no glow).
 - Shape: 0 border-radius (the site-wide reset already enforces this — do not override it above 2px). No box-shadow, no gradient, no icon.

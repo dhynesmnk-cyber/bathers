@@ -105,7 +105,7 @@ Content order (top to bottom): masthead → editorial foreword → **the map cha
 
 ### 2.2 Venue page
 
-- Content order per DESIGN.md §7. The appendix block includes a business-owner contact line (`Run this venue? Get in touch`, reworded 2026-07-21 to soften the claim/unclaimed framing per the homepage's "curated space for wellness" repositioning) as a plain `mailto:` line (v1 — no forms).
+- Content order per DESIGN.md §7. The appendix block includes a business-owner CTA (*2026-07-23*): a `.book-now-btn`-styled "Claim this listing" button linking to that venue's `/claim/[slug]/` page (§2.5), shown only when `status !== "claimed"`. It replaces the earlier plain mailto line (reworded 2026-07-21 to soften the claim/unclaimed framing) — the mailto contact now lives on the claim page itself, as the page's own CTA, not inline on the venue page.
 - Amenity notations in the dateline expand on hover/focus (title + inline italic). On touch, a tap toggles the expansion.
 - Pull-quotes are generated at build time from marked spans in the MDX (`<Pull>` component), not duplicated text.
 
@@ -125,6 +125,15 @@ Content order (top to bottom): masthead → editorial foreword → **the map cha
 - No transition/animation on switch — an instant state change, consistent with §3's motion posture.
 - Works with JavaScript disabled: the control still renders (a real, focusable element) but is inert without JS — the page still themes correctly from `prefers-color-scheme` alone, so a no-JS visitor always gets a correctly themed page, just without the override.
 - Admin app: no manual toggle — auto (`prefers-color-scheme`) only, per DESIGN.md §8.
+
+---
+
+### 2.5 Claim-listing page (2026-07-23 addition)
+
+- Route `/claim/[slug]/`, one per venue, statically generated (`getStaticPaths` over the `spas` collection, same pattern as the venue page). Same shell/typography as a venue page — no pricing-table/SaaS layout (DESIGN.md §10 test applies here too).
+- Content order: heading (`Claim {venue name}`) → prose explaining the two options (a one-off processing fee per content update, or a monthly subscription for ongoing update access) → a line noting requests can cover any copy, image, or detail, and that denied requests are not charged → a single `.book-now-btn`-styled `mailto:` CTA, pre-filled with subject and body identifying the venue → a plain link back to the venue page.
+- v1 stays mailto-only: no claim form, no login, no payment collection on the page itself — consistent with §2.2's "no forms" posture, just relocated from the venue page to its own page.
+- Reached only via the venue page's "Claim this listing" button (§2.2), which is hidden once a venue's `status` is `claimed`.
 
 ---
 
