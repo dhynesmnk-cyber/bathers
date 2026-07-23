@@ -99,6 +99,24 @@ export function videoEmbedUrl(url: string): string {
   return url; // already an embeddable player.vimeo.com/video/ID URL
 }
 
+// Cost display (2026-07-23). `cost` frontmatter is a freeform Architect-
+// drafted string that can run long ("Early Bird from $39 (weekday) / $49
+// (Fri–Sun); standard Soak from $59…"). Summary contexts show a compact
+// range derived from every dollar amount in the string; the full text
+// stays on the venue page's appendix. Returns null when no $ amount is
+// found so callers can fall back to the raw string.
+export function priceRange(cost: string): string | null {
+  const amounts = Array.from(cost.matchAll(/\$\s?(\d[\d,]*(?:\.\d{1,2})?)/g), (m) =>
+    Number(m[1].replace(/,/g, "")),
+  ).filter((n) => Number.isFinite(n));
+  if (amounts.length === 0) return null;
+  const min = Math.min(...amounts);
+  const max = Math.max(...amounts);
+  const fmt = (n: number) => `$${n % 1 === 0 ? n.toLocaleString("en-AU") : n.toFixed(2)}`;
+  if (min === max) return /\bfrom\b/i.test(cost) ? `from ${fmt(min)}` : fmt(min);
+  return `${fmt(min)}–${fmt(max)}`;
+}
+
 export const SITE_NAME = "Bathers'";
 export const SITE_TAGLINE = "Notes on heat, cold and water at Australian day spas and bathhouses.";
 
