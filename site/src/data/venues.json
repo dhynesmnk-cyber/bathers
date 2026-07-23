@@ -1,5 +1,34 @@
 [
   {
+    "slug": "about-time-bathhouse",
+    "name": "About Time Bathhouse",
+    "state": "VIC",
+    "category": "bathhouse",
+    "suburb": "Torquay",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "A multi-pool bathhouse in Torquay with saunas, cold plunges, steam room, gardens, and massage treatments — a solid option for the Surf Coast.",
+    "has_image": true,
+    "hours": "Mon & Wed 7am–7pm, Tue 9am–7pm, Thu–Sat 7am–8pm, Sun 8am–7pm",
+    "cost": null,
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
     "slug": "alba-thermal-springs-spa",
     "name": "Alba Thermal Springs & Spa",
     "state": "VIC",
@@ -11,6 +40,35 @@
     "summary": "Geothermal springs in native bushland on the Mornington Peninsula, with indoor, open-air, and botanical pools, plus treatments and on-site dining.",
     "has_image": false,
     "hours": "Daily 7:00 AM – 10:00 PM, closed Christmas Day",
+    "cost": null,
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
+    "slug": "aun-bathhouse",
+    "name": "AUN Bathhouse",
+    "state": "VIC",
+    "category": "bathhouse",
+    "suburb": "North Melbourne",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Japanese communal bathhouse opening in North Melbourne in August 2026. Specific facilities and pricing not yet disclosed.",
+    "has_image": true,
+    "hours": null,
     "cost": null,
     "access": null,
     "amenities": {
@@ -87,6 +145,267 @@
     }
   },
   {
+    "slug": "city-cave-braybrook",
+    "name": "City Cave Braybrook",
+    "state": "VIC",
+    "category": "day_spa",
+    "suburb": "Braybrook",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Float therapy, infrared sauna, and massage in a treatment-led day spa inside the Home and Co. complex on Ballarat Rd.",
+    "has_image": true,
+    "hours": "Mon–Sun, 8:30 am – 8:30 pm",
+    "cost": "Float therapy from $89 casual; infrared sauna from $49; massage from $119 (45 min). Membership and multi-pack pricing available.",
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": true,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": true
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
+    "slug": "crown-spa-melbourne",
+    "name": "Crown Spa Melbourne",
+    "state": "VIC",
+    "category": "day_spa",
+    "suburb": "Southbank",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Treatment-led hotel spa on Level 3 of Crown Towers, with one of the country's largest indoor pools and La Prairie facials on the menu.",
+    "has_image": true,
+    "hours": "Daily, 10am – 8pm",
+    "cost": null,
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": true,
+      "towels_provided": false,
+      "changerooms": true,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
+    "slug": "deep-blue-hot-springs",
+    "name": "Deep Blue Hot Springs Warrnambool",
+    "state": "VIC",
+    "category": "thermal_springs",
+    "suburb": "Warrnambool",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Open-air geothermal rock pools and cascading thermal waterfalls beside the sea in Warrnambool, open daily from 7am.",
+    "has_image": true,
+    "hours": "Daily, 7:00 AM – 9:30 PM",
+    "cost": null,
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": true,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
+    "slug": "hepburn-bathhouse-spa",
+    "name": "Hepburn Bathhouse & Spa",
+    "state": "VIC",
+    "category": "bathhouse",
+    "suburb": "Hepburn Springs",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "A mineral bathhouse operating since 1895 in Hepburn Springs, with a tiered bathing circuit drawing directly from natural springs.",
+    "has_image": true,
+    "hours": "Mon–Thu & Sun 9am–7pm, Fri–Sat 9am–9pm. Closed Christmas Day & Good Friday.",
+    "cost": null,
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
+    "slug": "holism-retreat",
+    "name": "Holism Retreat",
+    "state": "VIC",
+    "category": "day_spa",
+    "suburb": "Malvern East",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Treatment spa inside the MGallery Hotel Chadstone offering massage, holistic skincare, LED light therapy and facials. Weekend 10% surcharge applies.",
+    "has_image": true,
+    "hours": "Mon–Thu 10am–6pm, Fri 10am–7pm, Sat 9am–6pm, Sun 9am–5pm",
+    "cost": null,
+    "access": "Holism Retreat is inside the MGallery Hotel Chadstone — treatments are available to book directly with the spa and aren't restricted to hotel guests.",
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": true
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
+    "slug": "ikigai-head-spa-and-wellness",
+    "name": "ikigai Head Spa and Wellness",
+    "state": "VIC",
+    "category": "day_spa",
+    "suburb": "Hawthorn",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Japanese-inspired head spa on Glenferrie Rd offering scalp treatments, facial detox, and body therapy using natural botanicals.",
+    "has_image": true,
+    "hours": "Monday–Sunday, 10:00 am–8:30 pm",
+    "cost": null,
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
+    "slug": "lake-house-daylesford",
+    "name": "Lake House, Daylesford",
+    "state": "VIC",
+    "category": "day_spa",
+    "suburb": "Daylesford",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Lakeside hotel in Daylesford with a hot mineral soak, two-hatted restaurant, and spa packages from $1,000 per person.",
+    "has_image": true,
+    "hours": null,
+    "cost": "Winter Cocoon Package from $1,000 per person twin share; $200 spa credit per room",
+    "access": "Primarily for hotel guests — spa packages are tied to accommodation bookings.",
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
+    "slug": "metung-hot-springs",
+    "name": "Metung Hot Springs",
+    "state": "VIC",
+    "category": "thermal_springs",
+    "suburb": "Metung",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Geothermal springs on the Gippsland Lakes foreshore with three bathing precincts, private soaking barrels, glamping tents, and wellness treatments.",
+    "has_image": true,
+    "hours": "Daily, 9:00 AM – 6:00 PM",
+    "cost": null,
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": true,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
+    "slug": "mineral-springs-hotel",
+    "name": "Mineral Springs Hotel",
+    "state": "VIC",
+    "category": "bathhouse",
+    "suburb": "Hepburn Springs",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "A 1930s boutique hotel in Hepburn Springs with a spa retreat built around mineral pools, sauna, steam room, and a full treatment menu.",
+    "has_image": true,
+    "hours": null,
+    "cost": null,
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
     "slug": "peninsula-hot-springs",
     "name": "Peninsula Hot Springs",
     "state": "VIC",
@@ -116,6 +435,64 @@
     }
   },
   {
+    "slug": "peninsula-sauna",
+    "name": "Peninsula Sauna & Spa",
+    "state": "VIC",
+    "category": "bathhouse",
+    "suburb": "Seaford",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "A men's sauna and spa in Seaford running regular nude sessions and themed nights, open most days from noon.",
+    "has_image": true,
+    "hours": "Mon, Wed–Thu: 12pm–10:30pm; Tue, Fri–Sat: 12pm–6:30pm; Sun: 12pm–8pm",
+    "cost": "From $25 (Xposed Nude Sunday)",
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
+    "slug": "pond-bathhouse",
+    "name": "Pond Bathhouse",
+    "state": "VIC",
+    "category": "bathhouse",
+    "suburb": "Mornington",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Mornington bathhouse founded by a medical professional, with magnesium mineral pools, infrared and traditional saunas, ice baths, and a capped capacity of 20.\n",
+    "has_image": true,
+    "hours": "Mon 9am–9pm, Tue 8am–8pm, Wed 7:30am–8pm, Thu 10am–9pm, Fri 8:30am–9pm, Sat 7:30am–6pm, Sun 9am–6pm",
+    "cost": null,
+    "access": null,
+    "amenities": {
+      "magnesium_pool": true,
+      "infrared_sauna": true,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": true,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
     "slug": "relax-day-spa-melbourne-cbd",
     "name": "Relax Day Spa",
     "state": "VIC",
@@ -138,6 +515,93 @@
     },
     "facilities": {
       "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
+    "slug": "romantic-getaways-melbourne",
+    "name": "Woodlands Rainforest Retreat",
+    "state": "VIC",
+    "category": "day_spa",
+    "suburb": "Narbethong",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Adults-only mountain retreat in Narbethong with private mineral rock pools, cedar hot tubs, and a domed Roman bathhouse. Swimwear optional.",
+    "has_image": true,
+    "hours": "Daily, 8:00 AM – 5:00 PM",
+    "cost": "Couples date package from $615 per person",
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
+    "slug": "s-ma-bathhouse",
+    "name": "Sóma Bathhouse",
+    "state": "VIC",
+    "category": "bathhouse",
+    "suburb": "Essendon",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Small, community-minded bathhouse in Essendon with infrared sauna, ice bath, and magnesium hot spa. Quiet sessions available most days.",
+    "has_image": true,
+    "hours": "Tue–Fri 9:00am–1:30pm & 3:00–8:00pm; Sat–Sun 9:30am–6:00pm; closed Monday",
+    "cost": null,
+    "access": null,
+    "amenities": {
+      "magnesium_pool": true,
+      "infrared_sauna": true,
+      "traditional_sauna": false,
+      "cold_plunge": true,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
+    "slug": "saltair-day-spa-melbourne",
+    "name": "Saltair Day Spa Port Melbourne",
+    "state": "VIC",
+    "category": "day_spa",
+    "suburb": "Port Melbourne",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Two-storey treatment spa on Bay St, Port Melbourne, with massage and BABOR facials, inspired by the brand's Torquay roots.",
+    "has_image": true,
+    "hours": "Mon–Tue & Thu 10am–6pm, Wed & Fri 10am–7pm, Sat 9am–6pm, closed Sun",
+    "cost": null,
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": true,
       "towels_provided": false,
       "changerooms": false,
       "bookings_required": false,
@@ -198,6 +662,93 @@
       "parking": false,
       "towels_provided": false,
       "changerooms": true,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
+    "slug": "the-mineral-spa",
+    "name": "The Mineral Spa",
+    "state": "VIC",
+    "category": "day_spa",
+    "suburb": "Hepburn Springs",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Day spa in Hepburn Springs with natural mineral bathing pools, sauna, steam room, and a full treatment menu. Open daily; 16 and over.\n",
+    "has_image": true,
+    "hours": "Mon–Thu 10am–5pm, Fri 10am–7pm, Sat 9am–8pm, Sun 9am–7pm",
+    "cost": "Retreat Pass available; 2-for-1 promotional pricing on 90-minute passes. Royal or Purifying Rituals include complimentary Retreat passes (winter special).\n",
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": true,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
+    "slug": "v-hotel-spa",
+    "name": "V Hotel Spa",
+    "state": "VIC",
+    "category": "day_spa",
+    "suburb": "Melbourne",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Treatment-led day spa in a Melbourne CBD hotel with steam facilities, private spa baths, and a broad massage menu.",
+    "has_image": false,
+    "hours": "Daily 10:00am–9:00pm; surcharge applies on weekends and public holidays",
+    "cost": null,
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false
+    }
+  },
+  {
+    "slug": "wellness-recovery-centre",
+    "name": "P3 Recovery Port Melbourne",
+    "state": "VIC",
+    "category": "bathhouse",
+    "suburb": "Port Melbourne",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Recovery-focused centre on Bay St with ice baths, saunas, contrast therapy, compression, and myotherapy in Port Melbourne.",
+    "has_image": true,
+    "hours": "Mon–Fri 6am–9pm, Sat–Sun 8am–4pm",
+    "cost": null,
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
       "bookings_required": false,
       "wheelchair_access": false
     }
