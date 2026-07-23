@@ -59,7 +59,10 @@ CREATE TABLE facilities (
   towels_provided INTEGER NOT NULL DEFAULT 0,
   changerooms INTEGER NOT NULL DEFAULT 0,
   bookings_required INTEGER NOT NULL DEFAULT 0,
-  wheelchair_access INTEGER NOT NULL DEFAULT 0
+  wheelchair_access INTEGER NOT NULL DEFAULT 0,
+  outdoor_pool INTEGER NOT NULL DEFAULT 0,
+  indoor_pool INTEGER NOT NULL DEFAULT 0,
+  natural_spring INTEGER NOT NULL DEFAULT 0
 );
 """
 
@@ -141,12 +144,13 @@ def upsert_venue(conn: sqlite3.Connection, slug: str, data: dict[str, Any]) -> N
     facilities = data.get("facilities") or {}
     conn.execute(
         """
-        INSERT INTO facilities (slug, parking, towels_provided, changerooms, bookings_required, wheelchair_access)
-        VALUES (:slug, :parking, :towels_provided, :changerooms, :bookings_required, :wheelchair_access)
+        INSERT INTO facilities (slug, parking, towels_provided, changerooms, bookings_required, wheelchair_access, outdoor_pool, indoor_pool, natural_spring)
+        VALUES (:slug, :parking, :towels_provided, :changerooms, :bookings_required, :wheelchair_access, :outdoor_pool, :indoor_pool, :natural_spring)
         ON CONFLICT(slug) DO UPDATE SET
           parking = excluded.parking, towels_provided = excluded.towels_provided,
           changerooms = excluded.changerooms, bookings_required = excluded.bookings_required,
-          wheelchair_access = excluded.wheelchair_access
+          wheelchair_access = excluded.wheelchair_access, outdoor_pool = excluded.outdoor_pool,
+          indoor_pool = excluded.indoor_pool, natural_spring = excluded.natural_spring
         """,
         {
             "slug": slug,
@@ -161,7 +165,8 @@ def fetch_all_venues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         SELECT v.slug, v.name, v.state, v.category, v.suburb, v.latitude, v.longitude,
                v.status, v.summary, v.has_image, v.hours, v.cost, v.access,
                a.magnesium_pool, a.infrared_sauna, a.traditional_sauna, a.cold_plunge, a.led_therapy,
-               f.parking, f.towels_provided, f.changerooms, f.bookings_required, f.wheelchair_access
+               f.parking, f.towels_provided, f.changerooms, f.bookings_required, f.wheelchair_access,
+               f.outdoor_pool, f.indoor_pool, f.natural_spring
         FROM venues v
         JOIN amenities a ON a.slug = v.slug
         JOIN facilities f ON f.slug = v.slug
@@ -173,6 +178,7 @@ def fetch_all_venues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         slug, name, state, category, suburb, latitude, longitude, status, summary, has_image, hours, cost, access,
         mg, ir, sa, cp, led,
         parking, towels, changerooms, bookings, wheelchair,
+        outdoor_pool, indoor_pool, natural_spring,
     ) in rows:
         venues.append(
             {
@@ -202,6 +208,9 @@ def fetch_all_venues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
                     "changerooms": bool(changerooms),
                     "bookings_required": bool(bookings),
                     "wheelchair_access": bool(wheelchair),
+                    "outdoor_pool": bool(outdoor_pool),
+                    "indoor_pool": bool(indoor_pool),
+                    "natural_spring": bool(natural_spring),
                 },
             }
         )

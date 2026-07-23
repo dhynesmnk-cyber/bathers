@@ -28,4 +28,10 @@ export const GLOSSARY: Record<GlossaryKey, string> = {
     "You need to book ahead rather than arrive and pay at the door. Sessions at these venues are often sold as timed sittings, so the booking usually also sets how long you're there for.",
   wheelchair_access:
     "The venue states step-free or wheelchair access to at least part of the site. This doesn't guarantee every area is equally accessible — call ahead if a specific pool, sauna, or changeroom matters for your visit.",
+  outdoor_pool:
+    "The venue has a pool, spa, or bathing area that's open to the air — no roof between you and the sky. Coverage and shade vary by venue; check the venue's own page if weather protection matters for your visit.",
+  indoor_pool:
+    "The venue has a pool or bathing area under cover, inside a building or an enclosed structure. This flag says nothing about ventilation, natural light, or how the space feels — just that it's roofed.",
+  natural_spring:
+    "The bathing water is drawn from a natural spring or geothermal source, rather than being municipal water heated and mineral-dosed on site. Temperature, mineral composition, and flow vary by source and aren't independently verified here — check the venue's own page for specifics.",
 };

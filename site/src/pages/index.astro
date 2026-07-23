@@ -12,6 +12,32 @@ const byState = STATES.map((state) => ({
   venues: venues.filter((v) => v.data.state === state),
 })).filter((group) => group.venues.length > 0);
 
+// Homepage contents (2026-07-23) — grouped by pool type rather than state.
+// A venue can appear in more than one group (an outdoor AND indoor pool,
+// say); venues matching none of the three fall into "Other" so nothing
+// drops off the homepage (SCHEMA.md §1a).
+const poolTypeGroups = [
+  { label: "Outdoor pools", venues: venues.filter((v) => v.data.facilities?.outdoor_pool) },
+  { label: "Indoor pools", venues: venues.filter((v) => v.data.facilities?.indoor_pool) },
+  { label: "Natural springs", venues: venues.filter((v) => v.data.facilities?.natural_spring) },
+  {
+    label: "Other",
+    venues: venues.filter(
+      (v) => !v.data.facilities?.outdoor_pool && !v.data.facilities?.indoor_pool && !v.data.facilities?.natural_spring,
+    ),
+  },
+].filter((group) => group.venues.length > 0);
+
+// A venue can appear in more than one group above; only the first occurrence
+// gets the `venue-<slug>` id the map's click-to-scroll relies on, so ids
+// stay unique (duplicate DOM ids would make getElementById find the wrong copy).
+const seenSlugs = new Set<string>();
+function firstAppearance(slug: string): boolean {
+  if (seenSlugs.has(slug)) return false;
+  seenSlugs.add(slug);
+  return true;
+}
+
 // Venues with no geocoded coordinate (SCHEMA.md §2 — geocoding found no
 // address match) simply don't get a map marker; they still appear in the
 // state contents list below.
@@ -65,11 +91,9 @@ const markers = venues
         <span class="h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
       </div>
       {
-        byState.map((group) => (
+        poolTypeGroups.map((group) => (
           <div class="mb-12">
-            <h2 class="mono mb-2 text-[var(--ink-faded)]">
-              <a href={`/${group.state.toLowerCase()}/`}>{STATE_NAMES[group.state]}</a>
-            </h2>
+            <h2 class="mono mb-2 text-[var(--ink-faded)]">{group.label}</h2>
             {group.venues.map((venue) => (
               <VenueEntry
                 name={venue.data.name}
@@ -79,6 +103,7 @@ const markers = venues
                 summary={venue.data.summary}
                 amenities={venue.data.amenities}
                 facilities={venue.data.facilities}
+                withId={firstAppearance(venue.id)}
               />
             ))}
           </div>

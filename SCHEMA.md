@@ -14,9 +14,9 @@ One contract, four consumers: the zod content schema, the SQLite tables, the Har
 
 This order is used everywhere amenities are displayed.
 
-### 1a. Facility keys (2026-07-21 addition, optional)
+### 1a. Facility keys (2026-07-21 addition, optional; pool-type keys added 2026-07-23)
 
-Practical/logistics info, distinct from the bathing-experience amenities above — absent on venues published before this date, defaulting to `false`/unset.
+Practical/logistics info, distinct from the bathing-experience amenities above — absent on venues published before this date, defaulting to `false`/unset. The three pool-type keys (2026-07-23) drive the homepage's pool-type grouping (UX.md §2.1) — a venue can have more than one true.
 
 | Key | Label |
 |---|---|
@@ -25,6 +25,9 @@ Practical/logistics info, distinct from the bathing-experience amenities above �
 | `changerooms` | Changerooms |
 | `bookings_required` | Bookings required |
 | `wheelchair_access` | Wheelchair access |
+| `outdoor_pool` | Outdoor pool |
+| `indoor_pool` | Indoor pool |
+| `natural_spring` | Natural spring |
 
 ## 2. MDX Frontmatter
 
@@ -39,7 +42,7 @@ Practical/logistics info, distinct from the bathing-experience amenities above �
 | `longitude` | number | – | *(2026-07-22: no longer required)* 112.0 … 154.0 when present. Same null handling as `latitude`. |
 | `website` | string (url) | ✓ | The venue's own site. |
 | `amenities` | object | ✓ | Exactly the five boolean keys from §1, all required, no extras (zod `.strict()`). |
-| `facilities` | object | – | *(2026-07-21)* The five boolean keys from §1a. Optional — omit entirely on venues where none are known; individual keys default `false`. |
+| `facilities` | object | – | *(2026-07-21, extended 2026-07-23)* The eight boolean keys from §1a. Optional — omit entirely on venues where none are known; individual keys default `false`. |
 | `hours` | string | – | *(2026-07-21)* Freeform display string, e.g. `"Mon–Sun 6am–10pm"`. Drafted by the Architect from `facts.hours`, never fabricated. |
 | `cost` | string | – | *(2026-07-21)* Freeform display string, e.g. `"$45–120 per session"`. Drafted by the Architect from `facts.pricing`, never fabricated. |
 | `access` | string | – | *(2026-07-21)* Freeform display string, for venues gated by hotel-guest or membership status, e.g. `"Guests of the hotel, or Langham members — day spa visitors can also book a treatment to get pool access for the day."` Drafted by the Architect from `facts`, never fabricated. Omitted for the majority of standalone venues with no such restriction. |
@@ -87,7 +90,10 @@ CREATE TABLE facilities (
   towels_provided INTEGER NOT NULL DEFAULT 0,
   changerooms INTEGER NOT NULL DEFAULT 0,
   bookings_required INTEGER NOT NULL DEFAULT 0,
-  wheelchair_access INTEGER NOT NULL DEFAULT 0
+  wheelchair_access INTEGER NOT NULL DEFAULT 0,
+  outdoor_pool INTEGER NOT NULL DEFAULT 0,
+  indoor_pool INTEGER NOT NULL DEFAULT 0,
+  natural_spring INTEGER NOT NULL DEFAULT 0
 );
 ```
 
@@ -155,6 +161,9 @@ facilities:
   changerooms: true
   bookings_required: true
   wheelchair_access: false
+  outdoor_pool: false
+  indoor_pool: true
+  natural_spring: false
 hours: "Daily, sittings from 10am–9pm"
 cost: "$65 per two-hour sitting"
 status: "unclaimed"

@@ -134,6 +134,9 @@ FACILITY_KEYS = (
     "changerooms",
     "bookings_required",
     "wheelchair_access",
+    "outdoor_pool",
+    "indoor_pool",
+    "natural_spring",
 )
 
 FACILITY_LABELS = {
@@ -142,4 +145,7 @@ FACILITY_LABELS = {
     "changerooms": "Changerooms",
     "bookings_required": "Bookings required",
     "wheelchair_access": "Wheelchair access",
+    "outdoor_pool": "Outdoor pool",
+    "indoor_pool": "Indoor pool",
+    "natural_spring": "Natural spring",
 }

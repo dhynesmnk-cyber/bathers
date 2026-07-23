@@ -25,6 +25,9 @@ export const FACILITY_KEYS = [
   "changerooms",
   "bookings_required",
   "wheelchair_access",
+  "outdoor_pool",
+  "indoor_pool",
+  "natural_spring",
 ] as const;
 
 export const FACILITY_LABELS: Record<(typeof FACILITY_KEYS)[number], string> = {
@@ -33,6 +36,9 @@ export const FACILITY_LABELS: Record<(typeof FACILITY_KEYS)[number], string> = {
   changerooms: "Changerooms",
   bookings_required: "Bookings required",
   wheelchair_access: "Wheelchair access",
+  outdoor_pool: "Outdoor pool",
+  indoor_pool: "Indoor pool",
+  natural_spring: "Natural spring",
 };
 
 // Venue categories (2026-07-22 addition — see SCHEMA.md §2). Values match the

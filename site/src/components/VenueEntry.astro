@@ -10,13 +10,14 @@ interface Props {
   summary: string;
   amenities: Record<(typeof AMENITY_KEYS)[number], boolean>;
   facilities?: Partial<Record<(typeof FACILITY_KEYS)[number], boolean>>;
+  withId?: boolean;
 }
 
-const { name, slug, suburb, state, summary, amenities, facilities } = Astro.props;
+const { name, slug, suburb, state, summary, amenities, facilities, withId = true } = Astro.props;
 ---
 
 <article
-  id={`venue-${slug}`}
+  id={withId ? `venue-${slug}` : undefined}
   data-venue-slug={slug}
   class="py-6"
   style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent); scroll-margin-top: 2rem;"

@@ -17,7 +17,10 @@ export type IconKey =
   | "towels_provided"
   | "changerooms"
   | "bookings_required"
-  | "wheelchair_access";
+  | "wheelchair_access"
+  | "outdoor_pool"
+  | "indoor_pool"
+  | "natural_spring";
 
 export const ICON_PATHS: Record<IconKey, string> = {
   magnesium_pool: `
@@ -73,5 +76,22 @@ export const ICON_PATHS: Record<IconKey, string> = {
     <circle cx="11" cy="4.3" r="1.6" />
     <path d="M11 7.7v3.3l4 1.6" />
     <path d="M10.7 11H7a4 4 0 1 0 2.5 7.1L13 22" />
+  `,
+  outdoor_pool: `
+    <circle cx="12" cy="6" r="2.3" />
+    <path d="M12 2v1.2M8.4 3.6l.8.8M15.6 3.6l-.8.8M6.5 6.3h1.2M16.3 6.3h1.2" />
+    <path d="M3 16c1.4 1.6 2.8 1.6 4.2 0s2.8-1.6 4.2 0 2.8 1.6 4.2 0 2.8-1.6 4.2 0" />
+    <path d="M3 20c1.4 1.6 2.8 1.6 4.2 0s2.8-1.6 4.2 0 2.8 1.6 4.2 0 2.8-1.6 4.2 0" />
+  `,
+  indoor_pool: `
+    <path d="M4 9l8-5 8 5" />
+    <path d="M5 9v3M19 9v3" />
+    <path d="M3 16c1.4 1.6 2.8 1.6 4.2 0s2.8-1.6 4.2 0 2.8 1.6 4.2 0 2.8-1.6 4.2 0" />
+    <path d="M3 20c1.4 1.6 2.8 1.6 4.2 0s2.8-1.6 4.2 0 2.8 1.6 4.2 0 2.8-1.6 4.2 0" />
+  `,
+  natural_spring: `
+    <path d="M4 20c2-6 4-9 8-9s6 3 8 9" />
+    <path d="M8 20c1-3 2-4.5 4-4.5s3 1.5 4 4.5" />
+    <path d="M12 4c1.6 2 2.2 3.4 2.2 4.6a2.2 2.2 0 1 1-4.4 0C9.8 7.4 10.4 6 12 4z" />
   `,
 };

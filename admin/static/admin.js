@@ -2,7 +2,16 @@
   "use strict";
 
   const AMENITY_KEYS = ["magnesium_pool", "infrared_sauna", "traditional_sauna", "cold_plunge", "led_therapy"];
-  const FACILITY_KEYS = ["parking", "towels_provided", "changerooms", "bookings_required", "wheelchair_access"];
+  const FACILITY_KEYS = [
+    "parking",
+    "towels_provided",
+    "changerooms",
+    "bookings_required",
+    "wheelchair_access",
+    "outdoor_pool",
+    "indoor_pool",
+    "natural_spring",
+  ];
   const UNDO_SECONDS = 3;
 
   let queue = [];

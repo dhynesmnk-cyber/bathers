@@ -31,7 +31,10 @@
           "towels_provided": false,
           "changerooms": false,
           "bookings_required": false,
-          "wheelchair_access": false
+          "wheelchair_access": false,
+          "outdoor_pool": false,
+          "indoor_pool": true,
+          "natural_spring": false
         }
       }
     },
@@ -65,7 +68,10 @@
           "towels_provided": false,
           "changerooms": false,
           "bookings_required": false,
-          "wheelchair_access": false
+          "wheelchair_access": false,
+          "outdoor_pool": false,
+          "indoor_pool": true,
+          "natural_spring": false
         }
       }
     },
@@ -99,7 +105,10 @@
           "towels_provided": false,
           "changerooms": false,
           "bookings_required": false,
-          "wheelchair_access": false
+          "wheelchair_access": false,
+          "outdoor_pool": false,
+          "indoor_pool": true,
+          "natural_spring": false
         }
       }
     }
