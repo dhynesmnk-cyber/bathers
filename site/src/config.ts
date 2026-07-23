@@ -96,6 +96,9 @@ export function videoEmbedUrl(url: string): string {
 export const SITE_NAME = "Bathers'";
 export const SITE_TAGLINE = "Notes on heat, cold and water at Australian day spas and bathhouses.";
 
+// Claim-listing CTA (2026-07-23 addition — TRD.md §8 exception, UX.md §2.5).
+export const CLAIM_EMAIL = "d.hynes.mnk@gmail.com";
+
 // GoatCounter click tracking (Book Now button only — TRD.md §8 exception).
 // Site codes aren't secret; only the read-back API token stays server-side
 // in admin/.env (GOATCOUNTER_API_TOKEN, see admin/pipeline/goatcounter.py).

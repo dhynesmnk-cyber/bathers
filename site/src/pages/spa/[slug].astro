@@ -64,9 +64,11 @@ const { Content } = await render(venue);
         <p class="mt-4">
           <a href={`/category/${categoryUrlSlug(data.category)}/`}>More {CATEGORY_LABELS[data.category].toLowerCase()} venues</a>
         </p>
-        <p class="mt-4">
-          <a href={`mailto:claim@bathers.example?subject=About ${data.name}`}>Run this venue? Get in touch</a>
-        </p>
+        {data.status !== "claimed" && (
+          <p class="mt-4">
+            <a href={`/claim/${venue.id}/`} class="book-now-btn mono">Claim this listing</a>
+          </p>
+        )}
         <p class="mt-4 text-[var(--ink-faded)]">
           Information verified {data.verified.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
         </p>

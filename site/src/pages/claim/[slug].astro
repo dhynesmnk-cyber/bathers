@@ -1,0 +1,60 @@
+---
+// Claim-listing page (UX.md §2.5, TRD.md §8 exception 2026-07-23).
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { CLAIM_EMAIL } from "../../config";
+
+export async function getStaticPaths() {
+  const venues = await getCollection("spas");
+  return venues.map((venue) => ({
+    params: { slug: venue.id },
+    props: { venue },
+  }));
+}
+
+const { venue } = Astro.props;
+const { data } = venue;
+
+const subject = encodeURIComponent(`Claim listing: ${data.name}`);
+const body = encodeURIComponent(`I'd like to claim the listing for ${data.name} (${venue.id}).`);
+const mailtoHref = `mailto:${CLAIM_EMAIL}?subject=${subject}&body=${body}`;
+---
+
+<BaseLayout
+  title={`Claim ${data.name} — Bathers'`}
+  description={`Claim the listing for ${data.name}.`}
+  canonicalPath={`/claim/${venue.id}/`}
+>
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <article>
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
+        Claim {data.name}
+      </h1>
+
+      <div class="reading-spine mt-8">
+        <p>
+          Run this venue? You can claim this listing to keep its details accurate and request
+          changes to any copy, image, or detail on the page.
+        </p>
+        <p class="mt-6">
+          Updates are handled two ways: a one-off <strong>$25 processing fee</strong> per
+          content update, or <strong>$5 a month</strong> for constant access to request updates
+          whenever you need to.
+        </p>
+        <p class="mt-6">
+          Send a request for anything you'd like changed. If a request is denied, you are not
+          charged.
+        </p>
+      </div>
+
+      <div class="mono mt-16 pt-6" style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent); background: var(--paper-raised); padding: 1.5rem;">
+        <p>
+          <a href={mailtoHref} class="book-now-btn mono">Request to claim this listing</a>
+        </p>
+        <p class="mt-4">
+          <a href={`/spa/${venue.id}/`}>Back to {data.name}</a>
+        </p>
+      </div>
+    </article>
+  </main>
+</BaseLayout>
