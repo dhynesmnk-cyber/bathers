@@ -5,7 +5,7 @@ import Features from "../../components/Features.astro";
 import Pull from "../../components/Pull.astro";
 import TippedPhoto from "../../components/TippedPhoto.astro";
 import FAQ from "../../components/FAQ.astro";
-import { CATEGORY_LABELS, STATE_NAMES, categoryUrlSlug } from "../../config";
+import { CATEGORY_LABELS, STATE_NAMES, categoryUrlSlug, priceRange } from "../../config";
 
 export async function getStaticPaths() {
   const venues = await getCollection("spas");
@@ -18,9 +18,49 @@ export async function getStaticPaths() {
 const { venue } = Astro.props;
 const { data } = venue;
 const { Content } = await render(venue);
+
+// LocalBusiness + (when present) FAQPage structured data (2026-07-24 SEO/GEO
+// pass) — same facts already rendered visibly on this page (address, cost,
+// FAQ.astro), just made machine-readable for search/AI crawlers too.
+const localBusinessLd: Record<string, unknown> = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: data.name,
+  description: data.summary,
+  url: data.website,
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: data.address,
+    addressLocality: data.suburb,
+    addressRegion: STATE_NAMES[data.state],
+    addressCountry: "AU",
+  },
+};
+if (data.image) localBusinessLd.image = new URL(data.image, Astro.site).toString();
+if (data.latitude != null && data.longitude != null) {
+  localBusinessLd.geo = { "@type": "GeoCoordinates", latitude: data.latitude, longitude: data.longitude };
+}
+if (data.cost) {
+  const range = priceRange(data.cost);
+  if (range) localBusinessLd.priceRange = range;
+}
+
+const faqLd = data.faq && data.faq.length > 0
+  ? {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: data.faq.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: { "@type": "Answer", text: item.answer },
+      })),
+    }
+  : null;
 ---
 
-<BaseLayout title={`${data.name} — Bathers'`} description={data.summary}>
+<BaseLayout title={`${data.name} — Bathers'`} description={data.summary} image={data.image ?? undefined}>
+  <script type="application/ld+json" set:html={JSON.stringify(localBusinessLd)} />
+  {faqLd && <script type="application/ld+json" set:html={JSON.stringify(faqLd)} />}
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
     <article>
       <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">

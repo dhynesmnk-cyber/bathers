@@ -1,0 +1,24 @@
+# Bathers'
+
+> A free, ad-free directory of Australian day spas, bathhouses and thermal springs — saunas, magnesium pools, cold plunges — catalogued state by state, with no sponsored listings.
+
+Bathers' documents Australian venues built around heat, cold and water. Each entry begins as the venue's own published account, then is checked and tightened by hand before publication. There is no advertising on the site and no venue can pay for placement or ranking.
+
+## Structure
+
+- Browse by state: `/vic/`, `/nsw/`, `/qld/`, `/sa/`, `/wa/`, `/tas/`, `/nt/`, `/act/` (only states with at least one listed venue exist)
+- Browse by setting within a state: indoor pools, outdoor pools, thermal springs, or other — e.g. `/vic/outdoor/`
+- Browse by amenity within a state — e.g. `/vic/cold-plunge/`
+- Browse by venue category nationally: `/category/day-spa/`, `/category/bathhouse/`, `/category/thermal-springs/`
+- Individual venue pages: `/spa/{venue-slug}/` — name, location, amenities, hours, cost, FAQ, and source-verified detail
+- Glossary of amenity/facility terms: `/glossary/`
+
+## Journal
+
+Longer-form writing about the project — its mission, values, and the people behind it: `/blog/`
+
+## Links
+
+- Homepage: https://bathers-directory.netlify.app/
+- Journal: https://bathers-directory.netlify.app/blog/
+- Sitemap: https://bathers-directory.netlify.app/sitemap.xml

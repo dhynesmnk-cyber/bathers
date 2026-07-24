@@ -14,9 +14,27 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { data } = post;
 const { Content } = await render(post);
+
+// BlogPosting structured data (2026-07-24 SEO/GEO pass).
+const blogPostingLd: Record<string, unknown> = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: data.title,
+  datePublished: data.dateline.toISOString().slice(0, 10),
+  description: data.summary,
+  author: { "@type": "Organization", name: SITE_NAME },
+  publisher: { "@type": "Organization", name: SITE_NAME },
+};
+if (data.cover_image) blogPostingLd.image = new URL(data.cover_image, Astro.site).toString();
 ---
 
-<BaseLayout title={`${data.title} — ${SITE_NAME}`} description={data.summary}>
+<BaseLayout
+  title={`${data.title} — ${SITE_NAME}`}
+  description={data.summary}
+  image={data.cover_image}
+  type="article"
+>
+  <script type="application/ld+json" set:html={JSON.stringify(blogPostingLd)} />
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
     <article>
       <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
@@ -30,7 +48,7 @@ const { Content } = await render(post);
         data.cover_image && (
           <img
             src={data.cover_image}
-            alt=""
+            alt={data.title}
             class="mb-12 w-full"
             style="border: 3px solid var(--paper-raised);"
           />
