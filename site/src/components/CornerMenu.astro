@@ -3,10 +3,20 @@
 // site's one deliberate departure from "never fixed, never floating".
 // Rendered once from BaseLayout so it appears on every page.
 import { getCollection } from "astro:content";
-import { CATEGORIES, CATEGORY_LABELS, STATE_NAMES, STATES, categoryUrlSlug } from "../config";
+import { CATEGORIES, CATEGORY_LABELS, POOL_TYPES, STATE_NAMES, STATES, categoryUrlSlug } from "../config";
 
 const venues = await getCollection("spas");
-const presentStates = STATES.filter((state) => venues.some((v) => v.data.state === state));
+
+// Each present state, with the pool-type settings that actually have a venue
+// there, so the menu can offer "indoor / outdoor / springs / other by state"
+// (2026-07-24) without linking to empty pages.
+const stateMenu = STATES.filter((state) => venues.some((v) => v.data.state === state)).map((state) => {
+  const stateVenues = venues.filter((v) => v.data.state === state);
+  return {
+    state,
+    poolTypes: POOL_TYPES.filter((t) => stateVenues.some((v) => t.match(v.data.facilities))),
+  };
+});
 const presentCategories = CATEGORIES.filter((category) => venues.some((v) => v.data.category === category));
 ---
 
@@ -23,9 +33,22 @@ const presentCategories = CATEGORIES.filter((category) => venues.some((v) => v.d
   </button>
   <nav id="corner-menu-panel" class="mono corner-menu-panel" aria-label="Site menu" hidden>
     <a href="/">Home</a>
-    <span class="corner-menu-heading">States</span>
-    {presentStates.map((state) => <a href={`/${state.toLowerCase()}/`}>{STATE_NAMES[state]}</a>)}
-    <span class="corner-menu-heading">Categories</span>
+    <span class="corner-menu-heading">Find a bath by state</span>
+    {
+      stateMenu.map(({ state, poolTypes }) => (
+        <div class="corner-menu-state">
+          <a href={`/${state.toLowerCase()}/`}>{STATE_NAMES[state]}</a>
+          {poolTypes.length > 0 && (
+            <div class="corner-menu-subrow">
+              {poolTypes.map((t) => (
+                <a href={`/${state.toLowerCase()}/${t.slug}/`}>{t.short}</a>
+              ))}
+            </div>
+          )}
+        </div>
+      ))
+    }
+    <span class="corner-menu-heading">Find a bath by type</span>
     {presentCategories.map((category) => <a href={`/category/${categoryUrlSlug(category)}/`}>{CATEGORY_LABELS[category]}</a>)}
     <span class="corner-menu-heading">More</span>
     <a href="/glossary/">Glossary</a>
@@ -114,5 +137,26 @@ const presentCategories = CATEGORIES.filter((category) => venues.some((v) => v.d
   .corner-menu-panel a:hover,
   .corner-menu-panel a:focus-visible {
     text-decoration-color: var(--thermal);
+  }
+
+  .corner-menu-state {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  /* Pool-type settings for a state, sitting under its name (2026-07-24). Same
+     mono/thermal idiom as the panel links, indented and set in --ink-faded so
+     the state name stays the primary target. */
+  .corner-menu-subrow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+    padding-left: 0.9rem;
+  }
+
+  .corner-menu-subrow a {
+    font-size: 11px;
+    color: var(--ink-faded);
   }
 </style>

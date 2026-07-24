@@ -141,7 +141,7 @@ Content order (top to bottom): masthead → editorial foreword → a chooser sec
 ## 3. Interaction Rules (site-wide)
 
 - No modals, no toasts, no cookie banners, no floating buttons on the public site. **Exception (user-approved, 2026-07-22, repositioned 2026-07-23):** a small fixed corner menu (top-right, click/tap-to-open, listing states/categories/glossary/journal) — see DESIGN.md §5b. Scoped narrowly to this one navigation control; it does not reopen the door to modals, toasts, or banners generally.
-- Transitions: none beyond link underline colour and map marker states. `prefers-reduced-motion` disables even those.
+- Transitions: none beyond link underline colour and map marker states. `prefers-reduced-motion` disables even those. **Exception (user-approved, 2026-07-24):** a one-time, on-load-only settle on the homepage — top-level sections fade and rise a few pixels, and the two section-divider hairlines draw in left-to-right, once, when the page loads. No scroll-triggered reveals, no parallax, no looping. CSS-only, and `prefers-reduced-motion` shows everything in its final state with no flash. Scoped to the homepage; it does not license motion elsewhere.
 - All interactive elements reachable and operable by keyboard; focus order follows reading order.
 
 ---

@@ -41,6 +41,30 @@ export const FACILITY_LABELS: Record<(typeof FACILITY_KEYS)[number], string> = {
   natural_spring: "Natural spring",
 };
 
+// Pool-type settings (2026-07-24 addition). Not a schema field of their own —
+// derived from the three pool-related `facilities` booleans (SCHEMA.md §1a).
+// A venue can satisfy more than one; "other" catches venues with none of the
+// three so nothing drops off the by-setting listings. Shared by the homepage
+// contents grouping, the /[state]/[filter] pages and the corner menu, so the
+// grouping rule lives here once rather than being re-inlined at each site.
+type Facilities = Partial<Record<(typeof FACILITY_KEYS)[number], boolean>> | undefined;
+
+export const POOL_TYPES = [
+  { slug: "thermal-springs", label: "Thermal springs", short: "Springs", match: (f: Facilities) => !!f?.natural_spring },
+  { slug: "indoor", label: "Indoor pools", short: "Indoor", match: (f: Facilities) => !!f?.indoor_pool },
+  { slug: "outdoor", label: "Outdoor pools", short: "Outdoor", match: (f: Facilities) => !!f?.outdoor_pool },
+  {
+    slug: "other",
+    label: "Other",
+    short: "Other",
+    match: (f: Facilities) => !f?.natural_spring && !f?.indoor_pool && !f?.outdoor_pool,
+  },
+] as const;
+
+export function poolTypeFromUrlSlug(segment: string): (typeof POOL_TYPES)[number] | undefined {
+  return POOL_TYPES.find((t) => t.slug === segment);
+}
+
 // Venue categories (2026-07-22 addition — see SCHEMA.md §2). Values match the
 // discovery-keyword vocabulary already in use (UX.md §1.1): "day spa,
 // bathhouse, hot springs, thermal baths".

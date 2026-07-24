@@ -1,0 +1,124 @@
+---
+// Programmatic state x filter page (UX.md §2.3, TRD.md §4.2). One dynamic
+// route serving two filter kinds off the same /[state]/<slug>/ slot:
+//   - amenity filters (magnesium-pool, cold-plunge, …) — the original pages
+//   - pool-type settings (thermal-springs, indoor, outdoor, other) — 2026-07-24
+// Amenity and pool-type slugs are disjoint, so one file can host both without
+// collision, and Astro only permits one dynamic route per path depth anyway.
+// Generated only for combinations with >=1 published venue.
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import VenueEntry from "../../components/VenueEntry.astro";
+import Icon from "../../components/Icon.astro";
+import {
+  AMENITY_KEYS,
+  AMENITY_NOTATION,
+  POOL_TYPES,
+  STATE_NAMES,
+  STATES,
+  amenityUrlSlug,
+} from "../../config";
+import forewords from "../../data/forewords.json";
+
+type VenueList = Awaited<ReturnType<typeof getCollection<"spas">>>;
+
+export async function getStaticPaths() {
+  const venues = await getCollection("spas");
+  const paths: { params: { state: string; filter: string }; props: Record<string, unknown> }[] = [];
+  for (const state of STATES) {
+    const stateVenues = venues.filter((v) => v.data.state === state);
+    if (stateVenues.length === 0) continue;
+
+    for (const amenityKey of AMENITY_KEYS) {
+      const matching = stateVenues.filter((v) => v.data.amenities[amenityKey]);
+      if (matching.length === 0) continue;
+      paths.push({
+        params: { state: state.toLowerCase(), filter: amenityUrlSlug(amenityKey) },
+        props: { kind: "amenity", state, amenityKey, venues: matching },
+      });
+    }
+
+    for (const poolType of POOL_TYPES) {
+      const matching = stateVenues.filter((v) => poolType.match(v.data.facilities));
+      if (matching.length === 0) continue;
+      paths.push({
+        params: { state: state.toLowerCase(), filter: poolType.slug },
+        props: { kind: "pooltype", state, poolLabel: poolType.label, filterSlug: poolType.slug, venues: matching },
+      });
+    }
+  }
+  return paths;
+}
+
+const props = Astro.props as {
+  kind: "amenity" | "pooltype";
+  state: (typeof STATES)[number];
+  amenityKey?: (typeof AMENITY_KEYS)[number];
+  poolLabel?: string;
+  filterSlug?: string;
+  venues: VenueList;
+};
+const { kind, state, amenityKey, poolLabel, venues } = props;
+
+const notation = kind === "amenity" && amenityKey ? AMENITY_NOTATION[amenityKey] : null;
+const subhead = notation ? notation.full : (poolLabel ?? "");
+const filterSlug = kind === "amenity" && amenityKey ? amenityUrlSlug(amenityKey) : (props.filterSlug ?? "");
+
+// Forewords exist for amenity combinations only; pool-type pages fall back to
+// the plain contents list (the template already renders no foreword cleanly).
+const foreword: string =
+  kind === "amenity" && amenityKey
+    ? (forewords as Record<string, { amenities?: Record<string, string> }>)[state]?.amenities?.[amenityKey] ?? ""
+    : "";
+const pageTitle = `Bathhouses of ${STATE_NAMES[state]} — ${notation ? notation.short : subhead}`;
+---
+
+<BaseLayout
+  title={`${pageTitle} — Bathers'`}
+  description={foreword || pageTitle}
+  canonicalPath={`/${state.toLowerCase()}/${filterSlug}/`}
+>
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <header class="mb-16">
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
+        Bathhouses of {STATE_NAMES[state]}
+      </h1>
+      <p class="mt-2 inline-flex items-center gap-1 text-[var(--ink-faded)]">
+        {kind === "amenity" && amenityKey && <Icon name={amenityKey} size={15} />}
+        <span class="mono text-sm">{subhead}</span>
+      </p>
+    </header>
+
+    {
+      foreword && (
+        <section class="reading-spine mb-16">
+          <p>{foreword}</p>
+        </section>
+      )
+    }
+
+    <nav class="mono mb-16 text-[var(--ink-faded)]" aria-label="Back to state">
+      <a href={`/${state.toLowerCase()}/`}>All of {STATE_NAMES[state]}</a>
+    </nav>
+
+    <section aria-labelledby="contents-heading">
+      <div class="mono mb-8 flex items-center gap-4 text-[var(--ink-faded)]">
+        <span>CONTENTS</span>
+        <span class="h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
+      </div>
+      {
+        venues.map((venue) => (
+          <VenueEntry
+            name={venue.data.name}
+            slug={venue.id}
+            suburb={venue.data.suburb}
+            state={venue.data.state}
+            summary={venue.data.summary}
+            amenities={venue.data.amenities}
+            facilities={venue.data.facilities}
+          />
+        ))
+      }
+    </section>
+  </main>
+</BaseLayout>

@@ -4,7 +4,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import Map from "../components/Map.astro";
 import VenueEntry from "../components/VenueEntry.astro";
 import Icon from "../components/Icon.astro";
-import { AMENITY_KEYS, AMENITY_NOTATION, SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES } from "../config";
+import { AMENITY_KEYS, AMENITY_NOTATION, POOL_TYPES, SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES } from "../config";
 
 const venues = await getCollection("spas");
 
@@ -16,18 +16,12 @@ const byState = STATES.map((state) => ({
 // Homepage contents (2026-07-23) — grouped by pool type rather than state.
 // A venue can appear in more than one group (an outdoor AND indoor pool,
 // say); venues matching none of the three fall into "Other" so nothing
-// drops off the homepage (SCHEMA.md §1a).
-const poolTypeGroups = [
-  { label: "Outdoor pools", venues: venues.filter((v) => v.data.facilities?.outdoor_pool) },
-  { label: "Indoor pools", venues: venues.filter((v) => v.data.facilities?.indoor_pool) },
-  { label: "Natural springs", venues: venues.filter((v) => v.data.facilities?.natural_spring) },
-  {
-    label: "Other",
-    venues: venues.filter(
-      (v) => !v.data.facilities?.outdoor_pool && !v.data.facilities?.indoor_pool && !v.data.facilities?.natural_spring,
-    ),
-  },
-].filter((group) => group.venues.length > 0);
+// drops off the homepage. The grouping rule is shared with the by-setting
+// pages and the corner menu via POOL_TYPES (config.ts / SCHEMA.md §1a).
+const poolTypeGroups = POOL_TYPES.map((t) => ({
+  label: t.label,
+  venues: venues.filter((v) => t.match(v.data.facilities)),
+})).filter((group) => group.venues.length > 0);
 
 // A venue can appear in more than one group above; only the first occurrence
 // gets the `venue-<slug>` id the map's click-to-scroll relies on, so ids
@@ -65,38 +59,38 @@ const markers = venues.map((v) => ({
   description={SITE_TAGLINE}
 >
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
-    <header class="mb-16">
+    <header class="rise-in mb-16">
       <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
         {SITE_NAME}
       </h1>
       <p class="mono mt-2 text-[var(--ink-faded)]">{SITE_TAGLINE}</p>
+      <p class="mono mt-3 text-[var(--ink-faded)]">Free to use. No ads. No sponsored listings.</p>
       <p class="mono mt-4"><a href="/blog/">Journal</a></p>
     </header>
 
-    <section class="reading-spine mb-24">
+    <section class="rise-in reading-spine mb-24" style="animation-delay: 90ms;">
       <p class="mb-4">
-        This directory catalogues Australian venues built around heat, cold
-        and water — saunas, magnesium pools, cold plunges — state by state.
-        Each entry begins as the venue's own published account, then is
-        checked and tightened by hand.
+        Bathers' is a free directory of Australian venues built around heat,
+        cold and water: saunas, magnesium pools, cold plunges. We research
+        every venue so you get the best possible experience, then set out
+        what is actually there: how hot, how cold, and for how long.
       </p>
       <p>
-        Consider it a curated field guide to wellness — somewhere to start
-        whether you're after a proper sweat, a cold shock, or an hour of
-        water and quiet. Each entry sets out what's there, how hot, how
-        cold, and for how long, so you can choose by feel rather than
-        guesswork.
+        There are no ads here and no sponsored listings. Nothing ranks
+        because a venue paid for it. Browse by state, by setting (thermal
+        springs, indoor pools and outdoor pools), or by the amenity you are
+        after, and choose by feel rather than guesswork.
       </p>
     </section>
 
-    <section class="chooser mb-24" aria-labelledby="chooser-heading">
+    <section class="rise-in chooser mb-24" style="animation-delay: 180ms;" aria-labelledby="chooser-heading">
       <div class="mono mb-6 flex items-center gap-4 text-[var(--ink-faded)]">
         <span id="chooser-heading">START HERE</span>
-        <span class="h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
+        <span class="draw-line h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
       </div>
       <p class="reading-spine mb-10">
         Start with a state if you know where you're headed, or an amenity if
-        you know what you're after — magnesium water, a proper sweat, a cold
+        you know what you're after: magnesium water, a proper sweat, a cold
         shock. Picking an amenity filters the map and list below to venues
         that have it.
       </p>
@@ -129,12 +123,14 @@ const markers = venues.map((v) => ({
       </div>
     </section>
 
-    <Map venues={markers} />
+    <div class="rise-in" style="animation-delay: 270ms;">
+      <Map venues={markers} />
+    </div>
 
-    <section aria-labelledby="contents-heading">
+    <section class="rise-in" style="animation-delay: 360ms;" aria-labelledby="contents-heading">
       <div class="mono mb-8 flex items-center gap-4 text-[var(--ink-faded)]">
         <span>CONTENTS</span>
-        <span class="h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
+        <span class="draw-line h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
       </div>
       {
         poolTypeGroups.map((group) => (

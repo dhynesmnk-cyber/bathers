@@ -153,6 +153,8 @@ The admin hub inherits the palette (both modes, §2) and the mono utility face b
 
 Responsive to 360px. Visible keyboard focus (thermal 1px outline, offset 2px). `prefers-reduced-motion` respected — the only motion on the public site is subtle anyway (link underline transitions, map interactions; no scroll-triggered reveals, no parallax). Semantic HTML; the site must read correctly with CSS off.
 
+**Homepage on-load motion (user-approved, 2026-07-24 exception).** The homepage — and only the homepage — carries one restrained load animation: its top-level sections fade and rise ~10px into place, and the two section-divider hairlines draw in left-to-right. It runs once, on load; there are still no scroll-triggered reveals and no parallax anywhere. It is CSS-only (`rise-in` / `draw-line` in `global.css`), the at-rest state is the final state, and the existing `prefers-reduced-motion` kill-switch renders everything in place with no flash. This is a narrow exception to the "link underlines and map states only" posture, scoped to the homepage; it does not license motion on other pages or reopen scroll/parallax effects.
+
 ## 10. The Test
 
 Before any gate closes, screenshot the work and ask: *could this screen be mistaken for a tech startup, a listings site, or a generic dark-mode template?* If yes, it fails the gate. The reference register is a letterpress pamphlet and a field notebook — not a product.

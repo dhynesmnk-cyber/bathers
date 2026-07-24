@@ -142,6 +142,35 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
+/* Homepage on-load motion (DESIGN.md §9 / UX.md §3, 2026-07-24 exception).
+   A single, one-time settle when the page loads: sections fade and rise a
+   few pixels, and the section-divider hairlines draw in left-to-right.
+   No scroll triggers, no parallax, no looping. The at-rest state is the
+   final state (opacity 1, no transform), so the reduced-motion kill-switch
+   below simply shows everything in place with no flash. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.rise-in {
+  animation: rise-in 0.7s ease-out both;
+}
+
+@keyframes draw-line {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.draw-line {
+  transform-origin: left center;
+  animation: draw-line 0.9s ease-out both;
+  animation-delay: 0.3s;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;

@@ -17,7 +17,7 @@ Before touching any UI code, read `DESIGN.md` (visual spec) and the relevant sec
 - Venue images only via the TippedPhoto treatment (mount border, PLATE-register mono caption). Never full-bleed, never in lists. The rotation this treatment used to apply was removed 2026-07-22 (DESIGN.md §4) — photos now sit flat; mount border/caption unchanged. Blog cover images (2026-07-21, DESIGN.md §7) are a separate, longer-standing exception — plain full-width image with a `--paper-raised` mount border, no caption; see DESIGN.md §7 for why.
 - A small fixed corner menu (bottom-right, `MENU` text button) and a single hairline page-frame border are both named, dated exceptions (DESIGN.md §5b and §4/2026-07-22) to the "never fixed/floating" and "no boxed borders" rules — narrowly scoped to those two elements, not a general reopening.
 - Blog (2026-07-21): same typographic-entries list style as the index, no cards. Admin authoring screen at `/blog` uses Quill.js (vendored, `admin/static/vendor/quill/`) repainted to the site's dark palette — see `admin/static/blog.css`.
-- Grain overlay present on every public page. Motion: link underlines and map states only; `prefers-reduced-motion` kills those.
+- Grain overlay present on every public page. Motion: link underlines and map states only; `prefers-reduced-motion` kills those. **One exception (2026-07-24, DESIGN.md §9 / UX.md §3):** the homepage has a one-time, on-load-only fade/rise on its sections plus a left-to-right draw on its divider hairlines — CSS-only, no scroll triggers, reduced-motion-safe. Homepage only; do not extend motion to other pages.
 - Admin app: same palette + mono, radius ≤4px allowed, focus rings required, oxide = destructive/failure, thermal = confirm/success.
 
 ## Session discipline
