@@ -182,6 +182,29 @@ a:focus-visible {
   max-width: 65ch;
 }
 
+/* Vertical rhythm for prose content (2026-07-24 fix) — Tailwind's Preflight
+   reset zeroes default p/heading margins and nothing here replaced them, so
+   every paragraph on the site (blog posts, venue pages, forewords) rendered
+   flush against the next. `p + p` rather than a bare `p` rule avoids adding
+   unwanted top margin before the first paragraph in a block that already has
+   its own heading/section spacing. */
+.reading-spine p + p {
+  margin-top: 1.25em;
+}
+
+.reading-spine h2,
+.reading-spine h3 {
+  margin-top: 2em;
+  margin-bottom: 0.75em;
+}
+
+.reading-spine ul,
+.reading-spine ol {
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+  padding-left: 1.5em;
+}
+
 /* DESIGN.md §4/§5b (2026-07-22 exception) — a single hairline frame around
    the whole page, scrolling with the content (not fixed). Same hairline
    idiom as section dividers, just applied once at the layout level. */
