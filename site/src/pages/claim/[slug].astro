@@ -1,8 +1,10 @@
 ---
-// Claim-listing page (UX.md §2.5, TRD.md §8 exception 2026-07-23).
+// Claim-listing page (UX.md §2.5, TRD.md §8 exception — form/payment flow
+// added 2026-07-25, superseding the original mailto-only version).
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { CLAIM_EMAIL } from "../../config";
+import Icon from "../../components/Icon.astro";
+import { AMENITY_KEYS, AMENITY_NOTATION, FACILITY_KEYS, FACILITY_LABELS, CLAIM_API_BASE_URL } from "../../config";
 
 export async function getStaticPaths() {
   const venues = await getCollection("spas");
@@ -14,10 +16,6 @@ export async function getStaticPaths() {
 
 const { venue } = Astro.props;
 const { data } = venue;
-
-const subject = encodeURIComponent(`Claim listing: ${data.name}`);
-const body = encodeURIComponent(`I'd like to claim the listing for ${data.name} (${venue.id}).`);
-const mailtoHref = `mailto:${CLAIM_EMAIL}?subject=${subject}&body=${body}`;
 ---
 
 <BaseLayout
@@ -42,19 +40,344 @@ const mailtoHref = `mailto:${CLAIM_EMAIL}?subject=${subject}&body=${body}`;
           whenever you need to.
         </p>
         <p class="mt-6">
-          Send a request for anything you'd like changed. If a request is denied, you are not
+          Only the fields you change below are sent. If a request is denied, you are not
           charged.
         </p>
       </div>
 
-      <div class="mono mt-16 pt-6" style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent); background: var(--paper-raised); padding: 1.5rem;">
+      <form
+        id="claim-form"
+        class="claim-form mt-12"
+        data-slug={venue.id}
+        data-api-base={CLAIM_API_BASE_URL}
+      >
+        <input
+          type="text"
+          name="website_confirm"
+          tabindex="-1"
+          autocomplete="off"
+          class="claim-honeypot"
+          aria-hidden="true"
+        />
+
+        <label class="claim-field">
+          <span class="mono claim-field-label">Name</span>
+          <input class="claim-text-input" type="text" name="name" value={data.name} required />
+        </label>
+
+        <label class="claim-field">
+          <span class="mono claim-field-label">Address</span>
+          <input class="claim-text-input" type="text" name="address" value={data.address} required />
+        </label>
+
+        <label class="claim-field">
+          <span class="mono claim-field-label">Suburb</span>
+          <input class="claim-text-input" type="text" name="suburb" value={data.suburb} required />
+        </label>
+
+        <label class="claim-field">
+          <span class="mono claim-field-label">Hours</span>
+          <input class="claim-text-input" type="text" name="hours" value={data.hours ?? ""} />
+        </label>
+
+        <label class="claim-field">
+          <span class="mono claim-field-label">Cost</span>
+          <input class="claim-text-input" type="text" name="cost" value={data.cost ?? ""} />
+        </label>
+
+        <label class="claim-field">
+          <span class="mono claim-field-label">Access</span>
+          <input class="claim-text-input" type="text" name="access" value={data.access ?? ""} />
+        </label>
+
+        <label class="claim-field">
+          <span class="mono claim-field-label">Summary</span>
+          <textarea class="claim-text-input claim-textarea" name="summary" rows="2" maxlength="160" required
+            >{data.summary}</textarea
+          >
+        </label>
+
+        <fieldset class="claim-toggle-group">
+          <legend class="mono claim-field-label">Amenities</legend>
+          {
+            AMENITY_KEYS.map((key) => (
+              <button
+                type="button"
+                class:list={["claim-toggle-chip", { active: data.amenities[key] }]}
+                data-group="amenities"
+                data-key={key}
+              >
+                <Icon name={key} size={16} />
+                <span>{AMENITY_NOTATION[key].full}</span>
+              </button>
+            ))
+          }
+        </fieldset>
+
+        <fieldset class="claim-toggle-group">
+          <legend class="mono claim-field-label">Facilities</legend>
+          {
+            FACILITY_KEYS.map((key) => (
+              <button
+                type="button"
+                class:list={["claim-toggle-chip", { active: data.facilities?.[key] }]}
+                data-group="facilities"
+                data-key={key}
+              >
+                <Icon name={key} size={16} />
+                <span>{FACILITY_LABELS[key]}</span>
+              </button>
+            ))
+          }
+        </fieldset>
+
+        <div class="claim-field">
+          <span class="mono claim-field-label">Photo (optional)</span>
+          <input id="claim-photo-input" type="file" accept="image/*" class="mono" />
+          <input
+            id="claim-photo-caption"
+            class="claim-text-input mt-2"
+            type="text"
+            placeholder="Caption — required if you attach a photo"
+          />
+        </div>
+
+        <fieldset class="claim-toggle-group">
+          <legend class="mono claim-field-label">Plan</legend>
+          <button type="button" class="claim-toggle-chip active" data-group="plan" data-key="one_off">
+            One-off $25
+          </button>
+          <button type="button" class="claim-toggle-chip" data-group="plan" data-key="subscription">
+            $5/month — unlimited changes
+          </button>
+        </fieldset>
+
+        <label class="claim-field">
+          <span class="mono claim-field-label">Your name</span>
+          <input class="claim-text-input" type="text" name="requester_name" required />
+        </label>
+
+        <label class="claim-field">
+          <span class="mono claim-field-label">Your email</span>
+          <input class="claim-text-input" type="email" name="requester_email" required />
+        </label>
+
+        <p id="claim-form-error" class="mono claim-error" hidden></p>
+
+        <button type="submit" class="book-now-btn mono mt-4">Submit request</button>
+      </form>
+
+      <p id="claim-confirmation" class="mono mt-16" hidden>
+        Thanks — your request has been sent and will be reviewed. You'll hear back by email.
+      </p>
+
+      <div
+        class="mono mt-16 pt-6"
+        style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent); background: var(--paper-raised); padding: 1.5rem;"
+      >
         <p>
-          <a href={mailtoHref} class="book-now-btn mono">Request to claim this listing</a>
-        </p>
-        <p class="mt-4">
           <a href={`/spa/${venue.id}/`}>Back to {data.name}</a>
         </p>
       </div>
     </article>
   </main>
 </BaseLayout>
+
+<style>
+  .claim-honeypot {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  .claim-field {
+    display: block;
+    margin-bottom: 1.5rem;
+  }
+
+  .claim-field-label {
+    display: block;
+    color: var(--ink-faded);
+    margin-bottom: 0.35rem;
+  }
+
+  .claim-text-input {
+    width: 100%;
+    background: var(--paper-raised);
+    color: var(--ink);
+    border: 1px solid color-mix(in srgb, var(--ink-faded) 35%, transparent);
+    border-radius: 2px;
+    padding: 0.55rem 0.65rem;
+    font-family: "Newsreader", serif;
+    font-size: 16px;
+  }
+
+  .claim-textarea {
+    resize: vertical;
+  }
+
+  .claim-toggle-group {
+    border: none;
+    padding: 0;
+    margin: 0 0 1.5rem;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .claim-toggle-group legend {
+    display: block;
+    width: 100%;
+    margin-bottom: 0.5rem;
+    color: var(--ink-faded);
+  }
+
+  .claim-toggle-chip {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    background: var(--paper-raised);
+    color: var(--ink-faded);
+    border: 1px solid color-mix(in srgb, var(--ink-faded) 40%, transparent);
+    border-radius: 2px;
+    padding: 0.45rem 0.7rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+  }
+
+  .claim-toggle-chip.active {
+    color: var(--paper);
+    background: var(--thermal);
+    border-color: var(--thermal);
+  }
+
+  .claim-error {
+    color: var(--oxide);
+  }
+</style>
+
+<script>
+  const form = document.getElementById("claim-form") as HTMLFormElement;
+  const slug = form.dataset.slug!;
+  const apiBase = form.dataset.apiBase!;
+  const errorEl = document.getElementById("claim-form-error")!;
+  const confirmationEl = document.getElementById("claim-confirmation")!;
+  const photoInput = document.getElementById("claim-photo-input") as HTMLInputElement;
+  const captionInput = document.getElementById("claim-photo-caption") as HTMLInputElement;
+  const toggleChips = Array.from(form.querySelectorAll<HTMLButtonElement>(".claim-toggle-chip[data-group]"));
+
+  const TEXT_FIELDS = ["name", "address", "suburb", "hours", "cost", "access", "summary"] as const;
+
+  function fieldValue(field: string): string {
+    return (form.elements.namedItem(field) as HTMLInputElement | HTMLTextAreaElement).value;
+  }
+
+  const original: {
+    text: Record<string, string>;
+    amenities: Record<string, boolean>;
+    facilities: Record<string, boolean>;
+  } = { text: {}, amenities: {}, facilities: {} };
+
+  for (const field of TEXT_FIELDS) original.text[field] = fieldValue(field);
+  for (const chip of toggleChips) {
+    const group = chip.dataset.group!;
+    const key = chip.dataset.key!;
+    if (group === "amenities" || group === "facilities") {
+      original[group][key] = chip.classList.contains("active");
+    }
+  }
+
+  for (const chip of toggleChips) {
+    chip.addEventListener("click", () => {
+      if (chip.dataset.group === "plan") {
+        for (const c of toggleChips) {
+          if (c.dataset.group === "plan") c.classList.remove("active");
+        }
+        chip.classList.add("active");
+      } else {
+        chip.classList.toggle("active");
+      }
+    });
+  }
+
+  function currentPlan(): string {
+    const active = toggleChips.find((c) => c.dataset.group === "plan" && c.classList.contains("active"));
+    return active ? active.dataset.key! : "one_off";
+  }
+
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(",")[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    errorEl.hidden = true;
+
+    const patch: Record<string, unknown> = {};
+    for (const field of TEXT_FIELDS) {
+      const value = fieldValue(field);
+      if (value !== original.text[field]) patch[field] = value;
+    }
+
+    for (const group of ["amenities", "facilities"] as const) {
+      const values: Record<string, boolean> = {};
+      let changed = false;
+      for (const chip of toggleChips) {
+        if (chip.dataset.group !== group) continue;
+        const key = chip.dataset.key!;
+        const active = chip.classList.contains("active");
+        values[key] = active;
+        if (active !== original[group][key]) changed = true;
+      }
+      if (changed) patch[group] = values;
+    }
+
+    const file = photoInput.files && photoInput.files[0];
+    if (file && !captionInput.value.trim()) {
+      errorEl.textContent = "A caption is required for the photo.";
+      errorEl.hidden = false;
+      return;
+    }
+
+    const body: Record<string, unknown> = {
+      slug,
+      requester_name: fieldValue("requester_name"),
+      requester_email: fieldValue("requester_email"),
+      plan_type: currentPlan(),
+      patch,
+      photo_caption: file ? captionInput.value.trim() : null,
+      website: fieldValue("website_confirm"),
+    };
+
+    if (file) {
+      body.photo = { data: await fileToBase64(file), content_type: file.type };
+    }
+
+    const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+    submitBtn.disabled = true;
+
+    try {
+      const res = await fetch(`${apiBase}/api/claims/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error("request failed");
+      form.hidden = true;
+      confirmationEl.hidden = false;
+    } catch {
+      errorEl.textContent = "Something went wrong sending your request — please try again.";
+      errorEl.hidden = false;
+      submitBtn.disabled = false;
+    }
+  });
+</script>

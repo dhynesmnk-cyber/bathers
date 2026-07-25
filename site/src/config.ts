@@ -194,7 +194,15 @@ export const SITE_NAME = "Bathers'";
 export const SITE_TAGLINE = "Notes on heat, cold and water at Australian day spas and bathhouses.";
 
 // Claim-listing CTA (2026-07-23 addition — TRD.md §8 exception, UX.md §2.5).
+// No longer used by the claim page itself since the 2026-07-25 form/payment
+// exception replaced its mailto CTA, but harmless to keep as a record.
 export const CLAIM_EMAIL = "d.hynes.mnk@gmail.com";
+
+// The deployed admin app's public origin (Fly.io) — the claim form's fetch
+// target, since the static site has no backend of its own (2026-07-25,
+// TRD.md §8 exception). Same "plain exported constant, no site-side .env
+// loader" pattern as SITE_URL/GOATCOUNTER_SITE below.
+export const CLAIM_API_BASE_URL = "https://bathers-admin.fly.dev";
 
 // GoatCounter click tracking (Book Now button only — TRD.md §8 exception).
 // Site codes aren't secret; only the read-back API token stays server-side
