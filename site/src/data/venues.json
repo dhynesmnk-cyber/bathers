@@ -64,6 +64,38 @@
     }
   },
   {
+    "slug": "artesian-mud-baths",
+    "name": "Artesian Mud Baths Eulo",
+    "state": "QLD",
+    "category": "thermal_springs",
+    "suburb": "Eulo",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "Natural artesian mud baths in outback Queensland — mineral-rich clay, individual tubs, nibbles included, open daily from 6:30 AM.",
+    "has_image": true,
+    "hours": "Daily, 6:30 AM – 8:30 PM",
+    "cost": null,
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false,
+      "outdoor_pool": true,
+      "indoor_pool": false,
+      "natural_spring": true
+    }
+  },
+  {
     "slug": "aun-bathhouse",
     "name": "AUN Bathhouse",
     "state": "VIC",
@@ -264,9 +296,9 @@
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
-    "summary": "Historic 1895 bathhouse drawing on natural mineral springs, with salt pools, dry sauna, cold-water cascade, and contrast therapy rituals near Daylesford.",
+    "summary": "Mineral-spring bathhouse operating since 1895 in Hepburn Springs, with spring-fed pools, dry sauna, and contrast thermal ritual.",
     "has_image": true,
-    "hours": "Mon–Thu & Sun 9am–7pm; Fri–Sat 9am–9pm. Closed Christmas Day and Good Friday.",
+    "hours": null,
     "cost": null,
     "access": null,
     "amenities": {
@@ -573,6 +605,38 @@
       "outdoor_pool": false,
       "indoor_pool": false,
       "natural_spring": false
+    }
+  },
+  {
+    "slug": "pilliga-artesian-bore-bath",
+    "name": "Pilliga Artesian Bore Bath",
+    "state": "NSW",
+    "category": "thermal_springs",
+    "suburb": "Pilliga",
+    "latitude": null,
+    "longitude": null,
+    "status": "unclaimed",
+    "summary": "A 37°C artesian bore bath in outback NSW, open 24 hours, with basic camping on-site. Simple, remote, and genuinely old.",
+    "has_image": false,
+    "hours": "Open 24 hours, every day",
+    "cost": "$7.50 per night camping fee; maximum stay 4 nights",
+    "access": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": true,
+      "towels_provided": false,
+      "changerooms": true,
+      "bookings_required": false,
+      "wheelchair_access": false,
+      "outdoor_pool": true,
+      "indoor_pool": false,
+      "natural_spring": true
     }
   },
   {

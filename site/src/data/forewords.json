@@ -1,4 +1,12 @@
 {
+  "NSW": {
+    "amenities": {},
+    "state": "New South Wales holds one of the country's more unusual public bathing spots in the Pilliga, where artesian water drawn from the Great Artesian Basin surfaces warm and mineral-rich. That geological accident has made Pilliga Bore Bath a place people drive considerable distances to reach."
+  },
+  "QLD": {
+    "amenities": {},
+    "state": "Queensland's entry in this directory is brief: one venue, in Eulo, drawing on the Great Artesian Basin that underlies much of the state's interior. That basin is one of the largest and deepest freshwater aquifer systems on earth, and the mineralised waters it produces have made outback Queensland a quiet destination for this kind of bathing for well over a century."
+  },
   "TAS": {
     "amenities": {
       "cold_plunge": "Tasmania's cool climate makes cold plunge facilities a natural fit, with water temperatures in such pools typically kept well below 15°C to prompt the circulatory response the practice is known for. Two venues currently list this amenity in the state: Nova Holistic Spa in Hobart and Waldheim Alpine Spa at Cradle Mountain.",
