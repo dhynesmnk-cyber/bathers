@@ -61,12 +61,22 @@ def _format_diff(diff: dict[str, Any]) -> str:
 def send_claim_notification_email(request: ClaimRequest, venue_name: str, diff: dict[str, Any]) -> None:
     admin_link = f"\n\nReview: {ADMIN_BASE_URL}/claims/{request.id}" if ADMIN_BASE_URL else ""
     photo_note = "\n\nA photo was attached to this request." if request.has_photo else ""
+    # Action links require ADMIN_BASE_URL (optional) — without it there's
+    # nowhere for them to point, so fall back to the admin-only review link
+    # above rather than emit broken URLs.
+    action_links = ""
+    if ADMIN_BASE_URL and request.action_token:
+        action_links = (
+            f"\n\nApprove: {ADMIN_BASE_URL}/claim-action/{request.id}/approve?token={request.action_token}"
+            f"\nDeny: {ADMIN_BASE_URL}/claim-action/{request.id}/deny?token={request.action_token}"
+            f"\n(opens a confirmation page — nothing happens until you click the button there)"
+        )
     body = (
         f"New claim request for {venue_name} ({request.slug}).\n\n"
         f"From: {request.requester_name} <{request.requester_email}>\n"
         f"Plan: {PLAN_LABELS.get(request.plan_type, request.plan_type)}\n\n"
         f"Requested changes:\n{_format_diff(diff)}"
-        f"{photo_note}{admin_link}"
+        f"{photo_note}{action_links}{admin_link}"
     )
     _send(CLAIM_NOTIFY_EMAIL, f"Claim request: {venue_name}", body)
 

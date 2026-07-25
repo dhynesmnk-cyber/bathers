@@ -6,6 +6,7 @@ wiring together claims_store, staging, images, stripe_client and notify.
 
 from __future__ import annotations
 
+import hmac
 from pathlib import Path
 from typing import Any
 
@@ -186,3 +187,26 @@ def handle_checkout_completed(session_id: str, stripe_customer_id: str | None) -
     claims_store.set_stripe_session(request.id, session_id, stripe_customer_id)
     claims_store.update_status(request.id, "paid")
     publish_request(request.id)
+
+
+def verify_action_token(claim_id: int, token: str) -> ClaimRequest | None:
+    """Gate for the email Approve/Deny links (TRD.md §8, 2026-07-25 exception):
+    no admin login, so the per-request `action_token` (a 256-bit random
+    value, generated once at submission) is the sole credential. Constant-
+    time compare against timing attacks. Requires status == 'pending' so a
+    link goes inert the moment the request is acted on by ANY path — the
+    same email link, the admin UI, or a second click — rather than needing
+    a separate one-time-use flag. Returns None (never raises) on any
+    mismatch so callers can render a uniform "no longer valid" page without
+    leaking which check failed."""
+    if not token:
+        return None
+    try:
+        request = claims_store.get_request(claim_id)
+    except KeyError:
+        return None
+    if not request.action_token or not hmac.compare_digest(request.action_token, token):
+        return None
+    if request.status != "pending":
+        return None
+    return request

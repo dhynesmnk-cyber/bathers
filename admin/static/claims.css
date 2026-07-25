@@ -84,3 +84,11 @@
   color: var(--oxide);
   border-color: var(--oxide);
 }
+
+/* Email Approve/Deny confirm-and-act page (2026-07-25) — a standalone page
+   (no hub header/nav), reached only via the notification email's links. */
+.claim-action-page {
+  max-width: 480px;
+  margin: 3rem auto;
+  padding: 0 1.5rem;
+}

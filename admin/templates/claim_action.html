@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bathers' — Claim request</title>
+    <link rel="stylesheet" href="/static/admin.css" />
+    <link rel="stylesheet" href="/static/claims.css" />
+  </head>
+  <body>
+    <main class="claim-action-page">
+      <span class="mono eyebrow">BATHERS' — CLAIM REQUEST</span>
+
+      {% if state == "invalid" %}
+      <p class="mono" style="margin-top: 1.5rem;">
+        This link is no longer valid — it may have already been used, or the request has already
+        been handled. You can review claim requests directly in the
+        <a href="/claims">admin</a>.
+      </p>
+
+      {% elif state == "error" %}
+      <p class="mono" style="margin-top: 1.5rem; color: var(--oxide);">{{ message }}</p>
+      <p class="mono" style="margin-top: 1rem;"><a href="/claims">Review in the admin</a></p>
+
+      {% elif state == "done" %}
+      <p class="mono" style="margin-top: 1.5rem;">{{ message }}</p>
+      <p class="mono" style="margin-top: 1rem;"><a href="/claims">Review other requests</a></p>
+
+      {% elif state == "confirm" %}
+      <h1 class="claim-venue-name" style="margin-top: 1rem;">{{ venue_name }}</h1>
+      <p class="mono claim-meta">
+        {{ requester_name }} &lt;{{ requester_email }}&gt; &middot; {{ plan_label }}
+      </p>
+
+      <div class="field">
+        <span class="mono field-label">Requested changes</span>
+        {% if diff %}
+        <table class="claim-diff-table">
+          {% for field, change in diff.items() %}
+            {% if "old" in change %}
+            <tr>
+              <td class="mono claim-diff-label">{{ field }}</td>
+              <td class="mono claim-diff-value">{{ change.old or "(none)" }} &rarr; {{ change.new or "(none)" }}</td>
+            </tr>
+            {% else %}
+              {% for subkey, subchange in change.items() %}
+              <tr>
+                <td class="mono claim-diff-label">{{ field }}.{{ subkey }}</td>
+                <td class="mono claim-diff-value">{{ subchange.old }} &rarr; {{ subchange.new }}</td>
+              </tr>
+              {% endfor %}
+            {% endif %}
+          {% endfor %}
+        </table>
+        {% else %}
+        <p class="mono field-hint">No field changes{% if has_photo %} — photo only{% endif %}.</p>
+        {% endif %}
+      </div>
+
+      <form method="post" action="/claim-action/{{ claim_id }}/{{ action }}" class="claim-actions">
+        <input type="hidden" name="token" value="{{ token }}" />
+        {% if action == "deny" %}
+        <label class="field">
+          <span class="mono field-label">Reason (optional)</span>
+          <input class="mono text-input" type="text" name="reason" placeholder="Not approved" />
+        </label>
+        <button type="submit" class="btn btn-oxide">Deny</button>
+        {% else %}
+        <button type="submit" class="btn btn-thermal">Approve</button>
+        {% endif %}
+      </form>
+      {% endif %}
+    </main>
+  </body>
+</html>

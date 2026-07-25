@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import secrets
 import sqlite3
 from dataclasses import dataclass
 from typing import Any
@@ -40,11 +41,18 @@ CREATE INDEX IF NOT EXISTS idx_claim_requests_status ON claim_requests(status);
 CREATE INDEX IF NOT EXISTS idx_claim_requests_session ON claim_requests(stripe_checkout_session_id);
 """
 
+# Additive, no-formal-migration-tool schema evolution (matches this table's
+# existing "CREATE TABLE IF NOT EXISTS on every connect" posture) — needed
+# once a table already exists in production without a newly added column.
+_MIGRATIONS = (
+    "ALTER TABLE claim_requests ADD COLUMN action_token TEXT",
+)
+
 COLUMNS = (
     "id", "slug", "submitted_at", "requester_name", "requester_email", "plan_type",
     "patch_json", "has_photo", "photo_path", "photo_caption", "status", "review_note",
     "reviewed_at", "stripe_checkout_session_id", "stripe_customer_id",
-    "is_returning_subscriber", "honeypot_tripped",
+    "is_returning_subscriber", "honeypot_tripped", "action_token",
 )
 
 
@@ -67,6 +75,7 @@ class ClaimRequest:
     stripe_customer_id: str | None
     is_returning_subscriber: bool
     honeypot_tripped: bool
+    action_token: str | None
 
     @property
     def patch(self) -> dict[str, Any]:
@@ -77,6 +86,11 @@ def _connect() -> sqlite3.Connection:
     CLAIMS_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(CLAIMS_DB_PATH)
     conn.executescript(SCHEMA_SQL)
+    for statement in _MIGRATIONS:
+        try:
+            conn.execute(statement)
+        except sqlite3.OperationalError:
+            pass  # column already exists — migration already applied
     return conn
 
 
@@ -109,12 +123,13 @@ def create_request(
             """
             INSERT INTO claim_requests
               (slug, submitted_at, requester_name, requester_email, plan_type,
-               patch_json, has_photo, photo_caption, status, honeypot_tripped)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+               patch_json, has_photo, photo_caption, status, honeypot_tripped, action_token)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
             """,
             (
                 slug, _now(), requester_name, requester_email, plan_type,
                 json.dumps(patch), int(has_photo), photo_caption, int(honeypot_tripped),
+                secrets.token_urlsafe(32),
             ),
         )
         conn.commit()

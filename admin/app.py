@@ -11,6 +11,7 @@ import threading
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import parse_qsl
 
 import httpx
 from fastapi import BackgroundTasks, FastAPI, HTTPException
@@ -35,7 +36,7 @@ from admin.config import (
     VENUES_JSON_PATH,
 )
 from admin.mdx_preview import render_body_html
-from admin.pipeline import blog, claims, claims_store, deploy, discovery, goatcounter, images, orchestrator, places, staging, stripe_client
+from admin.pipeline import blog, claims, claims_store, deploy, discovery, goatcounter, images, notify, orchestrator, places, staging, stripe_client
 from admin.pipeline.blog import ValidationFailed as BlogValidationFailed
 from admin.pipeline.staging import UndoExpired, ValidationFailed
 
@@ -43,6 +44,11 @@ from admin.pipeline.staging import UndoExpired, ValidationFailed
 # Stripe webhook are this app's only unauthenticated public write paths
 # (TRD.md §8, 2026-07-25 exception). Everything else stays behind auth.
 PUBLIC_PATHS = {"/api/claims/submit", "/api/stripe/webhook"}
+# The email Approve/Deny confirm-and-act pages (2026-07-25 addition) carry a
+# variable claim id, so they're matched by prefix rather than exact path.
+# Auth here is the per-request action_token, not Basic Auth — see
+# claims.verify_action_token.
+PUBLIC_PATH_PREFIXES = ("/claim-action/",)
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -73,7 +79,7 @@ def _basic_auth_ok(header: str | None) -> bool:
 
 @app.middleware("http")
 async def require_basic_auth(request: Request, call_next):
-    if request.url.path in PUBLIC_PATHS:
+    if request.url.path in PUBLIC_PATHS or request.url.path.startswith(PUBLIC_PATH_PREFIXES):
         return await call_next(request)
     # No credentials configured (local dev's .env leaves these blank) — auth stays off.
     if not ADMIN_USERNAME and not ADMIN_PASSWORD:
@@ -703,6 +709,77 @@ def api_publish_claim(claim_id: int, background_tasks: BackgroundTasks):
     claims.publish_request(claim_id)
     background_tasks.add_task(deploy.run_auto_deploy)
     return {"ok": True}
+
+
+## ---- Email Approve/Deny confirm-and-act pages (2026-07-25 addition) ----
+#
+# Public (see PUBLIC_PATH_PREFIXES above) — auth is the per-request
+# action_token, not Basic Auth, so the owner can act straight from the
+# notification email with no login. GET only ever renders a confirmation
+# page (safe against mail-scanner/prefetch auto-visits); POST is the only
+# thing that actually approves/denies, reusing claims.approve_request /
+# claims.deny_request unchanged — this is a narrower entry point into the
+# same logic the authenticated JSON API above already calls, not a second
+# approval pathway.
+
+
+def _claim_action_context(claim: claims_store.ClaimRequest, *, action: str, token: str) -> dict[str, Any]:
+    return {
+        "state": "confirm",
+        "action": action,
+        "claim_id": claim.id,
+        "token": token,
+        "venue_name": claims._venue_name(claim.slug),
+        "requester_name": claim.requester_name,
+        "requester_email": claim.requester_email,
+        "plan_label": notify.PLAN_LABELS.get(claim.plan_type, claim.plan_type),
+        "diff": claims.compute_diff(claim.slug, claim.patch),
+        "has_photo": claim.has_photo,
+    }
+
+
+@app.get("/claim-action/{claim_id}/{action}", response_class=HTMLResponse)
+def claim_action_confirm(request: Request, claim_id: int, action: str, token: str = ""):
+    if action not in ("approve", "deny"):
+        raise HTTPException(404)
+    claim = claims.verify_action_token(claim_id, token)
+    if claim is None:
+        return templates.TemplateResponse(request, "claim_action.html", {"state": "invalid"})
+    return templates.TemplateResponse(
+        request, "claim_action.html", _claim_action_context(claim, action=action, token=token)
+    )
+
+
+@app.post("/claim-action/{claim_id}/{action}", response_class=HTMLResponse)
+async def claim_action_submit(request: Request, claim_id: int, action: str, background_tasks: BackgroundTasks):
+    if action not in ("approve", "deny"):
+        raise HTTPException(404)
+    # Plain url-encoded form body, parsed by hand with stdlib parse_qsl —
+    # avoids adding python-multipart, which FastAPI's Form(...) parameter
+    # type requires even for non-multipart bodies (same reasoning as the
+    # blog image upload's base64-JSON-over-multipart choice elsewhere).
+    fields = dict(parse_qsl((await request.body()).decode("utf-8")))
+    token = fields.get("token", "")
+    # Re-validate from scratch — never trust that the GET's check still
+    # holds by the time the form is submitted.
+    claim = claims.verify_action_token(claim_id, token)
+    if claim is None:
+        return templates.TemplateResponse(request, "claim_action.html", {"state": "invalid"})
+
+    if action == "approve":
+        try:
+            claims.approve_request(claim_id)
+        except stripe_client.StripeError as exc:
+            return templates.TemplateResponse(
+                request, "claim_action.html", {"state": "error", "message": f"Stripe error — {exc}"}
+            )
+        message = "Approved. The requester has been emailed next steps."
+    else:
+        reason = fields.get("reason", "").strip() or "Not approved"
+        claims.deny_request(claim_id, reason)
+        message = "Denied. The requester has been notified."
+
+    return templates.TemplateResponse(request, "claim_action.html", {"state": "done", "message": message})
 
 
 @app.get("/api/health")
