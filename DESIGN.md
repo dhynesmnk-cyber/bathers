@@ -83,6 +83,8 @@ This is what separates "dark editorial" from "dark dashboard":
 
 **Exception (user-approved, 2026-07-23).** The homepage carries one icon-based chooser section (§6, §7) between the foreword and the map chapter — a narrow, scoped departure from "never centred symmetric hero layouts" and "filters are text... no pills" above. It stays inside the reading-spine rhythm (asymmetric, not full-bleed, not centred) so it reads as the next section of the pamphlet rather than a hero banner, and it fronts the site's existing plain-text amenity filter and state pages rather than replacing either. Everything else covered by these two rules — the inline amenity-filter toggle bar, state/amenity page nav, and all venue listings — is unaffected and stays plain mono text and card-free.
 
+**2026-07-25 extension.** The same chooser section also fronts a plain mono-text search field and a "near you" suburb/postcode field (TRD.md §8 exception), sitting above the existing by-state/by-amenity grid. Same idiom as everything else in §5 — text inputs and text buttons, underline-on-focus, no pill/card treatment, not a third icon grid or hero element. The search field also appears inside the corner menu panel (§5b) so it's reachable from every page, not just the homepage.
+
 ---
 
 ## 5a. Theme Toggle (2026-07-21 addition)
