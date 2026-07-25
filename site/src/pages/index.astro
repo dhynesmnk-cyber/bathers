@@ -4,6 +4,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import Map from "../components/Map.astro";
 import VenueEntry from "../components/VenueEntry.astro";
 import Icon from "../components/Icon.astro";
+import SearchBox from "../components/SearchBox.astro";
 import { AMENITY_KEYS, AMENITY_NOTATION, POOL_TYPES, SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES } from "../config";
 
 const venues = await getCollection("spas");
@@ -89,11 +90,40 @@ const markers = venues.map((v) => ({
         <span class="draw-line h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
       </div>
       <p class="reading-spine mb-10">
-        Start with a state if you know where you're headed, or an amenity if
+        Search by name or suburb, tell us where you are, or browse below —
+        start with a state if you know where you're headed, or an amenity if
         you know what you're after: magnesium water, a proper sweat, a cold
         shock. Picking an amenity filters the map and list below to venues
         that have it.
       </p>
+
+      <div class="finder-row">
+        <div class="finder-field">
+          <span class="mono chooser-group-label">Search</span>
+          <SearchBox id="search-home" />
+        </div>
+        <div class="finder-field">
+          <span class="mono chooser-group-label">Near you</span>
+          <form id="near-me-form" class="mono near-me-form">
+            <input
+              type="text"
+              id="near-me-input"
+              class="near-me-input"
+              placeholder="Suburb or postcode…"
+              autocomplete="off"
+            />
+            <button type="submit" id="near-me-submit" class="near-me-btn">Find</button>
+            <button type="button" id="near-me-clear" class="near-me-btn" hidden>Clear</button>
+          </form>
+          <p id="near-me-message" class="near-me-message" role="status" hidden></p>
+          <noscript>
+            <p class="mono" style="color: var(--ink-faded); margin-top: 0.5rem;">
+              Finding venues near you requires JavaScript — browse by state or pool type below.
+            </p>
+          </noscript>
+        </div>
+      </div>
+
       <div class="chooser-groups">
         <div class="chooser-group">
           <span class="mono chooser-group-label">By state</span>
@@ -129,12 +159,13 @@ const markers = venues.map((v) => ({
 
     <section class="rise-in" style="animation-delay: 360ms;" aria-labelledby="contents-heading">
       <div class="mono mb-8 flex items-center gap-4 text-[var(--ink-faded)]">
-        <span>CONTENTS</span>
+        <span id="contents-heading">CONTENTS</span>
         <span class="draw-line h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
       </div>
+      <div id="venue-contents">
       {
         poolTypeGroups.map((group) => (
-          <div class="mb-12" data-venue-group>
+          <div class="mb-12" data-venue-group data-pool-group>
             <h2 class="mono mb-2 text-[var(--ink-faded)]">{group.label}</h2>
             {group.venues.map((venue) => (
               <VenueEntry
@@ -151,11 +182,84 @@ const markers = venues.map((v) => ({
           </div>
         ))
       }
+      </div>
     </section>
   </main>
 </BaseLayout>
 
 <style>
+  .finder-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+    padding-bottom: 2.5rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
+  }
+
+  @media (min-width: 640px) {
+    .finder-row {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .near-me-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    align-items: baseline;
+  }
+
+  .near-me-input {
+    flex: 1;
+    min-width: 8rem;
+    background: none;
+    border: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
+    color: var(--ink);
+    padding: 0.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 14px;
+  }
+
+  .near-me-input::placeholder {
+    color: var(--ink-faded);
+  }
+
+  .near-me-input:focus-visible {
+    border-bottom-color: var(--thermal);
+  }
+
+  .near-me-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    color: var(--ink-faded);
+    cursor: pointer;
+    text-underline-offset: 3px;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+  }
+
+  .near-me-btn:hover,
+  .near-me-btn:focus-visible {
+    color: var(--ink);
+    text-decoration-color: var(--thermal);
+  }
+
+  .near-me-message {
+    margin-top: 0.5rem;
+    font-size: 13px;
+    color: var(--ink-faded);
+  }
+
+  .near-me-message[data-tone="error"] {
+    color: var(--oxide);
+  }
+
   .chooser-groups {
     display: grid;
     grid-template-columns: 1fr;
