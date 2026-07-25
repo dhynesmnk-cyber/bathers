@@ -93,6 +93,18 @@ Empty states are directions, not moods: an empty queue says `No drafts staged. H
 
 ---
 
+### 1.6 Claim Review screen (2026-07-25 addition)
+
+A second admin screen at `/claims`, linked from the hub header next to Blog — separate from the venue review workflow because claim requests are visitor-submitted and payment-gated, not part of the AI pipeline (TRD.md §8 exception).
+
+- Two-pane layout, same shape as `/blog`: a request list (newest first, status chip per row: `PENDING` / `AWAITING PAYMENT` / `APPROVED` / `PAID` / `PUBLISHED` / `DENIED`) and a detail pane.
+- Detail pane shows: requester name/email, plan type, submitted date, the uploaded photo (if any) and its caption, and a **field-level diff** against the venue's current live frontmatter (`changed field: old value → new value`, mono register) — never the raw patch alone, so the reviewer always sees the actual before/after.
+- Actions on a `pending` request: `Approve` (thermal) and `Deny` (oxide, requires a one-line reason, same pattern as venue Reject). Approving performs a live Stripe subscription lookup by the requester's email; if it matches an active subscription, the request moves to `approved` and a `Publish` button appears (a second, separate deliberate action — no fee, but still a considered publish step, same posture as the blog's "publishing is a considered action"); otherwise the request moves to `awaiting_payment` and a Checkout email goes to the requester, with publishing left entirely to the Stripe webhook.
+- Both the webhook-driven publish and the subscriber's manual `Publish` click also trigger the admin's deploy pipeline automatically in the background (TRD.md §8) — the one path in this system where a write reaches the live site without a human clicking the Deploy strip's button.
+- `paid`/`published` requests are read-only history; `denied` requests are read-only history with the reason shown.
+
+---
+
 ## 2. Public Site — Page Behaviour
 
 ### 2.1 Index
@@ -131,12 +143,15 @@ Content order (top to bottom): masthead → editorial foreword → a chooser sec
 
 ---
 
-### 2.5 Claim-listing page (2026-07-23 addition)
+### 2.5 Claim-listing page (2026-07-23 addition; form/payment flow added 2026-07-25, user-approved — supersedes this section's original mailto-only posture)
 
-- Route `/claim/[slug]/`, one per venue, statically generated (`getStaticPaths` over the `spas` collection, same pattern as the venue page). Same shell/typography as a venue page — no pricing-table/SaaS layout (DESIGN.md §10 test applies here too).
-- Content order: heading (`Claim {venue name}`) → prose explaining the two options (a one-off processing fee per content update, or a monthly subscription for ongoing update access) → a line noting requests can cover any copy, image, or detail, and that denied requests are not charged → a single `.book-now-btn`-styled `mailto:` CTA, pre-filled with subject and body identifying the venue → a plain link back to the venue page.
-- v1 stays mailto-only: no claim form, no login, no payment collection on the page itself — consistent with §2.2's "no forms" posture, just relocated from the venue page to its own page.
-- Reached only via the venue page's "Claim this listing" button (§2.2), which is hidden once a venue's `status` is `claimed`.
+- Route `/claim/[slug]/`, one per venue, statically generated (`getStaticPaths` over the `spas` collection, same pattern as the venue page). Same shell/typography as a venue page — no pricing-table/SaaS layout (DESIGN.md §10 test applies here too; see DESIGN.md's dated note near §7 for the narrow form-input exception this page now carries).
+- Content order: heading (`Claim {venue name}`) → prose explaining the two options (a one-off processing fee per content update, or a monthly subscription for ongoing update access) → a line noting requests can cover any copy, image, or detail, and that denied requests are not charged → **a structured request form**, pre-filled from the venue's current published values: name, address, suburb, hours, cost, access, the 5 amenity toggle-chips, the 8 facility toggle-chips, summary, one optional photo upload with a required caption if a photo is attached, requester name, requester email, and a one-off/subscription plan choice → a `.book-now-btn`-styled submit button → a plain link back to the venue page.
+- Only the fields the requester actually changes from the pre-filled values are sent in the submission's `patch`.
+- Submitting posts JSON to the admin app's public `POST /api/claims/submit` endpoint (photo base64-encoded, matching the admin's existing blog-image-upload pattern, TRD.md §8). On success the form is replaced in place by a plain confirmation line — no modal, per §3 — confirming the request was sent and will be reviewed. No page reload, no redirect.
+- No visitor login or account of any kind is added — a submission is a one-off, unauthenticated POST identified only by the email address the requester types in.
+- Reached only via the venue page's "Claim this listing" button (§2.2), hidden once a venue's `status` is `claimed`.
+- Owner review, Stripe payment, and auto-publish/auto-deploy-on-payment are server-side and documented in TRD.md §8's 2026-07-25 exception and §1.6 below — not page behaviour.
 
 ---
 
