@@ -13,8 +13,10 @@ force-added by hand).
 
 from __future__ import annotations
 
+import logging
 import shutil
 import subprocess
+import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -24,6 +26,13 @@ from typing import Iterator
 import httpx
 
 from admin.config import NETLIFY_AUTH_TOKEN, NETLIFY_SITE_ID, ROOT, SITE_DIR
+
+# Shared by the admin's manual Deploy strip (app.py) and the claim-flow
+# auto-deploy background task (TRD.md §8, 2026-07-25 exception) — one lock
+# so the two paths can never race a git push against each other.
+DEPLOY_LOCK = threading.Lock()
+
+_logger = logging.getLogger("admin.deploy")
 
 ALLOWED_PREFIXES = (
     "site/src/content/spas/_published/",
@@ -263,3 +272,30 @@ def run_deploy(commit_message: str) -> Iterator[LogLine]:
 
     sha = _run_git("rev-parse", "HEAD").stdout.strip()
     yield from _poll_netlify(sha)
+
+
+def run_auto_deploy() -> None:
+    """Unattended deploy triggered by the claim-flow webhook / subscriber
+    Publish click (TRD.md §8, 2026-07-25 exception) — the one path in this
+    system where a write reaches the live site with no human clicking the
+    Deploy strip's button. Meant to run as a FastAPI BackgroundTask, after
+    the triggering request has already responded, so a slow build/push/
+    Netlify-poll never blocks that response (Stripe in particular expects a
+    fast webhook reply and retries on timeout).
+
+    Shares DEPLOY_LOCK with the manual deploy endpoint: if a human-triggered
+    deploy is already running, this skips rather than racing it — the
+    change is already safely published to disk either way, and the very
+    next deploy (manual or another auto-deploy) sweeps in every pending
+    change, not just this one, since run_deploy() operates on overall git
+    status. A failed build/push here is logged only; it does not roll back
+    the already-published MDX/DB, which stays queued for the next attempt."""
+    if not DEPLOY_LOCK.acquire(blocking=False):
+        _logger.warning("auto-deploy skipped — a deploy is already running")
+        return
+    try:
+        for line in run_deploy(""):
+            log = _logger.error if line.level == "error" else _logger.info
+            log("auto-deploy: %s", line.text)
+    finally:
+        DEPLOY_LOCK.release()

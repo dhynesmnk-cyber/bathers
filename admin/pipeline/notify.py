@@ -1,0 +1,100 @@
+"""Outgoing claim-flow email — stdlib smtplib only, no new dependency
+(TRD.md §8, 2026-07-25 exception)."""
+
+from __future__ import annotations
+
+import logging
+import smtplib
+from email.message import EmailMessage
+from typing import Any
+
+_logger = logging.getLogger("admin.notify")
+
+from admin.config import (
+    ADMIN_BASE_URL,
+    CLAIM_NOTIFY_EMAIL,
+    SMTP_FROM,
+    SMTP_HOST,
+    SMTP_PASSWORD,
+    SMTP_PORT,
+    SMTP_USERNAME,
+)
+from admin.pipeline.claims_store import ClaimRequest
+
+PLAN_LABELS = {"one_off": "one-off $25 processing fee", "subscription": "$5/month unlimited-changes subscription"}
+
+
+def _send(to_addr: str, subject: str, body_text: str) -> None:
+    if not SMTP_HOST:
+        return  # unconfigured in local dev — silently no-op rather than error the caller
+
+    message = EmailMessage()
+    message["From"] = SMTP_FROM or SMTP_USERNAME
+    message["To"] = to_addr
+    message["Subject"] = subject
+    message.set_content(body_text)
+
+    # A mail failure must never take down the caller — the claim/approval/
+    # denial it's reporting on has already happened and is safely recorded;
+    # losing the notification is recoverable (the admin can still see
+    # everything in the /claims screen), a 500 on a public submission
+    # endpoint is not. Log and move on rather than propagate.
+    try:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as smtp:
+            smtp.starttls()
+            if SMTP_USERNAME:
+                smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
+            smtp.send_message(message)
+    except (OSError, smtplib.SMTPException) as exc:
+        _logger.error("failed to send %r to %s: %s", subject, to_addr, exc)
+
+
+def _format_diff(diff: dict[str, Any]) -> str:
+    if not diff:
+        return "(no field changes — photo only)"
+    lines = []
+    for field, change in diff.items():
+        lines.append(f"  {field}: {change['old']!r} -> {change['new']!r}")
+    return "\n".join(lines)
+
+
+def send_claim_notification_email(request: ClaimRequest, venue_name: str, diff: dict[str, Any]) -> None:
+    admin_link = f"\n\nReview: {ADMIN_BASE_URL}/claims/{request.id}" if ADMIN_BASE_URL else ""
+    photo_note = "\n\nA photo was attached to this request." if request.has_photo else ""
+    body = (
+        f"New claim request for {venue_name} ({request.slug}).\n\n"
+        f"From: {request.requester_name} <{request.requester_email}>\n"
+        f"Plan: {PLAN_LABELS.get(request.plan_type, request.plan_type)}\n\n"
+        f"Requested changes:\n{_format_diff(diff)}"
+        f"{photo_note}{admin_link}"
+    )
+    _send(CLAIM_NOTIFY_EMAIL, f"Claim request: {venue_name}", body)
+
+
+def send_approval_payment_email(request: ClaimRequest, venue_name: str, checkout_url: str) -> None:
+    plan_label = PLAN_LABELS.get(request.plan_type, request.plan_type)
+    body = (
+        f"Your requested changes to the {venue_name} listing have been approved.\n\n"
+        f"To publish them, complete payment for the {plan_label}:\n{checkout_url}\n\n"
+        f"Your changes will go live automatically as soon as payment is confirmed."
+    )
+    _send(request.requester_email, f"Your listing update for {venue_name} is approved", body)
+
+
+def send_approval_no_payment_email(request: ClaimRequest, venue_name: str) -> None:
+    body = (
+        f"Your requested changes to the {venue_name} listing have been approved.\n\n"
+        f"As an active subscriber, no payment is needed — your update will go live shortly."
+    )
+    _send(request.requester_email, f"Your listing update for {venue_name} is approved", body)
+
+
+def send_denial_email(request: ClaimRequest, venue_name: str) -> None:
+    reason = f"\n\nReason: {request.review_note}" if request.review_note else ""
+    body = f"Your requested changes to the {venue_name} listing were not approved.{reason}\n\nYou have not been charged."
+    _send(request.requester_email, f"Your listing update request for {venue_name}", body)
+
+
+def send_published_email(request: ClaimRequest, venue_name: str) -> None:
+    body = f"Your requested changes to the {venue_name} listing are now live."
+    _send(request.requester_email, f"Your {venue_name} listing update is live", body)

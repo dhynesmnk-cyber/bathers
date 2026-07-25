@@ -47,6 +47,12 @@ VENUES_JSON_PATH = ROOT / "site" / "src" / "data" / "venues.json"
 VENUES_GEOJSON_PATH = ROOT / "site" / "public" / "venues.geojson"
 FOREWORDS_JSON_PATH = ROOT / "site" / "src" / "data" / "forewords.json"
 
+# Claim-request records (2026-07-25, TRD.md §8 exception) — a separate SQLite
+# file from DB_PATH because data_store.rebuild() deletes and fully recreates
+# directory.db on every venue write, which would destroy anything stored
+# there. Gitignored (holds requester PII), never committed.
+CLAIMS_DB_PATH = ROOT / "data" / "claims.db"
+
 TEMP_DATA_DIR = ROOT / "temp_data"
 IMAGES_DIR = TEMP_DATA_DIR / "images"
 FAILED_DIR = TEMP_DATA_DIR / "failed"
@@ -54,6 +60,7 @@ PLACES_DIR = TEMP_DATA_DIR / "places"
 GOATCOUNTER_CACHE_DIR = TEMP_DATA_DIR / "goatcounter"
 BLOG_IMAGES_TEMP_DIR = TEMP_DATA_DIR / "blog_images"
 GEOCODE_CACHE_PATH = TEMP_DATA_DIR / "geocode_cache.json"  # 2026-07-22 — see geocode.py
+CLAIMS_TEMP_DIR = TEMP_DATA_DIR / "claims"  # uploaded claim photos, pending publish
 
 PROMPTS_DIR = ROOT / "PROMPTS"
 
@@ -87,6 +94,19 @@ GEOCODER_USER_AGENT = _ENV.get("GEOCODER_USER_AGENT", "")
 GOOGLE_PLACES_API_KEY = _ENV.get("GOOGLE_PLACES_API_KEY", "")
 GOATCOUNTER_API_TOKEN = _ENV.get("GOATCOUNTER_API_TOKEN", "")
 GOATCOUNTER_SITE = _ENV.get("GOATCOUNTER_SITE", "")
+
+# Claim-listing form/payment flow (2026-07-25, TRD.md §8 exception).
+STRIPE_SECRET_KEY = _ENV.get("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = _ENV.get("STRIPE_WEBHOOK_SECRET", "")
+STRIPE_PRICE_ONEOFF = _ENV.get("STRIPE_PRICE_ONEOFF", "")
+STRIPE_PRICE_SUBSCRIPTION = _ENV.get("STRIPE_PRICE_SUBSCRIPTION", "")
+SMTP_HOST = _ENV.get("SMTP_HOST", "")
+SMTP_PORT = int(_ENV.get("SMTP_PORT", "587"))
+SMTP_USERNAME = _ENV.get("SMTP_USERNAME", "")
+SMTP_PASSWORD = _ENV.get("SMTP_PASSWORD", "")
+SMTP_FROM = _ENV.get("SMTP_FROM", "")
+CLAIM_NOTIFY_EMAIL = _ENV.get("CLAIM_NOTIFY_EMAIL", "") or "d.hynes.mnk@gmail.com"
+ADMIN_BASE_URL = _ENV.get("ADMIN_BASE_URL", "").rstrip("/")
 # Deployed public-site origin — the Done panel's "view" links target it.
 # Defaults to the Netlify production URL; override in .env (e.g. once a
 # custom domain exists), or set empty to fall back to /site-dist.

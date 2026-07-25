@@ -10,14 +10,15 @@ import secrets
 import threading
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 
 from admin.config import (
@@ -30,12 +31,18 @@ from admin.config import (
     SITE_URL,
     STAGING_DIR,
     STATES,
+    STRIPE_WEBHOOK_SECRET,
     VENUES_JSON_PATH,
 )
 from admin.mdx_preview import render_body_html
-from admin.pipeline import blog, deploy, discovery, goatcounter, images, orchestrator, places, staging
+from admin.pipeline import blog, claims, claims_store, deploy, discovery, goatcounter, images, orchestrator, places, staging, stripe_client
 from admin.pipeline.blog import ValidationFailed as BlogValidationFailed
 from admin.pipeline.staging import UndoExpired, ValidationFailed
+
+# Exempted from Basic Auth (require_basic_auth, below) — the claim form and
+# Stripe webhook are this app's only unauthenticated public write paths
+# (TRD.md §8, 2026-07-25 exception). Everything else stays behind auth.
+PUBLIC_PATHS = {"/api/claims/submit", "/api/stripe/webhook"}
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -66,12 +73,27 @@ def _basic_auth_ok(header: str | None) -> bool:
 
 @app.middleware("http")
 async def require_basic_auth(request: Request, call_next):
+    if request.url.path in PUBLIC_PATHS:
+        return await call_next(request)
     # No credentials configured (local dev's .env leaves these blank) — auth stays off.
     if not ADMIN_USERNAME and not ADMIN_PASSWORD:
         return await call_next(request)
     if not _basic_auth_ok(request.headers.get("authorization")):
         return Response(status_code=401, headers={"WWW-Authenticate": 'Basic realm="Bathers Admin"'})
     return await call_next(request)
+
+
+# Starlette applies the most-recently-added middleware outermost, so adding
+# this after require_basic_auth makes CORS run before the auth check —
+# needed so a preflight OPTIONS on /api/claims/submit from the (different-
+# origin) static site never hits the 401 path. Restricted to the site's own
+# origin plus the Astro dev server default.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[SITE_URL, "http://localhost:4321"],
+    allow_methods=["POST"],
+    allow_headers=["Content-Type"],
+)
 
 
 def _site_css_hrefs() -> list[str]:
@@ -140,6 +162,11 @@ def index(request: Request):
 @app.get("/blog", response_class=HTMLResponse)
 def blog_page(request: Request):
     return templates.TemplateResponse(request, "blog.html", {})
+
+
+@app.get("/claims", response_class=HTMLResponse)
+def claims_page(request: Request):
+    return templates.TemplateResponse(request, "claims.html", {})
 
 
 @app.get("/preview/{slug}", response_class=HTMLResponse)
@@ -350,12 +377,9 @@ class DeployBody(BaseModel):
     commit_message: str = ""
 
 
-_deploy_lock = threading.Lock()  # deploy shells out to git; keep it to one run at a time
-
-
 @app.post("/api/deploy")
 def api_deploy(body: DeployBody):
-    if not _deploy_lock.acquire(blocking=False):
+    if not deploy.DEPLOY_LOCK.acquire(blocking=False):
         raise HTTPException(409, "a deploy is already running")
 
     def stream():
@@ -363,7 +387,7 @@ def api_deploy(body: DeployBody):
             for line in deploy.run_deploy(body.commit_message):
                 yield _sse_line({"time": line.time, "level": line.level, "text": line.text})
         finally:
-            _deploy_lock.release()
+            deploy.DEPLOY_LOCK.release()
         yield "event: done\ndata: {}\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream")
@@ -508,6 +532,177 @@ def api_conversions(refresh: bool = False):
         for slug, count in sorted(counts.items(), key=lambda kv: kv[1], reverse=True)
     ]
     return {"configured": goatcounter.configured(), "rows": rows}
+
+
+## ---- Claim-listing flow (TRD.md §8, 2026-07-25 exception) ----
+#
+# The only two routes in PUBLIC_PATHS (above) are below: /api/claims/submit
+# (the public form) and /api/stripe/webhook (Stripe's callback). Everything
+# else here is a normal authenticated admin route.
+
+
+def _claim_summary(request: claims_store.ClaimRequest) -> dict[str, Any]:
+    return {
+        "id": request.id,
+        "slug": request.slug,
+        "venue_name": claims._venue_name(request.slug),
+        "requester_name": request.requester_name,
+        "plan_type": request.plan_type,
+        "status": request.status,
+        "submitted_at": request.submitted_at,
+    }
+
+
+def _claim_detail(request: claims_store.ClaimRequest) -> dict[str, Any]:
+    return {
+        **_claim_summary(request),
+        "requester_email": request.requester_email,
+        "patch": request.patch,
+        "diff": claims.compute_diff(request.slug, request.patch),
+        "has_photo": request.has_photo,
+        "photo_caption": request.photo_caption,
+        "review_note": request.review_note,
+        "reviewed_at": request.reviewed_at,
+        "is_returning_subscriber": request.is_returning_subscriber,
+    }
+
+
+class ClaimPhotoBody(BaseModel):
+    data: str
+    content_type: str
+
+
+class ClaimSubmitBody(BaseModel):
+    slug: str
+    requester_name: str
+    requester_email: str
+    plan_type: Literal["one_off", "subscription"]
+    patch: dict[str, Any]
+    photo: ClaimPhotoBody | None = None
+    photo_caption: str | None = None
+    website: str = ""  # honeypot — real visitors never see or fill this field
+
+
+@app.post("/api/claims/submit")
+def api_submit_claim(body: ClaimSubmitBody):
+    photo_bytes = None
+    if body.photo is not None:
+        if not body.photo_caption or not body.photo_caption.strip():
+            raise HTTPException(400, "a caption is required when a photo is attached")
+        try:
+            photo_bytes = base64.b64decode(body.photo.data)
+        except (ValueError, base64.binascii.Error):
+            raise HTTPException(400, "photo data must be valid base64")
+    try:
+        claims.submit_request(
+            slug=body.slug,
+            requester_name=body.requester_name,
+            requester_email=body.requester_email,
+            plan_type=body.plan_type,
+            patch=body.patch,
+            photo_bytes=photo_bytes,
+            photo_content_type=body.photo.content_type if body.photo else None,
+            photo_caption=body.photo_caption,
+            honeypot_value=body.website,
+        )
+    except FileNotFoundError:
+        raise HTTPException(404, f"no published venue '{body.slug}'")
+    except claims.InvalidPatch as exc:
+        raise HTTPException(400, str(exc))
+    except claims.RateLimitExceeded:
+        raise HTTPException(429, "too many requests for this venue — try again later")
+    # Always the same shape, honeypot hit or not — nothing here should tell
+    # an automated caller it was filtered.
+    return {"ok": True}
+
+
+@app.post("/api/stripe/webhook")
+async def api_stripe_webhook(request: Request, background_tasks: BackgroundTasks):
+    payload = await request.body()  # must stay raw/unparsed for signature verification
+    try:
+        event = stripe_client.verify_webhook_signature(
+            payload, request.headers.get("stripe-signature", ""), STRIPE_WEBHOOK_SECRET
+        )
+    except stripe_client.SignatureVerificationError as exc:
+        raise HTTPException(400, str(exc))
+
+    if event.get("type") == "checkout.session.completed":
+        session = event["data"]["object"]
+        claims.handle_checkout_completed(session["id"], session.get("customer"))
+        background_tasks.add_task(deploy.run_auto_deploy)
+
+    return {"received": True}
+
+
+@app.get("/api/claims")
+def api_list_claims(status: str | None = None):
+    return [_claim_summary(r) for r in claims_store.list_requests(status)]
+
+
+@app.get("/api/claims/{claim_id}")
+def api_get_claim(claim_id: int):
+    try:
+        request = claims_store.get_request(claim_id)
+    except KeyError:
+        raise HTTPException(404, f"no claim request '{claim_id}'")
+    return _claim_detail(request)
+
+
+@app.get("/api/claims/{claim_id}/photo")
+def api_claim_photo(claim_id: int):
+    try:
+        request = claims_store.get_request(claim_id)
+    except KeyError:
+        raise HTTPException(404, f"no claim request '{claim_id}'")
+    if not request.has_photo or not request.photo_path:
+        raise HTTPException(404, "no photo for this request")
+    path = Path(request.photo_path)
+    if not path.exists():
+        raise HTTPException(404, "photo file missing")
+    return FileResponse(path)
+
+
+class ClaimReviewBody(BaseModel):
+    review_note: str = ""
+
+
+@app.post("/api/claims/{claim_id}/approve")
+def api_approve_claim(claim_id: int, body: ClaimReviewBody):
+    try:
+        request = claims.approve_request(claim_id, body.review_note)
+    except KeyError:
+        raise HTTPException(404, f"no claim request '{claim_id}'")
+    except stripe_client.StripeError as exc:
+        raise HTTPException(502, f"Stripe error — {exc}")
+    return _claim_detail(request)
+
+
+class ClaimDenyBody(BaseModel):
+    review_note: str
+
+
+@app.post("/api/claims/{claim_id}/deny")
+def api_deny_claim(claim_id: int, body: ClaimDenyBody):
+    if not body.review_note.strip():
+        raise HTTPException(400, "a review reason is required")
+    try:
+        request = claims.deny_request(claim_id, body.review_note)
+    except KeyError:
+        raise HTTPException(404, f"no claim request '{claim_id}'")
+    return _claim_detail(request)
+
+
+@app.post("/api/claims/{claim_id}/publish")
+def api_publish_claim(claim_id: int, background_tasks: BackgroundTasks):
+    try:
+        request = claims_store.get_request(claim_id)
+    except KeyError:
+        raise HTTPException(404, f"no claim request '{claim_id}'")
+    if request.status != "approved" or not request.is_returning_subscriber:
+        raise HTTPException(409, "only an approved subscriber request can be published this way")
+    claims.publish_request(claim_id)
+    background_tasks.add_task(deploy.run_auto_deploy)
+    return {"ok": True}
 
 
 @app.get("/api/health")

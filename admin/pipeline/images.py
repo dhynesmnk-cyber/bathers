@@ -209,3 +209,26 @@ def publish_image(slug: str, candidate_index: int, caption: str) -> dict[str, st
 def remove_image(slug: str) -> None:
     dest_path = SITE_IMAGES_DIR / f"{slug}.webp"
     dest_path.unlink(missing_ok=True)
+
+
+def publish_uploaded_image(slug: str, source_path: Path, source_url: str, caption: str) -> dict[str, str]:
+    """Claim-flow analogue of publish_image() (TRD.md §8, 2026-07-25): same
+    resize/webp/save-to-site/public/images/ work, but from an arbitrary
+    visitor-uploaded file rather than a manifest-tracked harvester
+    candidate. `source_url` must be a real URL — SCHEMA.md's image_source is
+    URL-validated — so callers pass the venue's own `website` field as the
+    honest attribution target, since a visitor-submitted photo has no
+    harvested source URL of its own."""
+    SITE_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+    dest_path = SITE_IMAGES_DIR / f"{slug}.webp"
+
+    with Image.open(source_path) as im:
+        im = im.convert("RGB")
+        im.thumbnail((MAX_DIMENSION, MAX_DIMENSION), Image.LANCZOS)
+        im.save(dest_path, "WEBP", quality=82)
+
+    return {
+        "image": f"/images/{slug}.webp",
+        "image_source": source_url,
+        "image_caption": caption,
+    }

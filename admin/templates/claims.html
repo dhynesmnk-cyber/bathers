@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bathers' — Claims</title>
+    <link rel="stylesheet" href="/static/admin.css" />
+    <link rel="stylesheet" href="/static/claims.css" />
+  </head>
+  <body>
+    <header class="hub-header">
+      <span class="mono eyebrow">BATHERS' — CLAIMS</span>
+      <p id="action-status" class="mono save-status" aria-live="polite"></p>
+      <a href="/blog" class="btn btn-plain">Blog</a>
+      <a href="/" class="btn btn-plain">Back to hub</a>
+    </header>
+
+    <main class="claims-grid">
+      <section class="pane claims-list-pane" aria-labelledby="claims-list-heading">
+        <h2 id="claims-list-heading" class="mono pane-heading">REQUESTS</h2>
+        <select id="status-filter" class="mono text-input">
+          <option value="">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="awaiting_payment">Awaiting payment</option>
+          <option value="approved">Approved</option>
+          <option value="paid">Paid</option>
+          <option value="published">Published</option>
+          <option value="denied">Denied</option>
+        </select>
+        <ul id="claims-list" class="queue-list" role="listbox" aria-label="Claim requests"></ul>
+        <p id="claims-list-empty" class="mono empty-state" hidden>No claim requests yet.</p>
+      </section>
+
+      <section class="pane claims-detail-pane" aria-labelledby="claims-detail-heading">
+        <h2 id="claims-detail-heading" class="mono pane-heading">REQUEST</h2>
+        <div id="detail-empty" class="mono empty-state">Select a request.</div>
+        <div id="detail-content" hidden>
+          <div class="claim-summary-row">
+            <span id="detail-venue-name" class="claim-venue-name"></span>
+            <span id="detail-status-chip" class="status-chip"></span>
+          </div>
+          <p class="mono claim-meta">
+            <span id="detail-requester"></span> · <span id="detail-plan"></span> · <span id="detail-submitted"></span>
+          </p>
+
+          <div id="detail-photo-wrap" class="field" hidden>
+            <span class="mono field-label">Photo</span>
+            <div class="image-strip"><img id="detail-photo" alt="" /></div>
+            <p id="detail-photo-caption" class="mono field-hint"></p>
+          </div>
+
+          <div class="field">
+            <span class="mono field-label">Requested changes</span>
+            <table id="diff-table" class="claim-diff-table"></table>
+            <p id="diff-empty" class="mono field-hint" hidden>No field changes — photo only.</p>
+          </div>
+
+          <div id="review-note-wrap" class="field" hidden>
+            <span class="mono field-label">Review note</span>
+            <p id="detail-review-note" class="mono"></p>
+          </div>
+
+          <div class="claim-actions">
+            <div id="pending-actions" class="claim-action-row" hidden>
+              <button id="approve-btn" type="button" class="btn btn-thermal">Approve</button>
+              <button id="deny-btn" type="button" class="btn btn-oxide">Deny</button>
+            </div>
+            <form id="deny-form" class="reject-form" hidden>
+              <input id="deny-reason" class="mono text-input" type="text" placeholder="Reason for denial…" required />
+              <button type="submit" class="btn btn-oxide">Confirm deny</button>
+              <button type="button" id="deny-cancel" class="btn btn-plain">Cancel</button>
+            </form>
+            <button id="publish-btn" type="button" class="btn btn-thermal" hidden>Publish (no fee — subscriber)</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/claims.js"></script>
+  </body>
+</html>

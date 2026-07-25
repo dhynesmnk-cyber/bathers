@@ -13,3 +13,8 @@ __pycache__/
 # Pipeline working directories (TRD.md §3 / CLAUDE.md rule 5)
 temp_data/
 content-staging/
+
+# Claim-request records (TRD.md §8, 2026-07-25) — holds requester PII,
+# unlike data/directory.db which is an intentionally-committed derived
+# artefact. Covers the -wal/-shm SQLite journal siblings too.
+data/claims.db*

@@ -1,0 +1,86 @@
+.claims-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  min-height: 0;
+}
+
+.claims-detail-pane {
+  border-right: none;
+}
+
+.claim-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.35rem;
+}
+
+.claim-venue-name {
+  font-family: "Fraunces", serif;
+  font-size: 20px;
+}
+
+.claim-meta {
+  color: var(--ink-faded);
+  font-size: 12px;
+  margin-bottom: 1rem;
+}
+
+.claim-diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.claim-diff-table td {
+  padding: 0.3rem 0.5rem 0.3rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink-faded) 20%, transparent);
+  vertical-align: top;
+}
+
+.claim-diff-label {
+  color: var(--ink-faded);
+  white-space: nowrap;
+  width: 1%;
+}
+
+.claim-diff-value {
+  color: var(--ink);
+}
+
+.claim-actions {
+  margin-top: 1.25rem;
+}
+
+.claim-action-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.status-chip.status-pending {
+  color: var(--ink-faded);
+  border-color: var(--ink-faded);
+}
+
+.status-chip.status-awaiting_payment {
+  color: var(--oxide);
+  border-color: var(--oxide);
+}
+
+.status-chip.status-approved,
+.status-chip.status-paid {
+  color: var(--thermal);
+  border-color: var(--thermal);
+}
+
+.status-chip.status-published {
+  background: color-mix(in srgb, var(--thermal) 15%, transparent);
+  color: var(--thermal);
+  border-color: var(--thermal);
+}
+
+.status-chip.status-denied {
+  color: var(--oxide);
+  border-color: var(--oxide);
+}

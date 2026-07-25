@@ -310,6 +310,29 @@ def publish_image_fields(slug: str, fields: dict[str, str]) -> StagingEntry:
     return _entry_from_path(path)
 
 
+def publish_image_fields_on_published(slug: str, fields: dict[str, str]) -> StagingEntry:
+    """Claim-webhook analogue of publish_image_fields (TRD.md §8, 2026-07-25):
+    same frontmatter-merge + <TippedPhoto> tag insertion, but targeting an
+    ALREADY-PUBLISHED venue rather than a staging draft — update_published()
+    alone only touches frontmatter, and a photo renders nowhere without the
+    body tag (see the TippedPhoto note above render_mdx). Validated on every
+    save, like update_published, since _published/ must never hold a file
+    that would fail the schema check approve() already guarantees on the
+    way in."""
+    path = PUBLISHED_DIR / f"{slug}.mdx"
+    if not path.exists():
+        raise FileNotFoundError(slug)
+    data, body = split_frontmatter(path.read_text(encoding="utf-8"), slug)
+    data.update(fields)
+    errors = validate_frontmatter(data)
+    if errors:
+        raise ValidationFailed(errors)
+    body = _insert_tipped_photo(_strip_tipped_photo(body), _tipped_photo_tag(slug, fields))
+    path.write_text(render_mdx(data, body), encoding="utf-8")
+    data_store.rebuild()
+    return _entry_from_path(path)
+
+
 def remove_image_fields(slug: str) -> StagingEntry:
     """UX.md §4.4's "Remove image" action on a staged draft — reverse of
     publish_image_fields: drops the frontmatter fields and strips the
