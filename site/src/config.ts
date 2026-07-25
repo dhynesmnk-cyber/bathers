@@ -93,6 +93,55 @@ export const STATE_NAMES: Record<(typeof STATES)[number], string> = {
 export const AU_LATITUDE_BOUNDS = { min: -44.0, max: -9.0 } as const;
 export const AU_LONGITUDE_BOUNDS = { min: 112.0, max: 154.0 } as const;
 
+export interface GeoPoint {
+  latitude: number;
+  longitude: number;
+}
+
+// Straight-line (great-circle) distance in km. Shared by the venue page's
+// build-time "Nearby" block and the client-side near-me sort (2026-07-25
+// addition, TRD.md §8 exception) so the distance rule lives once rather than
+// being reimplemented per caller. Has no server-only dependency, so it's
+// importable from both Astro frontmatter (build time) and browser <script>
+// modules (client-side).
+export function haversineDistanceKm(a: GeoPoint, b: GeoPoint): number {
+  const R = 6371;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(b.latitude - a.latitude);
+  const dLon = toRad(b.longitude - a.longitude);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(a.latitude)) * Math.cos(toRad(b.latitude)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+// Nearest-N candidates by straight-line distance, any category. `getCoords`
+// lets one helper serve both build-time content-collection entries
+// (spa/[slug].astro) and plain client-side marker objects (Map.astro's
+// near-me mode) — candidates without resolvable coordinates are dropped
+// rather than sorted arbitrarily.
+export function nearestByDistance<T>(
+  origin: GeoPoint,
+  candidates: T[],
+  n: number,
+  getCoords: (item: T) => GeoPoint | null,
+): Array<{ item: T; distanceKm: number }> {
+  return candidates
+    .map((item) => {
+      const coords = getCoords(item);
+      return coords ? { item, distanceKm: haversineDistanceKm(origin, coords) } : null;
+    })
+    .filter((x): x is { item: T; distanceKm: number } => x !== null)
+    .sort((a, b) => a.distanceKm - b.distanceKm)
+    .slice(0, n);
+}
+
+// Distance display: one decimal place under 10 km, whole km at/above —
+// shared by the Nearby block and the near-me distance-slot span.
+export function formatDistanceKm(distanceKm: number): string {
+  return distanceKm < 10 ? `${distanceKm.toFixed(1)} km` : `${Math.round(distanceKm)} km`;
+}
+
 // Amenity keys are snake_case (SCHEMA.md §1); URL path segments use kebab-case.
 export function amenityUrlSlug(key: (typeof AMENITY_KEYS)[number]): string {
   return key.replace(/_/g, "-");

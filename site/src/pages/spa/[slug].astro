@@ -5,17 +5,45 @@ import Features from "../../components/Features.astro";
 import Pull from "../../components/Pull.astro";
 import TippedPhoto from "../../components/TippedPhoto.astro";
 import FAQ from "../../components/FAQ.astro";
-import { CATEGORY_LABELS, STATE_NAMES, categoryUrlSlug, priceRange } from "../../config";
+import {
+  CATEGORY_LABELS,
+  STATE_NAMES,
+  categoryUrlSlug,
+  formatDistanceKm,
+  nearestByDistance,
+  priceRange,
+  type GeoPoint,
+} from "../../config";
 
 export async function getStaticPaths() {
   const venues = await getCollection("spas");
-  return venues.map((venue) => ({
-    params: { slug: venue.id },
-    props: { venue },
-  }));
+
+  function venueCoords(v: (typeof venues)[number]): GeoPoint | null {
+    return v.data.latitude != null && v.data.longitude != null
+      ? { latitude: v.data.latitude, longitude: v.data.longitude }
+      : null;
+  }
+
+  return venues.map((venue) => {
+    // Nearby (2026-07-25, TRD.md §8 exception) — nearest 3 other published
+    // venues by straight-line distance, any category. Omitted entirely when
+    // this venue has no coordinate of its own to measure from; otherwise
+    // shows whatever's available even below 3 (thin neighbour pools, e.g.
+    // Tasmania today, are expected as the directory grows nationally).
+    const origin = venueCoords(venue);
+    const nearby = origin
+      ? nearestByDistance(
+          origin,
+          venues.filter((v) => v.id !== venue.id),
+          3,
+          venueCoords,
+        )
+      : [];
+    return { params: { slug: venue.id }, props: { venue, nearby } };
+  });
 }
 
-const { venue } = Astro.props;
+const { venue, nearby } = Astro.props;
 const { data } = venue;
 const { Content } = await render(venue);
 
@@ -83,6 +111,25 @@ const faqLd = data.faq && data.faq.length > 0
       </div>
 
       <FAQ items={data.faq ?? []} />
+
+      {nearby.length > 0 && (
+        <section class="mono mt-16" aria-labelledby="nearby-heading">
+          <div class="mb-6 flex items-center gap-4 text-[var(--ink-faded)]">
+            <span id="nearby-heading">NEARBY</span>
+            <span class="h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
+          </div>
+          <ul>
+            {nearby.map(({ item, distanceKm }) => (
+              <li class="py-3" style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);">
+                <a href={`/spa/${item.id}/`} class="font-display text-xl font-light text-[var(--ink)]">{item.data.name}</a>
+                <span class="ml-2" style="color: var(--ink-faded);">
+                  {item.data.suburb}, {STATE_NAMES[item.data.state]} — {formatDistanceKm(distanceKm)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div class="mono mt-16 pt-6" style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent); background: var(--paper-raised); padding: 1.5rem;">
         <p>{data.address}</p>
