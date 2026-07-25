@@ -1,0 +1,214 @@
+---
+// Sitewide search (2026-07-25, TRD.md §8 exception — narrowly reverses the
+// "search" out-of-scope line). Reads the build-time-embedded venue index
+// (BaseLayout.astro's #search-index-data) and matches client-side with plain
+// substring matching — no backend, no fuzzy-search library. Usable more than
+// once per page (corner menu + homepage), so every id is namespaced by the
+// `id` prop to avoid DOM collisions.
+interface Props {
+  id: string;
+  placeholder?: string;
+}
+
+const { id, placeholder = "Search by name or suburb…" } = Astro.props;
+---
+
+<div class="mono search-box" data-search-box={id}>
+  <input
+    type="text"
+    id={`${id}-input`}
+    class="search-input"
+    placeholder={placeholder}
+    autocomplete="off"
+    role="combobox"
+    aria-expanded="false"
+    aria-controls={`${id}-results`}
+    aria-autocomplete="list"
+  />
+  <ul id={`${id}-results`} class="search-results" role="listbox" hidden></ul>
+  <noscript>
+    <p class="mono" style="color: var(--ink-faded); margin-top: 0.5rem;">
+      Search requires JavaScript — browse by state or amenity below.
+    </p>
+  </noscript>
+</div>
+
+<style>
+  .search-box {
+    position: relative;
+  }
+
+  .search-input {
+    width: 100%;
+    background: none;
+    border: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
+    color: var(--ink);
+    padding: 0.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 14px;
+  }
+
+  .search-input::placeholder {
+    color: var(--ink-faded);
+  }
+
+  .search-input:focus-visible {
+    border-bottom-color: var(--thermal);
+  }
+
+  .search-results {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* The <li>/<a>/<span> results below are created by the client script, not
+     server-rendered, so they never receive Astro's scoped data-astro-cid-*
+     attribute — these rules must be :global or they silently never match. */
+  :global(.search-results li a) {
+    text-decoration-color: transparent;
+  }
+
+  :global(.search-results li a:hover),
+  :global(.search-results li[aria-selected="true"] a) {
+    text-decoration-color: var(--thermal);
+  }
+
+  :global(.search-results .search-meta) {
+    color: var(--ink-faded);
+  }
+
+  :global(.search-results .search-empty) {
+    color: var(--ink-faded);
+  }
+</style>
+
+<script>
+  interface SearchEntry {
+    slug: string;
+    name: string;
+    suburb: string;
+    state: string;
+    category: string;
+    amenities: string[];
+  }
+
+  function normalize(s: string): string {
+    return s
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase();
+  }
+
+  const dataEl = document.getElementById("search-index-data");
+  const index: SearchEntry[] = dataEl ? JSON.parse(dataEl.textContent || "[]") : [];
+  const haystacks = index.map((entry) =>
+    normalize([entry.name, entry.suburb, entry.state, entry.category, ...entry.amenities].join(" ")),
+  );
+
+  const MAX_RESULTS = 8;
+
+  function search(query: string): SearchEntry[] {
+    const q = normalize(query.trim());
+    if (!q) return [];
+    const results: SearchEntry[] = [];
+    for (let i = 0; i < index.length; i++) {
+      if (haystacks[i].includes(q)) {
+        results.push(index[i]);
+        if (results.length >= MAX_RESULTS) break;
+      }
+    }
+    return results;
+  }
+
+  function initSearchBox(root: HTMLElement) {
+    const input = root.querySelector("input.search-input") as HTMLInputElement | null;
+    const resultsEl = root.querySelector("ul.search-results") as HTMLUListElement | null;
+    if (!input || !resultsEl) return;
+
+    let selectedIndex = -1;
+
+    function render(results: SearchEntry[], query: string) {
+      resultsEl!.innerHTML = "";
+      selectedIndex = -1;
+      if (query.trim() === "") {
+        resultsEl!.hidden = true;
+        input!.setAttribute("aria-expanded", "false");
+        return;
+      }
+      if (results.length === 0) {
+        const li = document.createElement("li");
+        li.className = "search-empty";
+        li.textContent = "No matches";
+        resultsEl!.appendChild(li);
+      } else {
+        for (const entry of results) {
+          const li = document.createElement("li");
+          li.setAttribute("role", "option");
+          li.setAttribute("aria-selected", "false");
+          const a = document.createElement("a");
+          a.href = `/spa/${entry.slug}/`;
+          a.textContent = entry.name;
+          const meta = document.createElement("span");
+          meta.className = "search-meta mono";
+          meta.textContent = ` ${entry.suburb}, ${entry.state}`;
+          li.appendChild(a);
+          li.appendChild(meta);
+          resultsEl!.appendChild(li);
+        }
+      }
+      resultsEl!.hidden = false;
+      input!.setAttribute("aria-expanded", "true");
+    }
+
+    function currentLinks(): HTMLAnchorElement[] {
+      return Array.from(resultsEl!.querySelectorAll("li[role='option'] a"));
+    }
+
+    function setSelected(nextIndex: number) {
+      const links = currentLinks();
+      if (links.length === 0) return;
+      selectedIndex = ((nextIndex % links.length) + links.length) % links.length;
+      resultsEl!.querySelectorAll("li[role='option']").forEach((li, i) => {
+        li.setAttribute("aria-selected", i === selectedIndex ? "true" : "false");
+      });
+    }
+
+    input.addEventListener("input", () => {
+      render(search(input.value), input.value);
+    });
+
+    input.addEventListener("keydown", (e) => {
+      const links = currentLinks();
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (links.length > 0) setSelected(selectedIndex + 1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (links.length > 0) setSelected(selectedIndex - 1);
+      } else if (e.key === "Enter") {
+        const target = selectedIndex >= 0 ? links[selectedIndex] : links[0];
+        if (target) {
+          e.preventDefault();
+          window.location.href = target.href;
+        }
+      } else if (e.key === "Escape") {
+        input.value = "";
+        render([], "");
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!root.contains(e.target as Node)) {
+        resultsEl!.hidden = true;
+        input.setAttribute("aria-expanded", "false");
+      }
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-search-box]").forEach(initSearchBox);
+</script>

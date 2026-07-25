@@ -3,6 +3,7 @@
 // site's one deliberate departure from "never fixed, never floating".
 // Rendered once from BaseLayout so it appears on every page.
 import { getCollection } from "astro:content";
+import SearchBox from "./SearchBox.astro";
 import { CATEGORIES, CATEGORY_LABELS, POOL_TYPES, STATE_NAMES, STATES, categoryUrlSlug } from "../config";
 
 const venues = await getCollection("spas");
@@ -32,6 +33,7 @@ const presentCategories = CATEGORIES.filter((category) => venues.some((v) => v.d
     MENU
   </button>
   <nav id="corner-menu-panel" class="mono corner-menu-panel" aria-label="Site menu" hidden>
+    <SearchBox id="search-corner" placeholder="Search venues…" />
     <a href="/">Home</a>
     <span class="corner-menu-heading">Find a bath by state</span>
     {

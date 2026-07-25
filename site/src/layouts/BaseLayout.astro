@@ -1,8 +1,9 @@
 ---
+import { getCollection } from "astro:content";
 import CornerMenu from "../components/CornerMenu.astro";
 import GrainOverlay from "../components/GrainOverlay.astro";
 import ThemeToggle from "../components/ThemeToggle.astro";
-import { GOATCOUNTER_SITE, SITE_NAME, SITE_TAGLINE } from "../config";
+import { AMENITY_KEYS, AMENITY_NOTATION, CATEGORY_LABELS, GOATCOUNTER_SITE, SITE_NAME, SITE_TAGLINE, STATE_NAMES } from "../config";
 import "../styles/global.css";
 
 interface Props {
@@ -28,6 +29,20 @@ const organizationLd = {
   url: Astro.site?.toString(),
   description: SITE_TAGLINE,
 };
+
+// Sitewide search index (2026-07-25, TRD.md §8 exception) — embedded once
+// here, at build time, since CornerMenu (which hosts a <SearchBox>) renders
+// from this layout on every page. Matches Map.astro's embedded-JSON pattern:
+// zero runtime fetch, read client-side via #search-index-data.
+const searchVenues = await getCollection("spas");
+const searchIndex = searchVenues.map((v) => ({
+  slug: v.id,
+  name: v.data.name,
+  suburb: v.data.suburb,
+  state: STATE_NAMES[v.data.state],
+  category: CATEGORY_LABELS[v.data.category],
+  amenities: AMENITY_KEYS.filter((k) => v.data.amenities?.[k]).map((k) => AMENITY_NOTATION[k].full),
+}));
 ---
 
 <!doctype html>
@@ -58,6 +73,7 @@ const organizationLd = {
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={imageUrl} />
     <script type="application/ld+json" set:html={JSON.stringify(organizationLd)} />
+    <script type="application/json" id="search-index-data" set:html={JSON.stringify(searchIndex)} />
     {/* Inline SVG favicon — the map's thermal marker ring (DESIGN.md §5),
         no asset file or extra request. SVGs can't read CSS custom
         properties, so the two thermal hexes are restated here; the embedded
