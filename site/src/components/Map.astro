@@ -46,6 +46,8 @@ const { venues } = Astro.props;
 <script>
   import L from "leaflet";
   import "leaflet.markercluster";
+  import { AU_PLACES } from "../data/au-places";
+  import { formatDistanceKm, haversineDistanceKm } from "../config";
 
   interface VenueMarker {
     slug: string;
@@ -268,6 +270,208 @@ const { venues } = Astro.props;
       const bounds = L.latLngBounds(boundsSource.map((v) => [v.latitude!, v.longitude!] as [number, number]));
       map.fitBounds(bounds, { padding: [24, 24], maxZoom: 10 });
     }
+
+    // ---- Near me (2026-07-25, TRD.md §8 exception) — manual location entry
+    // only (never browser geolocation). Reorders the actual homepage
+    // VenueEntry DOM nodes into a single "nearest to you" group rather than
+    // hiding/duplicating them, so the map's existing venue-{slug} scroll
+    // anchors keep working unchanged. Composes with the amenity filter above:
+    // the ranked list only ever includes venues that currently pass matches(). ----
+
+    const nearMeForm = document.getElementById("near-me-form") as HTMLFormElement | null;
+    const nearMeInput = document.getElementById("near-me-input") as HTMLInputElement | null;
+    const nearMeClearBtn = document.getElementById("near-me-clear") as HTMLButtonElement | null;
+    const nearMeMessage = document.getElementById("near-me-message") as HTMLParagraphElement | null;
+    const venueContents = document.getElementById("venue-contents") as HTMLElement | null;
+
+    if (nearMeForm && nearMeInput && nearMeClearBtn && nearMeMessage && venueContents) {
+      let nearMeGroup: HTMLElement | null = null;
+      let hereMarker: L.Marker | null = null;
+      // originalIndex is this element's position among its original parent's
+      // children at the moment it was captured — used to restore relative
+      // order on clear. A plain "next sibling" reference breaks here because
+      // sibling venue entries from the same pool-type group are typically
+      // moved out together, so the recorded sibling is often no longer a
+      // child of that parent by the time clearNearMe() runs.
+      const originalSpot = new Map<string, { parent: HTMLElement; originalIndex: number }>();
+
+      function normalizePlace(s: string): string {
+        return s
+          .normalize("NFD")
+          .replace(/[̀-ͯ]/g, "")
+          .toLowerCase();
+      }
+
+      function resolvePlace(query: string) {
+        const q = normalizePlace(query.trim());
+        if (!q) return null;
+        if (/^\d+$/.test(q)) {
+          return AU_PLACES.find((p) => p.postcode === q) ?? null;
+        }
+        const exact = AU_PLACES.find((p) => normalizePlace(p.name) === q);
+        if (exact) return exact;
+        return AU_PLACES.find((p) => normalizePlace(p.name).includes(q)) ?? null;
+      }
+
+      function showNearMeMessage(text: string, tone?: "error") {
+        nearMeMessage!.textContent = text;
+        nearMeMessage!.hidden = false;
+        if (tone) nearMeMessage!.dataset.tone = tone;
+        else delete nearMeMessage!.dataset.tone;
+      }
+
+      function refitDefault() {
+        const mappableAll = venues.filter((v) => v.latitude != null && v.longitude != null);
+        const fitTargetsAll = active.size > 0 ? mappableAll.filter(matches) : mappableAll;
+        const boundsSourceAll = fitTargetsAll.length > 0 ? fitTargetsAll : mappableAll;
+        if (boundsSourceAll.length > 0) {
+          const b = L.latLngBounds(boundsSourceAll.map((v) => [v.latitude!, v.longitude!] as [number, number]));
+          map.fitBounds(b, { padding: [24, 24], maxZoom: 10 });
+        }
+      }
+
+      function clearNearMe() {
+        if (nearMeGroup) {
+          const moved = Array.from(nearMeGroup.querySelectorAll<HTMLElement>("[data-venue-slug]"));
+          // Restore in ascending original-index order so appendChild rebuilds
+          // each original group's relative order rather than the distance
+          // order they currently sit in within the near-me group.
+          moved.sort((a, b) => {
+            const ai = originalSpot.get(a.dataset.venueSlug!)?.originalIndex ?? 0;
+            const bi = originalSpot.get(b.dataset.venueSlug!)?.originalIndex ?? 0;
+            return ai - bi;
+          });
+          moved.forEach((el) => {
+            const spot = originalSpot.get(el.dataset.venueSlug!);
+            if (spot) spot.parent.appendChild(el);
+          });
+          nearMeGroup.remove();
+          nearMeGroup = null;
+        }
+        originalSpot.clear();
+        document.querySelectorAll<HTMLElement>("[data-pool-group]").forEach((el) => {
+          el.hidden = false;
+        });
+        document.querySelectorAll<HTMLElement>("[data-distance-slot]").forEach((el) => {
+          el.hidden = true;
+          el.textContent = "";
+        });
+        if (hereMarker) {
+          map.removeLayer(hereMarker);
+          hereMarker = null;
+        }
+        nearMeClearBtn!.hidden = true;
+        applyFilter();
+        refitDefault();
+      }
+
+      function applyNearMe(place: { name: string; latitude: number; longitude: number }) {
+        clearNearMe();
+
+        const eligible = venues.filter((v) => matches(v));
+        const withCoords = eligible.filter((v) => v.latitude != null && v.longitude != null);
+        const withoutCoords = eligible.filter((v) => v.latitude == null || v.longitude == null);
+
+        const ranked = withCoords
+          .map((v) => ({
+            v,
+            distanceKm: haversineDistanceKm(
+              { latitude: place.latitude, longitude: place.longitude },
+              { latitude: v.latitude!, longitude: v.longitude! },
+            ),
+          }))
+          .sort((a, b) => a.distanceKm - b.distanceKm);
+
+        const group = document.createElement("div");
+        group.className = "mb-12";
+        group.setAttribute("data-venue-group", "");
+        const heading = document.createElement("h2");
+        heading.className = "mono mb-2 text-[var(--ink-faded)]";
+        heading.textContent = `Nearest to ${place.name}`;
+        group.appendChild(heading);
+
+        function moveEntry(slug: string, distanceKm: number | null) {
+          const el = document.querySelector<HTMLElement>(`[data-venue-slug="${CSS.escape(slug)}"][id]`);
+          if (!el) return;
+          const parent = el.parentElement!;
+          const originalIndex = Array.from(parent.children).indexOf(el);
+          originalSpot.set(slug, { parent, originalIndex });
+          const slot = el.querySelector<HTMLElement>("[data-distance-slot]");
+          if (slot) {
+            if (distanceKm != null) {
+              slot.textContent = ` — ${formatDistanceKm(distanceKm)} away`;
+              slot.hidden = false;
+            } else {
+              slot.hidden = true;
+              slot.textContent = "";
+            }
+          }
+          group.appendChild(el);
+        }
+
+        for (const { v, distanceKm } of ranked) moveEntry(v.slug, distanceKm);
+        for (const v of withoutCoords) moveEntry(v.slug, null);
+
+        venueContents!.insertBefore(group, venueContents!.firstChild);
+        nearMeGroup = group;
+
+        document.querySelectorAll<HTMLElement>("[data-pool-group]").forEach((el) => {
+          el.hidden = true;
+        });
+        nearMeClearBtn!.hidden = false;
+
+        if (hereMarker) map.removeLayer(hereMarker);
+        hereMarker = L.marker([place.latitude, place.longitude], {
+          icon: L.divIcon({ className: "here-marker-icon", html: "<span></span>", iconSize: [16, 16] }),
+        }).addTo(map);
+
+        const nearestMappable = ranked.slice(0, 8).map((r) => r.v);
+        if (nearestMappable.length > 0) {
+          const bounds = L.latLngBounds([
+            [place.latitude, place.longitude],
+            ...nearestMappable.map((v) => [v.latitude!, v.longitude!] as [number, number]),
+          ]);
+          map.fitBounds(bounds, { padding: [24, 24], maxZoom: 11 });
+        } else {
+          map.setView([place.latitude, place.longitude], 9);
+        }
+
+        showNearMeMessage(`Showing results near ${place.name}.`);
+      }
+
+      function submitNearMe(query: string) {
+        const place = resolvePlace(query);
+        if (!place) {
+          showNearMeMessage("Couldn't find that place — try a bigger nearby town, or a postcode.", "error");
+          return;
+        }
+        applyNearMe(place);
+        const params = new URLSearchParams(location.search);
+        params.set("near", query.trim());
+        history.replaceState(null, "", `?${params.toString()}`);
+      }
+
+      nearMeForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        submitNearMe(nearMeInput!.value);
+      });
+
+      nearMeClearBtn.addEventListener("click", () => {
+        nearMeInput!.value = "";
+        nearMeMessage!.hidden = true;
+        clearNearMe();
+        const params = new URLSearchParams(location.search);
+        params.delete("near");
+        const query = params.toString();
+        history.replaceState(null, "", query ? `?${query}` : location.pathname);
+      });
+
+      const urlNear = new URLSearchParams(location.search).get("near");
+      if (urlNear) {
+        nearMeInput.value = urlNear;
+        submitNearMe(urlNear);
+      }
+    }
   }
 </script>
 
@@ -384,6 +588,15 @@ const { venues } = Astro.props;
 
   :global(.venue-marker-icon.active span) {
     background: var(--thermal);
+  }
+
+  :global(.here-marker-icon span) {
+    display: block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--oxide);
+    background: var(--oxide);
   }
 
   :global(.venue-cluster-icon span) {

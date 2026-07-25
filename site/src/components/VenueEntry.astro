@@ -25,7 +25,10 @@ const { name, slug, suburb, state, summary, amenities, facilities, withId = true
   <a href={`/spa/${slug}/`}>
     <h3 class="font-display text-3xl font-light text-[var(--ink)]">{name}</h3>
   </a>
-  <div class="mt-1 mono text-[var(--ink-faded)]">{suburb}</div>
+  <div class="mt-1 mono text-[var(--ink-faded)]">
+    {suburb}
+    <span class="mono" data-distance-slot hidden></span>
+  </div>
   <Features state={state} amenities={amenities} facilities={facilities} compact />
   <p class="mt-2 max-w-[65ch] italic text-[var(--ink-faded)]">{summary}</p>
 </article>
