@@ -1,11 +1,11 @@
 ---
 import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import Map from "../components/Map.astro";
 import VenueEntry from "../components/VenueEntry.astro";
 import Icon from "../components/Icon.astro";
+import MarginAnimal from "../components/MarginAnimal.astro";
 import SearchBox from "../components/SearchBox.astro";
-import { AMENITY_KEYS, AMENITY_NOTATION, POOL_TYPES, SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES } from "../config";
+import { AMENITY_KEYS, AMENITY_NOTATION, SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES } from "../config";
 
 const venues = await getCollection("spas");
 
@@ -14,53 +14,36 @@ const byState = STATES.map((state) => ({
   venues: venues.filter((v) => v.data.state === state),
 })).filter((group) => group.venues.length > 0);
 
-// Homepage contents (2026-07-23) — grouped by pool type rather than state.
-// A venue can appear in more than one group (an outdoor AND indoor pool,
-// say); venues matching none of the three fall into "Other" so nothing
-// drops off the homepage. The grouping rule is shared with the by-setting
-// pages and the corner menu via POOL_TYPES (config.ts / SCHEMA.md §1a).
-const poolTypeGroups = POOL_TYPES.map((t) => ({
-  label: t.label,
-  venues: venues.filter((v) => t.match(v.data.facilities)),
-})).filter((group) => group.venues.length > 0);
-
-// A venue can appear in more than one group above; only the first occurrence
-// gets the `venue-<slug>` id the map's click-to-scroll relies on, so ids
-// stay unique (duplicate DOM ids would make getElementById find the wrong copy).
-const seenSlugs = new Set<string>();
-function firstAppearance(slug: string): boolean {
-  if (seenSlugs.has(slug)) return false;
-  seenSlugs.add(slug);
-  return true;
-}
-
 // Homepage chooser (DESIGN.md §5/§6/§7, 2026-07-23 exception) — amenities
 // with at least one published venue, same "present only" rule as the corner
 // menu's state/category lists.
 const presentAmenities = AMENITY_KEYS.filter((key) => venues.some((v) => v.data.amenities?.[key]));
 
-// All venues go to the map component — those with no geocoded coordinate
-// (SCHEMA.md §2 — geocoding found no address match) get no marker, but the
-// amenity filter still needs their amenities so it can keep them visible in
-// the contents list below (filtering must never hide a venue just because
-// it lacks a marker).
-const markers = venues.map((v) => ({
+// 2026-07-26 — the map is gone (DESIGN.md §5, UX.md §2.1). Every venue still
+// renders server-side into the results area so it degrades to real markup,
+// but stays hidden until the amenity filter and/or near-me lookup below
+// (both client-side, both required-JS per UX.md §2.1) reveal a match — there
+// is no default full list any more.
+const allVenues = venues.map((v) => ({
   slug: v.id,
   name: v.data.name,
   suburb: v.data.suburb,
   state: v.data.state,
+  summary: v.data.summary,
+  amenities: v.data.amenities,
+  facilities: v.data.facilities,
   latitude: v.data.latitude ?? null,
   longitude: v.data.longitude ?? null,
-  amenities: v.data.amenities,
 }));
 ---
 
 <BaseLayout
-  title={`${SITE_NAME} — Australian day spas and bathhouses`}
+  title={`${SITE_NAME} — Australian saunas, hot pools and bathhouses`}
   description={SITE_TAGLINE}
 >
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
-    <header class="rise-in mb-16">
+    <header class="rise-in mb-16" style="position: relative;">
+      <MarginAnimal name="otter" />
       <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
         {SITE_NAME}
       </h1>
@@ -71,20 +54,24 @@ const markers = venues.map((v) => ({
 
     <section class="rise-in reading-spine mb-24" style="animation-delay: 90ms;">
       <p>
-        Bathers' is a free directory of Australian venues built around heat,
-        cold and water: saunas, magnesium pools, cold plunges. We research
-        every venue so you get the best possible experience, then set out
-        what is actually there: how hot, how cold, and for how long.
+        There is a particular kind of quiet that arrives with heat: the first
+        minutes in a sauna, a magnesium pool at 39 degrees, the sharp clarity
+        of a cold plunge straight after. Bathers' is a free directory of the
+        Australian venues built around that ritual — saunas, hot pools, cold
+        plunges — researched properly, then set out plainly: how hot, how
+        cold, and for how long.
       </p>
       <p>
         There are no ads here and no sponsored listings. Nothing ranks
-        because a venue paid for it. Browse by state, by setting (thermal
-        springs, indoor pools and outdoor pools), or by the amenity you are
-        after, and choose by feel rather than guesswork.
+        because a venue paid for it. Search by name or suburb, tell us where
+        you are, or browse by state or by the amenity you are after — a
+        proper sweat, magnesium water, a cold shock — and choose by feel
+        rather than guesswork.
       </p>
     </section>
 
-    <section class="rise-in chooser mb-24" style="animation-delay: 180ms;" aria-labelledby="chooser-heading">
+    <section class="rise-in chooser mb-24" style="animation-delay: 180ms; position: relative;" aria-labelledby="chooser-heading">
+      <MarginAnimal name="capybara" />
       <div class="mono mb-6 flex items-center gap-4 text-[var(--ink-faded)]">
         <span id="chooser-heading">START HERE</span>
         <span class="draw-line h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
@@ -93,8 +80,8 @@ const markers = venues.map((v) => ({
         Search by name or suburb, tell us where you are, or browse below —
         start with a state if you know where you're headed, or an amenity if
         you know what you're after: magnesium water, a proper sweat, a cold
-        shock. Picking an amenity filters the map and list below to venues
-        that have it.
+        shock. Picking an amenity filters the results below to venues that
+        have it.
       </p>
 
       <div class="finder-row">
@@ -118,7 +105,7 @@ const markers = venues.map((v) => ({
           <p id="near-me-message" class="near-me-message" role="status" hidden></p>
           <noscript>
             <p class="mono" style="color: var(--ink-faded); margin-top: 0.5rem;">
-              Finding venues near you requires JavaScript — browse by state or pool type below.
+              Finding venues near you requires JavaScript — browse by state below.
             </p>
           </noscript>
         </div>
@@ -142,7 +129,7 @@ const markers = venues.map((v) => ({
           <ul class="chooser-amenities">
             {presentAmenities.map((key) => (
               <li>
-                <a class="chooser-amenity-link" href={`/?amenities=${key}#map-heading`}>
+                <a class="chooser-amenity-link" href={`/?amenities=${key}#results-heading`}>
                   <Icon name={key} size={32} />
                   <span class="mono chooser-amenity-label">{AMENITY_NOTATION[key].full}</span>
                 </a>
@@ -153,39 +140,255 @@ const markers = venues.map((v) => ({
       </div>
     </section>
 
-    <div class="rise-in" style="animation-delay: 270ms;">
-      <Map venues={markers} />
-    </div>
-
-    <section class="rise-in" style="animation-delay: 360ms;" aria-labelledby="contents-heading">
-      <div class="mono mb-8 flex items-center gap-4 text-[var(--ink-faded)]">
-        <span id="contents-heading">CONTENTS</span>
+    <section class="rise-in" style="animation-delay: 270ms; position: relative;" aria-labelledby="results-heading">
+      <MarginAnimal name="penguin" />
+      <div class="mono mb-6 flex items-center gap-4 text-[var(--ink-faded)]">
+        <span id="results-heading">RESULTS</span>
         <span class="draw-line h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
       </div>
-      <div id="venue-contents">
-      {
-        poolTypeGroups.map((group) => (
-          <div class="mb-12" data-venue-group data-pool-group>
-            <h2 class="mono mb-2 text-[var(--ink-faded)]">{group.label}</h2>
-            {group.venues.map((venue) => (
-              <VenueEntry
-                name={venue.data.name}
-                slug={venue.id}
-                suburb={venue.data.suburb}
-                state={venue.data.state}
-                summary={venue.data.summary}
-                amenities={venue.data.amenities}
-                facilities={venue.data.facilities}
-                withId={firstAppearance(venue.id)}
-              />
-            ))}
-          </div>
-        ))
-      }
+
+      <div id="amenity-filters" class="mono filter-bar" hidden></div>
+
+      <p id="results-direction" class="reading-spine text-[var(--ink-faded)]">
+        Pick an amenity above, or tell us where you are, to see venues here.
+      </p>
+
+      <noscript>
+        <p class="mono" style="color: var(--ink-faded);">
+          Results require JavaScript — browse by state or amenity above.
+        </p>
+      </noscript>
+
+      <div id="venue-contents" hidden>
+        {
+          allVenues.map((venue) => (
+            <VenueEntry
+              name={venue.name}
+              slug={venue.slug}
+              suburb={venue.suburb}
+              state={venue.state}
+              summary={venue.summary}
+              amenities={venue.amenities}
+              facilities={venue.facilities}
+            />
+          ))
+        }
       </div>
+      <script
+        type="application/json"
+        id="venue-data"
+        set:html={JSON.stringify(
+          allVenues.map((v) => ({
+            slug: v.slug,
+            amenities: v.amenities,
+            latitude: v.latitude,
+            longitude: v.longitude,
+          })),
+        )}
+      />
     </section>
   </main>
 </BaseLayout>
+
+<script>
+  import { AMENITY_KEYS, AMENITY_NOTATION, haversineDistanceKm, formatDistanceKm } from "../config";
+  import { AU_PLACES } from "../data/au-places";
+
+  interface VenueRow {
+    slug: string;
+    amenities: Record<string, boolean>;
+    latitude: number | null;
+    longitude: number | null;
+  }
+
+  const venueEls = Array.from(document.querySelectorAll<HTMLElement>("#venue-contents [data-venue-slug]"));
+  const venueContents = document.getElementById("venue-contents") as HTMLElement | null;
+  const directionLine = document.getElementById("results-direction") as HTMLElement | null;
+  const filterBar = document.getElementById("amenity-filters") as HTMLDivElement | null;
+  const nearMeForm = document.getElementById("near-me-form") as HTMLFormElement | null;
+  const nearMeInput = document.getElementById("near-me-input") as HTMLInputElement | null;
+  const nearMeClearBtn = document.getElementById("near-me-clear") as HTMLButtonElement | null;
+  const nearMeMessage = document.getElementById("near-me-message") as HTMLParagraphElement | null;
+
+  if (venueContents && directionLine && filterBar) {
+    const rows: VenueRow[] = JSON.parse(document.getElementById("venue-data")?.textContent || "[]");
+    const rowBySlug = new Map(rows.map((r) => [r.slug, r]));
+
+    function readActiveFromUrl(): Set<string> {
+      const params = new URLSearchParams(location.search);
+      const raw = params.get("amenities");
+      if (!raw) return new Set();
+      return new Set(raw.split(",").filter((k) => (AMENITY_KEYS as readonly string[]).includes(k)));
+    }
+
+    function writeParam(key: string, value: string | null) {
+      const params = new URLSearchParams(location.search);
+      if (value) params.set(key, value);
+      else params.delete(key);
+      const query = params.toString();
+      history.replaceState(null, "", query ? `?${query}` : location.pathname);
+    }
+
+    let active = readActiveFromUrl();
+
+    const buttons: Record<string, HTMLButtonElement> = {};
+    for (const key of AMENITY_KEYS) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "filter-toggle";
+      btn.textContent = AMENITY_NOTATION[key].full;
+      btn.setAttribute("aria-pressed", active.has(key) ? "true" : "false");
+      btn.classList.toggle("active", active.has(key));
+      btn.addEventListener("click", () => {
+        if (active.has(key)) active.delete(key);
+        else active.add(key);
+        btn.classList.toggle("active", active.has(key));
+        btn.setAttribute("aria-pressed", active.has(key) ? "true" : "false");
+        writeParam("amenities", active.size > 0 ? Array.from(active).join(",") : null);
+        render();
+      });
+      buttons[key] = btn;
+      filterBar.appendChild(btn);
+    }
+    filterBar.hidden = false;
+
+    function normalizePlace(s: string): string {
+      return s
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .toLowerCase();
+    }
+
+    function resolvePlace(query: string) {
+      const q = normalizePlace(query.trim());
+      if (!q) return null;
+      if (/^\d+$/.test(q)) return AU_PLACES.find((p) => p.postcode === q) ?? null;
+      const exact = AU_PLACES.find((p) => normalizePlace(p.name) === q);
+      if (exact) return exact;
+      return AU_PLACES.find((p) => normalizePlace(p.name).includes(q)) ?? null;
+    }
+
+    function showNearMeMessage(text: string, tone?: "error") {
+      nearMeMessage!.textContent = text;
+      nearMeMessage!.hidden = false;
+      if (tone) nearMeMessage!.dataset.tone = tone;
+      else delete nearMeMessage!.dataset.tone;
+    }
+
+    const RADIUS_KM = 50;
+    let currentPlace: { name: string; latitude: number; longitude: number } | null = null;
+
+    function render() {
+      const hasFilter = active.size > 0;
+      const hasNear = currentPlace !== null;
+
+      if (!hasFilter && !hasNear) {
+        venueContents!.hidden = true;
+        directionLine!.hidden = false;
+        return;
+      }
+      directionLine!.hidden = true;
+      venueContents!.hidden = false;
+
+      let visible = venueEls.filter((el) => {
+        const row = rowBySlug.get(el.dataset.venueSlug!);
+        if (!row) return false;
+        for (const key of active) if (!row.amenities[key]) return false;
+        return true;
+      });
+
+      if (hasNear) {
+        const ranked = visible
+          .map((el) => {
+            const row = rowBySlug.get(el.dataset.venueSlug!)!;
+            if (row.latitude == null || row.longitude == null) return null;
+            const distanceKm = haversineDistanceKm(
+              { latitude: currentPlace!.latitude, longitude: currentPlace!.longitude },
+              { latitude: row.latitude, longitude: row.longitude },
+            );
+            return distanceKm <= RADIUS_KM ? { el, distanceKm } : null;
+          })
+          .filter((x): x is { el: HTMLElement; distanceKm: number } => x !== null)
+          .sort((a, b) => a.distanceKm - b.distanceKm);
+
+        visible.forEach((el) => {
+          el.hidden = true;
+          const slot = el.querySelector<HTMLElement>("[data-distance-slot]");
+          if (slot) {
+            slot.hidden = true;
+            slot.textContent = "";
+          }
+        });
+        for (const { el, distanceKm } of ranked) {
+          el.hidden = false;
+          venueContents!.appendChild(el);
+          const slot = el.querySelector<HTMLElement>("[data-distance-slot]");
+          if (slot) {
+            slot.textContent = ` — ${formatDistanceKm(distanceKm)} away`;
+            slot.hidden = false;
+          }
+        }
+        const hiddenAll = venueEls.filter((el) => !ranked.some((r) => r.el === el));
+        hiddenAll.forEach((el) => (el.hidden = true));
+
+        if (ranked.length === 0) {
+          showNearMeMessage(`No venues within ${RADIUS_KM}km of ${currentPlace!.name}.`);
+        } else {
+          showNearMeMessage(`Showing venues within ${RADIUS_KM}km of ${currentPlace!.name}.`);
+        }
+      } else {
+        const visibleSlugs = new Set(visible.map((el) => el.dataset.venueSlug));
+        venueEls.forEach((el) => {
+          el.hidden = !visibleSlugs.has(el.dataset.venueSlug);
+          const slot = el.querySelector<HTMLElement>("[data-distance-slot]");
+          if (slot) {
+            slot.hidden = true;
+            slot.textContent = "";
+          }
+        });
+        nearMeMessage!.hidden = true;
+      }
+    }
+
+    function clearNearMe() {
+      currentPlace = null;
+      nearMeClearBtn!.hidden = true;
+      writeParam("near", null);
+      render();
+    }
+
+    function submitNearMe(query: string) {
+      const place = resolvePlace(query);
+      if (!place) {
+        showNearMeMessage("Couldn't find that place — try a bigger nearby town, or a postcode.", "error");
+        return;
+      }
+      currentPlace = place;
+      nearMeClearBtn!.hidden = false;
+      writeParam("near", query.trim());
+      render();
+    }
+
+    if (nearMeForm && nearMeInput && nearMeClearBtn && nearMeMessage) {
+      nearMeForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        submitNearMe(nearMeInput.value);
+      });
+      nearMeClearBtn.addEventListener("click", () => {
+        nearMeInput.value = "";
+        nearMeMessage.hidden = true;
+        clearNearMe();
+      });
+      const urlNear = new URLSearchParams(location.search).get("near");
+      if (urlNear) {
+        nearMeInput.value = urlNear;
+        submitNearMe(urlNear);
+      }
+    }
+
+    render();
+  }
+</script>
 
 <style>
   .finder-row {
@@ -330,5 +533,38 @@ const markers = venues.map((v) => ({
   .chooser-amenity-link:hover .chooser-amenity-label,
   .chooser-amenity-link:focus-visible .chooser-amenity-label {
     color: var(--thermal);
+  }
+
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin-bottom: 1.5rem;
+    color: var(--ink-faded);
+  }
+
+  :global(.filter-toggle) {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    color: var(--ink-faded);
+    cursor: pointer;
+    text-underline-offset: 3px;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 1px;
+  }
+
+  :global(.filter-toggle:hover),
+  :global(.filter-toggle:focus-visible) {
+    color: var(--ink);
+  }
+
+  :global(.filter-toggle.active) {
+    color: var(--ink);
+    text-decoration-color: var(--thermal);
   }
 </style>

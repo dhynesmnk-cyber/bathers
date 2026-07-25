@@ -116,10 +116,9 @@ export function haversineDistanceKm(a: GeoPoint, b: GeoPoint): number {
 }
 
 // Nearest-N candidates by straight-line distance, any category. `getCoords`
-// lets one helper serve both build-time content-collection entries
-// (spa/[slug].astro) and plain client-side marker objects (Map.astro's
-// near-me mode) — candidates without resolvable coordinates are dropped
-// rather than sorted arbitrarily.
+// lets one helper serve build-time content-collection entries
+// (spa/[slug].astro's "Nearby" block) — candidates without resolvable
+// coordinates are dropped rather than sorted arbitrarily.
 export function nearestByDistance<T>(
   origin: GeoPoint,
   candidates: T[],
@@ -191,7 +190,7 @@ export function priceRange(cost: string): string | null {
 }
 
 export const SITE_NAME = "Bathers'";
-export const SITE_TAGLINE = "Notes on heat, cold and water at Australian day spas and bathhouses.";
+export const SITE_TAGLINE = "A field guide to Australian saunas, hot pools and bathhouses.";
 
 // Claim-listing CTA (2026-07-23 addition — TRD.md §8 exception, UX.md §2.5).
 // No longer used by the claim page itself since the 2026-07-25 form/payment

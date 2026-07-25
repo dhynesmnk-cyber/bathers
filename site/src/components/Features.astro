@@ -23,13 +23,23 @@ const latLabel = latitude != null ? `${Math.abs(latitude).toFixed(4)}° S` : nul
 const lngLabel = longitude != null ? `${longitude.toFixed(4)}° E` : null;
 
 const presentAmenities = AMENITY_KEYS.filter((key) => amenities[key]);
-const presentFacilities = FACILITY_KEYS.filter((key) => facilities?.[key]);
+
+// 2026-07-26 — pool-type facilities (indoor/outdoor/thermal-spring) are the
+// "main" facilities per the homepage results list; the five logistics keys
+// (parking, towels, changerooms, bookings, wheelchair access) are secondary.
+// See DESIGN.md §6/Features.astro ordering note.
+const POOL_TYPE_FACILITY_KEYS = ["outdoor_pool", "indoor_pool", "natural_spring"] as const;
+const LOGISTICS_FACILITY_KEYS = FACILITY_KEYS.filter(
+  (key) => !(POOL_TYPE_FACILITY_KEYS as readonly string[]).includes(key),
+);
+const presentPoolTypeFacilities = POOL_TYPE_FACILITY_KEYS.filter((key) => facilities?.[key]);
+const presentLogisticsFacilities = LOGISTICS_FACILITY_KEYS.filter((key) => facilities?.[key]);
 
 // Amenity/facility chips link to their glossary page (UX.md §2.3) — the
 // glossary was previously reachable only via the corner menu. hours/cost
 // have no glossary entries and stay plain spans. Key→segment conversion
 // matches amenityUrlSlug (snake_case → kebab-case).
-type Feature = { icon: IconKey; label: string; glossaryHref?: string; title?: string };
+type Feature = { icon: IconKey; label: string; glossaryHref?: string; title?: string; secondary?: boolean };
 const glossaryHref = (key: string) => `/glossary/${key.replace(/_/g, "-")}/`;
 const features: Feature[] = [
   ...presentAmenities.map((key) => ({
@@ -37,14 +47,20 @@ const features: Feature[] = [
     label: AMENITY_NOTATION[key].full,
     glossaryHref: glossaryHref(key),
   })),
+  ...presentPoolTypeFacilities.map((key) => ({
+    icon: key as IconKey,
+    label: FACILITY_LABELS[key],
+    glossaryHref: glossaryHref(key),
+  })),
   ...(hours ? [{ icon: "hours" as IconKey, label: hours }] : []),
   // Compact price range in the summary row (full cost text lives in the
   // venue page's appendix); falls back to the raw string when no $ amount.
   ...(cost ? [{ icon: "cost" as IconKey, label: priceRange(cost) ?? cost, title: cost }] : []),
-  ...presentFacilities.map((key) => ({
+  ...presentLogisticsFacilities.map((key) => ({
     icon: key as IconKey,
     label: FACILITY_LABELS[key],
     glossaryHref: glossaryHref(key),
+    secondary: true,
   })),
 ];
 ---
@@ -61,18 +77,20 @@ const features: Feature[] = [
       feature.glossaryHref ? (
         <a
           href={feature.glossaryHref}
-          class="feature-chip inline-flex items-center gap-1 text-[var(--ink)]"
+          class="feature-chip inline-flex items-center gap-1"
+          class:list={[feature.secondary ? "text-[var(--ink-faded)]" : "text-[var(--ink)]"]}
           title={feature.title ?? feature.label}
         >
-          <Icon name={feature.icon} size={compact ? 14 : 16} />
+          <Icon name={feature.icon} size={feature.secondary ? 12 : compact ? 14 : 16} />
           {!compact && <span class="mono text-sm">{feature.label}</span>}
         </a>
       ) : (
         <span
-          class="feature-chip inline-flex items-center gap-1 text-[var(--ink)]"
+          class="feature-chip inline-flex items-center gap-1"
+          class:list={[feature.secondary ? "text-[var(--ink-faded)]" : "text-[var(--ink)]"]}
           title={feature.title ?? feature.label}
         >
-          <Icon name={feature.icon} size={compact ? 14 : 16} />
+          <Icon name={feature.icon} size={feature.secondary ? 12 : compact ? 14 : 16} />
           {!compact && <span class="mono text-sm">{feature.label}</span>}
         </span>
       ),

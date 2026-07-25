@@ -1,0 +1,47 @@
+---
+// DESIGN.md §6a — sparse decorative margin illustration, homepage only.
+// Mirrors Icon.astro's shape; kept separate because these are decorative
+// (ANIMAL_PATHS) rather than functional (ICON_PATHS/IconKey).
+import { ANIMAL_PATHS, type AnimalKey } from "../icons/animals";
+
+interface Props {
+  name: AnimalKey;
+  size?: number;
+}
+
+const { name, size = 48 } = Astro.props;
+---
+
+<span class="margin-animal" aria-hidden="true">
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    set:html={ANIMAL_PATHS[name]}
+  />
+</span>
+
+<style>
+  /* DESIGN.md §6a — lives in the reading spine's wide right margin, never
+     inline with copy; collapses out below 640px rather than squeezing into
+     the single-column layout (§9's 360px floor). */
+  .margin-animal {
+    display: none;
+    position: absolute;
+    left: 100%;
+    margin-left: 1.5rem;
+    top: 0;
+    color: var(--ink-faded);
+  }
+
+  @media (min-width: 1024px) {
+    .margin-animal {
+      display: block;
+    }
+  }
+</style>

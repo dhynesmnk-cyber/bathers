@@ -63,13 +63,16 @@
    register; dark is the inversion. Order matters: OS-preference media query
    first, then explicit [data-theme] overrides from the toggle (ThemeToggle.astro)
    win over it via source order + specificity. */
+/* DESIGN.md §2, 2026-07-26 amendment — --ink/--ink-faded moved to an olive
+   family; --thermal shifted cooler/tealer so the "one mineral accent" still
+   reads distinct now that body copy is also green-family. */
 :root {
   color-scheme: light dark;
   --paper: #f2ece0;
   --paper-raised: #e9e1d1;
-  --ink: #2a241e;
-  --ink-faded: #6b6255;
-  --thermal: #3f6b5b;
+  --ink: #3d4423;
+  --ink-faded: #6f7a4a;
+  --thermal: #2f6e78;
   --oxide: #96502e;
   /* DESIGN.md §4 — grain reads differently by mode; tuned separately. */
   --grain-opacity: 0.035;
@@ -79,9 +82,9 @@
   :root:not([data-theme="light"]) {
     --paper: #191614;
     --paper-raised: #211d1a;
-    --ink: #e8e2d6;
-    --ink-faded: #a89f8f;
-    --thermal: #7fb5a4;
+    --ink: #d9dcb0;
+    --ink-faded: #9aa06e;
+    --thermal: #6fb8bd;
     --oxide: #b4633a;
     --grain-opacity: 0.03;
   }
@@ -90,9 +93,9 @@
 :root[data-theme="dark"] {
   --paper: #191614;
   --paper-raised: #211d1a;
-  --ink: #e8e2d6;
-  --ink-faded: #a89f8f;
-  --thermal: #7fb5a4;
+  --ink: #d9dcb0;
+  --ink-faded: #9aa06e;
+  --thermal: #6fb8bd;
   --oxide: #b4633a;
   --grain-opacity: 0.03;
 }
@@ -100,9 +103,9 @@
 :root[data-theme="light"] {
   --paper: #f2ece0;
   --paper-raised: #e9e1d1;
-  --ink: #2a241e;
-  --ink-faded: #6b6255;
-  --thermal: #3f6b5b;
+  --ink: #3d4423;
+  --ink-faded: #6f7a4a;
+  --thermal: #2f6e78;
   --oxide: #96502e;
   --grain-opacity: 0.035;
 }

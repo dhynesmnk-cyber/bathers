@@ -42,6 +42,17 @@ It should **never** feel like: a SaaS product, an Airbnb listing, a Google Maps 
 
 **Banned in both modes:** the Tailwind default grey scale (`slate`, `gray`, `zinc`, `neutral`, `stone` utilities for colour), pure `#000`/`#fff`, any blue that reads "tech", any purple, gradients of any kind, coloured glows/shadows.
 
+**2026-07-26 amendment — olive `--ink`/`--ink-faded`.** Body copy and hairlines move from the previous warm-neutral ink to an olive family, user-requested. New values, replacing the ones in the tables above:
+
+| Token | Mode | Hex |
+|---|---|---|
+| `--ink` | Dark | `#d9dcb0` (pale khaki-olive) |
+| `--ink-faded` | Dark | `#9aa06e` (muted olive) |
+| `--ink` | Light | `#3d4423` (deep olive) |
+| `--ink-faded` | Light | `#6f7a4a` (muted olive) |
+
+`--paper`/`--paper-raised`/`--oxide` are unchanged. Because `--ink` is now itself green, `--thermal` moves cooler/tealer so the "one mineral accent" (see role description above) still reads as a distinct colour rather than a shade of the body text — `#2f6e78` (light) / `#6fb8bd` (dark), replacing the values in the tables above. The "~5% of a screen" thermal budget still applies unchanged. Verify actual contrast on screen before treating these hexes as final (§10).
+
 ---
 
 ## 3. Typography
@@ -79,11 +90,13 @@ This is what separates "dark editorial" from "dark dashboard":
 - **No cards.** Venue listings on the index are typographic entries — name, dateline, one-line notation — separated by hairlines, like a table of contents. No thumbnails in lists.
 - **Whitespace is structural.** Section spacing at 6–10rem on desktop. When in doubt, add space, not decoration.
 - **Filters are text.** Amenity filters render as inline mono toggles (`magnesium pool · infrared · cold plunge`); active state = thermal underline. No sidebar, no checkboxes, no pills.
-- The map (Leaflet) is a chapter within the index page, not the hero. Tiles must be styled/filtered to sit in the palette (CSS filter to warm-dark, or a dark tile theme with a warm overlay). Default markers replaced with a small thermal ring; active marker fills. **Light mode (2026-07-21):** dark mode keeps the warm-dark tile treatment; light mode uses a light basemap with little to no filter rather than the same dark-tile-plus-filter approach — the tile source itself is chosen at map-init time based on the active mode, not styled after the fact.
+- **2026-07-26 — map removed.** The map (Leaflet) chapter described in earlier revisions of this section is superseded: the homepage no longer carries a map. It's replaced by a manual-postcode "facilities around me" 50km radius list (UX.md §2.1) rendered in the same results slot as search. Kept here, struck through for the record: ~~The map (Leaflet) is a chapter within the index page, not the hero. Tiles must be styled/filtered to sit in the palette (CSS filter to warm-dark, or a dark tile theme with a warm overlay). Default markers replaced with a small thermal ring; active marker fills.~~
 
-**Exception (user-approved, 2026-07-23).** The homepage carries one icon-based chooser section (§6, §7) between the foreword and the map chapter — a narrow, scoped departure from "never centred symmetric hero layouts" and "filters are text... no pills" above. It stays inside the reading-spine rhythm (asymmetric, not full-bleed, not centred) so it reads as the next section of the pamphlet rather than a hero banner, and it fronts the site's existing plain-text amenity filter and state pages rather than replacing either. Everything else covered by these two rules — the inline amenity-filter toggle bar, state/amenity page nav, and all venue listings — is unaffected and stays plain mono text and card-free.
+**Exception (user-approved, 2026-07-23).** The homepage carries one icon-based chooser section (§6, §7) between the foreword and the results area — a narrow, scoped departure from "never centred symmetric hero layouts" and "filters are text... no pills" above. It stays inside the reading-spine rhythm (asymmetric, not full-bleed, not centred) so it reads as the next section of the pamphlet rather than a hero banner, and it fronts the site's existing plain-text amenity filter and state pages rather than replacing either. Everything else covered by these two rules — the inline amenity-filter toggle bar, state/amenity page nav, and all venue listings — is unaffected and stays plain mono text and card-free.
 
 **2026-07-25 extension.** The same chooser section also fronts a plain mono-text search field and a "near you" suburb/postcode field (TRD.md §8 exception), sitting above the existing by-state/by-amenity grid. Same idiom as everything else in §5 — text inputs and text buttons, underline-on-focus, no pill/card treatment, not a third icon grid or hero element. The search field also appears inside the corner menu panel (§5b) so it's reachable from every page, not just the homepage.
+
+**2026-07-26 extension.** Below the chooser, a results area (also §7) replaces the former map-plus-contents-list pairing: empty by default with a direction line, populated by the amenity filter and/or the near-me 50km radius list (search keeps its own dropdown under the search field, unchanged), each row the existing `VenueEntry` typographic-entry treatment (§5, "no cards"). The pool-type grouping (thermal springs/indoor/outdoor/other) that the removed default contents list used to sort by no longer has a homepage entry point — it remains reachable via each state's `/[state]/[pooltype]/` pages (UX.md §2.3, unchanged) and is otherwise surfaced per-venue via promoted feature badges (§6, DESIGN.md's Features.astro ordering) rather than a new sitewide browse column, since no sitewide pool-type route exists to link to.
 
 ---
 
@@ -127,9 +140,20 @@ Superseded text, kept for record: amenities were previously recorded as a natura
 
 ---
 
+## 6a. Margin Animal Motifs (2026-07-26 addition)
+
+A narrow, homepage-only exception adding sparse decorative illustration where §6's icons are strictly functional. Hand-authored, stroke-only line-art animals (bathing/sauna-themed — otter, capybara, penguin, duck and similar), drawn in the same authoring spirit as §6's icon set, not lifted wholesale from any external reference:
+
+- One shared renderer (`site/src/components/MarginAnimal.astro`, paths in `site/src/icons/animals.ts`), mirroring `Icon.astro`'s shape: `currentColor` stroke, `stroke-width: 1.4–1.8`, no fill, simple primitives (circles, rects, short paths) — same visual family as §6, just decorative rather than functional.
+- Sized 40–64px — larger than the 32px homepage chooser icons (§6, "the only place icons render above 18px" is superseded narrowly by this section for this one decorative use), since these carry no label and read at a glance.
+- Placement: the reading-spine's wide right margin (§5) beside section openers only — the masthead, "START HERE," and the results heading. Never inline with copy, never more than one per section break, never on any page but the homepage.
+- Single colour, no colour-coding by species or meaning — decoration, not notation. Collapses out of the layout below the 640px breakpoint rather than being squeezed into the single-column reading spine (§9's 360px floor).
+
+---
+
 ## 7. Page-Specific Notes
 
-- **Index:** masthead first — site name in large Fraunces with a one-line mono subtitle (like a pamphlet title page), then a short editorial foreword (real prose, 2–3 paragraphs), then a chooser section (*2026-07-23 exception, see §5*) — one short line of plain-prose usage guidance, plus two ways into the directory: by state (plain mono text links) and by amenity (large icon+label triggers, §6) — then the map chapter, then the state-grouped contents list.
+- **Index:** masthead first — site name in large Fraunces with a one-line mono subtitle (like a pamphlet title page), then a short editorial foreword (real prose, 2–3 paragraphs), then a chooser section (*2026-07-23 exception, extended 2026-07-26, see §5*) — one short line of plain-prose usage guidance, a search field and a "near you" field, plus two ways into the directory: by state (plain mono text links) and by amenity (large icon+label triggers, §6) — then the results area (§5, §7), empty by default, populated by the amenity filter and/or the near-me 50km radius list (search has its own dropdown under the search field).
 - **Venue page:** name → dateline/notation row → prose with 1–2 pull-quotes → tipped-in photo if one exists (mid-article, never top) → FAQ (if present) → appendix block (`--paper-raised`, mono, hairline-topped) with address, the Book Now button, hours, and the claim-this-listing button (*2026-07-23: upgraded from a plain mailto line to a `.book-now-btn`-styled button linking to `/claim/[slug]/`, hidden once `status` is `claimed`*). FAQ sits above the appendix, not inside it — it's still editorial content ("what is this place like"), while the appendix is the page's practical/logistics close and should stay a stable landing spot regardless of how much FAQ content exists.
 - **Claim page** (*2026-07-23 addition*): same shell and prose register as a venue page — no pricing-table/SaaS treatment. Ends in a second usage of `.book-now-btn` (§7a) as its submit CTA. See UX.md §2.5.
 

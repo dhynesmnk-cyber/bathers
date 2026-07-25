@@ -32,8 +32,9 @@ const organizationLd = {
 
 // Sitewide search index (2026-07-25, TRD.md §8 exception) — embedded once
 // here, at build time, since CornerMenu (which hosts a <SearchBox>) renders
-// from this layout on every page. Matches Map.astro's embedded-JSON pattern:
-// zero runtime fetch, read client-side via #search-index-data.
+// from this layout on every page. Same embedded-JSON pattern the homepage's
+// venue data uses (index.astro's #venue-data): zero runtime fetch, read
+// client-side via #search-index-data.
 const searchVenues = await getCollection("spas");
 const searchIndex = searchVenues.map((v) => ({
   slug: v.id,
