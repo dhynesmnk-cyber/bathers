@@ -143,6 +143,15 @@ A second admin screen at `/claims`, linked from the hub header next to Blog — 
 
 ---
 
+### 2.4a Site logo / home button (2026-07-26 addition)
+
+- Renders in-flow at the top of every public page (index, venue, programmatic, blog, claim), above the theme toggle, per DESIGN.md §5c — a real `<a href="/">`, keyboard-reachable and operable like any other link, not a decorative image.
+- Large size on the index (replacing the page's former standalone `<h1>`); the smaller default size everywhere else. No other states or sizes.
+- Works with JavaScript disabled — it's a plain anchor and a CSS-masked background image, nothing script-driven.
+- Not present in the admin app (§1) — that surface has its own hub header, unaffected.
+
+---
+
 ### 2.5 Claim-listing page (2026-07-23 addition; form/payment flow added 2026-07-25, user-approved — supersedes this section's original mailto-only posture)
 
 - Route `/claim/[slug]/`, one per venue, statically generated (`getStaticPaths` over the `spas` collection, same pattern as the venue page). Same shell/typography as a venue page — no pricing-table/SaaS layout (DESIGN.md §10 test applies here too; see DESIGN.md's dated note near §7 for the narrow form-input exception this page now carries).

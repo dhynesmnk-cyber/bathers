@@ -1,0 +1,77 @@
+---
+// 2026-07-26 addition (DESIGN.md §5c) — the seal is the site's mascot/"main
+// character": a persistent home-link logo lockup (seal artwork + wordmark)
+// rendered by BaseLayout on every page, above that page's own content, same
+// in-flow-never-floating posture as ThemeToggle (§5a). Reuses the seal
+// artwork already prepared for margin decoration (icons/animals.ts,
+// DESIGN.md §6a) recoloured the same way (CSS mask, --ink-faded light /
+// white dark) rather than a second favicon-style asset.
+import { ANIMAL_SRC } from "../icons/animals";
+import { SITE_NAME } from "../config";
+
+interface Props {
+  large?: boolean;
+}
+
+const { large = false } = Astro.props;
+---
+
+<a href="/" class={`site-logo ${large ? "site-logo-large" : ""}`} aria-label={`${SITE_NAME} — home`}>
+  <span class="site-logo-icon" style={`--animal-src: url(${ANIMAL_SRC.seal});`}></span>
+  <span class="font-display font-light site-logo-text">{SITE_NAME}</span>
+</a>
+
+<style>
+  .site-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .site-logo:hover .site-logo-text,
+  .site-logo:focus-visible .site-logo-text {
+    color: var(--thermal);
+  }
+
+  .site-logo-icon {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    background-color: var(--ink-faded);
+    -webkit-mask-image: var(--animal-src);
+    mask-image: var(--animal-src);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-position: center;
+    mask-position: center;
+  }
+
+  .site-logo-text {
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    line-height: 1;
+  }
+
+  .site-logo-large .site-logo-icon {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  .site-logo-large .site-logo-text {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+  }
+
+  :root[data-theme="dark"] .site-logo-icon {
+    background-color: #ffffff;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .site-logo-icon {
+      background-color: #ffffff;
+    }
+  }
+</style>

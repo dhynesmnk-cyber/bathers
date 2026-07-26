@@ -42,11 +42,7 @@ const allVenues = venues.map((v) => ({
   description={SITE_TAGLINE}
 >
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
-    <header class="rise-in mb-16" style="position: relative;">
-      <MarginAnimal name="otter" />
-      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
-        {SITE_NAME}
-      </h1>
+    <header class="rise-in mb-16">
       <p class="mono mt-2 text-[var(--ink-faded)]">{SITE_TAGLINE}</p>
       <p class="mono mt-3 text-[var(--ink-faded)]">Free to use. No ads. No sponsored listings.</p>
       <p class="mono mt-4"><a href="/blog/">Journal</a></p>
@@ -141,7 +137,7 @@ const allVenues = venues.map((v) => ({
     </section>
 
     <section class="rise-in" style="animation-delay: 270ms; position: relative;" aria-labelledby="results-heading">
-      <MarginAnimal name="penguin" />
+      <MarginAnimal name="otter" />
       <div class="mono mb-6 flex items-center gap-4 text-[var(--ink-faded)]">
         <span id="results-heading">RESULTS</span>
         <span class="draw-line h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>

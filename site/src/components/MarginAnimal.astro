@@ -1,8 +1,12 @@
 ---
 // DESIGN.md §6a — sparse decorative margin illustration, homepage only.
-// Mirrors Icon.astro's shape; kept separate because these are decorative
-// (ANIMAL_PATHS) rather than functional (ICON_PATHS/IconKey).
-import { ANIMAL_PATHS, type AnimalKey } from "../icons/animals";
+// Source artwork lives in the repo-root `Icons and logos/` folder (committed
+// source assets, TRD.md §3); these are the downscaled, alpha-cropped copies
+// actually served. Recoloured via CSS mask rather than inline SVG/currentColor
+// stroke (unlike Icon.astro/paths.ts) because the source is raster, not
+// hand-authored paths — the mask uses each PNG's alpha channel only, so the
+// original export tint never matters.
+import { ANIMAL_SRC, type AnimalKey } from "../icons/animals";
 
 interface Props {
   name: AnimalKey;
@@ -12,36 +16,49 @@ interface Props {
 const { name, size = 48 } = Astro.props;
 ---
 
-<span class="margin-animal" aria-hidden="true">
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="1.6"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    set:html={ANIMAL_PATHS[name]}
-  />
-</span>
+<span
+  class="margin-animal"
+  aria-hidden="true"
+  style={`width:${size}px; height:${size}px; --animal-src: url(${ANIMAL_SRC[name]});`}
+></span>
 
 <style>
   /* DESIGN.md §6a — lives in the reading spine's wide right margin, never
-     inline with copy; collapses out below 640px rather than squeezing into
-     the single-column layout (§9's 360px floor). */
+     inline with copy; collapses out below 1024px rather than squeezing into
+     the single-column layout. Light mode uses the decorative --ink-faded
+     tone; dark mode is forced to pure white (not --ink/--ink-faded) since
+     the artwork reads better at full contrast against the near-black paper
+     than the olive ink tones do. */
   .margin-animal {
     display: none;
     position: absolute;
     left: 100%;
     margin-left: 1.5rem;
     top: 0;
-    color: var(--ink-faded);
+    background-color: var(--ink-faded);
+    -webkit-mask-image: var(--animal-src);
+    mask-image: var(--animal-src);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-position: center;
+    mask-position: center;
   }
 
   @media (min-width: 1024px) {
     .margin-animal {
       display: block;
+    }
+  }
+
+  :root[data-theme="dark"] .margin-animal {
+    background-color: #ffffff;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .margin-animal {
+      background-color: #ffffff;
     }
   }
 </style>

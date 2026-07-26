@@ -35,7 +35,7 @@ One repo, two clearly separated applications sharing a content directory. No Pyt
         /_published       # approved MDX (the only content Astro builds from)
       /blog
         /_published       # published posts (2026-07-21, SCHEMA.md §7)
-    /components           # Map.astro, VenueEntry.astro, Features.astro, Icon.astro, Pull.astro, TippedPhoto.astro, CornerMenu.astro
+    /components           # VenueEntry.astro, Features.astro, Icon.astro, MarginAnimal.astro, Pull.astro, TippedPhoto.astro, CornerMenu.astro (2026-07-26: Map.astro removed, see §2)
     /icons/paths.ts        # hand-authored inline SVG icon set (DESIGN.md §6)
     /data/venues.json     # generated on approve — committed
     /pages
@@ -50,6 +50,7 @@ One repo, two clearly separated applications sharing a content directory. No Pyt
       /blog/[slug].astro
   /public/venues.geojson  # generated on approve — committed
   /public/blog-images     # published blog images — committed
+  /public/animals         # 2026-07-26 — downscaled margin-decoration artwork (DESIGN.md §6a), sourced from /Icons and logos below
 /admin                    # FastAPI app
   app.py  config.py  pipeline/  templates/  static/
 /content-staging          # OUTSIDE site/src/content so Astro never builds drafts
@@ -57,6 +58,7 @@ One repo, two clearly separated applications sharing a content directory. No Pyt
 /data/directory.db        # committed derived DB
 /temp_data                # scrape output + candidate images — gitignored
 /PROMPTS                  # agent prompt files, loaded at runtime by admin app
+/Icons and logos          # 2026-07-26 addition — committed source design assets (user-supplied), not built; downscaled derivatives served from site/public/animals
 .env  .env.example  .gitignore
 ```
 
