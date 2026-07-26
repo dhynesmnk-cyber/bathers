@@ -82,7 +82,7 @@ const features: Feature[] = [
           title={feature.title ?? feature.label}
         >
           <Icon name={feature.icon} size={feature.secondary ? 14 : compact ? 16 : 18} />
-          {!compact && <span class="mono text-sm">{feature.label}</span>}
+          <span class:list={["mono text-sm", compact && "sr-only"]}>{feature.label}</span>
         </a>
       ) : (
         <span
@@ -91,7 +91,7 @@ const features: Feature[] = [
           title={feature.title ?? feature.label}
         >
           <Icon name={feature.icon} size={feature.secondary ? 14 : compact ? 16 : 18} />
-          {!compact && <span class="mono text-sm">{feature.label}</span>}
+          <span class:list={["mono text-sm", compact && "sr-only"]}>{feature.label}</span>
         </span>
       ),
     )

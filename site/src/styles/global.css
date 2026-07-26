@@ -233,6 +233,22 @@ svg {
   letter-spacing: 0.05em;
 }
 
+/* Visually hidden but present in the DOM/accessibility tree — for compact
+   chip labels (Features.astro) that carry an icon-only look but still need
+   an accessible name. Clip-based, not display:none, so it reads with CSS
+   disabled too (DESIGN.md §9). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* DESIGN.md §7a — the site's one button-styled element. Combine with .mono
    for the type treatment; this class only carries the box/colour/shape. */
 .book-now-btn {
