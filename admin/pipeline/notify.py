@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import html
 import logging
 import smtplib
 from email.message import EmailMessage
@@ -24,7 +25,7 @@ from admin.pipeline.claims_store import ClaimRequest
 PLAN_LABELS = {"one_off": "one-off $25 processing fee", "subscription": "$5/month unlimited-changes subscription"}
 
 
-def _send(to_addr: str, subject: str, body_text: str) -> None:
+def _send(to_addr: str, subject: str, body_text: str, body_html: str | None = None) -> None:
     if not SMTP_HOST:
         return  # unconfigured in local dev — silently no-op rather than error the caller
 
@@ -33,6 +34,11 @@ def _send(to_addr: str, subject: str, body_text: str) -> None:
     message["To"] = to_addr
     message["Subject"] = subject
     message.set_content(body_text)
+    if body_html:
+        # multipart/alternative via stdlib email — no new dependency. Mail
+        # clients that render HTML (effectively all of them) show this;
+        # text-only clients fall back to the plain part set above.
+        message.add_alternative(body_html, subtype="html")
 
     # A mail failure must never take down the caller — the claim/approval/
     # denial it's reporting on has already happened and is safely recorded;
@@ -83,12 +89,28 @@ def send_claim_notification_email(request: ClaimRequest, venue_name: str, diff: 
 
 def send_approval_payment_email(request: ClaimRequest, venue_name: str, checkout_url: str) -> None:
     plan_label = PLAN_LABELS.get(request.plan_type, request.plan_type)
-    body = (
-        f"Your requested changes to the {venue_name} listing have been approved.\n\n"
-        f"To publish them, complete payment for the {plan_label}:\n{checkout_url}\n\n"
-        f"Your changes will go live automatically as soon as payment is confirmed."
+    text_body = (
+        f"YOUR UPDATE ISN'T LIVE YET — one step left.\n\n"
+        f"Your requested changes to the {venue_name} listing have been approved, but they will "
+        f"not publish until payment is completed for the {plan_label}.\n\n"
+        f"Finish here: {checkout_url}\n\n"
+        f"Your changes go live automatically, with no further action, the moment payment is confirmed."
     )
-    _send(request.requester_email, f"Your listing update for {venue_name} is approved", body)
+    safe_venue = html.escape(venue_name)
+    safe_plan = html.escape(plan_label)
+    html_body = (
+        f"<p><strong>Your update isn't live yet — one step left.</strong></p>"
+        f"<p>Your requested changes to the {safe_venue} listing have been approved, but they "
+        f"will not publish until payment is completed for the {safe_plan}.</p>"
+        f'<p><a href="{checkout_url}">Click here to finalise your payment with Stripe</a></p>'
+        f"<p>Your changes go live automatically, with no further action, the moment payment is confirmed.</p>"
+    )
+    _send(
+        request.requester_email,
+        f"Action needed — finish your {venue_name} listing update",
+        text_body,
+        html_body,
+    )
 
 
 def send_approval_no_payment_email(request: ClaimRequest, venue_name: str) -> None:

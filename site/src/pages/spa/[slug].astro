@@ -94,6 +94,29 @@ const faqLd = data.faq && data.faq.length > 0
       <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
         {data.name}
       </h1>
+
+      {/* Claim-payment redirect landing (2026-07-26) — Stripe's success_url/
+          cancel_url both point back here with a ?claim= query param
+          (admin/pipeline/claims.py). A static page can't read a visitor's
+          query string at build time, so visibility is toggled client-side
+          below. Plain in-flow notice, not a modal/toast (UX.md §3). */}
+      <div
+        id="claim-status-success"
+        class="mono mt-6"
+        style="border-top: 1px solid color-mix(in srgb, var(--thermal) 40%, transparent); background: var(--paper-raised); padding: 1rem 1.5rem;"
+        hidden
+      >
+        Payment received — your update is being processed and will appear here shortly.
+      </div>
+      <div
+        id="claim-status-cancelled"
+        class="mono mt-6"
+        style="border-top: 1px solid color-mix(in srgb, var(--oxide) 40%, transparent); background: var(--paper-raised); padding: 1rem 1.5rem;"
+        hidden
+      >
+        Payment wasn't completed — this listing hasn't changed. Use the link in your email to try again.
+      </div>
+
       <div class="mt-2 mb-12">
         <Features
           latitude={data.latitude}
@@ -166,3 +189,12 @@ const faqLd = data.faq && data.faq.length > 0
     </article>
   </main>
 </BaseLayout>
+
+<script>
+  const claimStatus = new URLSearchParams(window.location.search).get("claim");
+  if (claimStatus === "success") {
+    document.getElementById("claim-status-success")?.removeAttribute("hidden");
+  } else if (claimStatus === "cancelled") {
+    document.getElementById("claim-status-cancelled")?.removeAttribute("hidden");
+  }
+</script>
