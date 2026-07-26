@@ -35,19 +35,36 @@
           {{ data.get("name") or "(untitled)" }}
         </h1>
         <div class="mt-2 mb-12">
-          <p class="mono flex flex-wrap items-center gap-x-2 text-[var(--ink-faded)]">
+          <p class="mono flex flex-wrap items-center gap-x-3 gap-y-2 text-[var(--ink-faded)]">
             {% if data.get("latitude") is not none and data.get("longitude") is not none %}
             <span>{{ "%.4f"|format(data.get("latitude")|abs) }}° S, {{ "%.4f"|format(data.get("longitude")) }}° E</span>
-            <span aria-hidden="true">·</span>
             {% endif %}
             <span>{{ data.get("state") or "(state)" }}</span>
-            {% set notation = {"magnesium_pool": "Magnesium pool", "infrared_sauna": "Infrared sauna", "traditional_sauna": "Traditional sauna", "cold_plunge": "Cold plunge", "led_therapy": "LED light therapy"} %}
-            {% set short = {"magnesium_pool": "Mg", "infrared_sauna": "IR", "traditional_sauna": "SA", "cold_plunge": "CP", "led_therapy": "LED"} %}
-            {% for key, full in notation.items() %}
+            {% for key in amenity_keys %}
               {% if data.get("amenities", {}).get(key) %}
-              <span aria-hidden="true">·</span>
-              <span tabindex="0" class="notation-item relative cursor-default text-[var(--ink)]">
-                <b class="short font-medium">{{ short[key] }}</b><i class="full"> {{ full }}</i>
+              <span class="feature-chip inline-flex items-center gap-1 text-[var(--ink)]" title="{{ amenity_labels[key] }}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ icon_paths[key] | safe }}</svg>
+                <span class="text-sm">{{ amenity_labels[key] }}</span>
+              </span>
+              {% endif %}
+            {% endfor %}
+            {% if data.get("hours") %}
+            <span class="feature-chip inline-flex items-center gap-1 text-[var(--ink)]" title="{{ data.get('hours') }}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ icon_paths["hours"] | safe }}</svg>
+              <span class="text-sm">{{ data.get("hours") }}</span>
+            </span>
+            {% endif %}
+            {% if data.get("cost") %}
+            <span class="feature-chip inline-flex items-center gap-1 text-[var(--ink)]" title="{{ data.get('cost') }}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ icon_paths["cost"] | safe }}</svg>
+              <span class="text-sm">{{ data.get("cost") }}</span>
+            </span>
+            {% endif %}
+            {% for key in facility_keys %}
+              {% if data.get("facilities", {}).get(key) %}
+              <span class="feature-chip inline-flex items-center gap-1 text-[var(--ink-faded)]" title="{{ facility_labels[key] }}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ icon_paths[key] | safe }}</svg>
+                <span class="text-sm">{{ facility_labels[key] }}</span>
               </span>
               {% endif %}
             {% endfor %}
@@ -74,21 +91,29 @@
 
         <div class="mono mt-16 pt-6" style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent); background: var(--paper-raised); padding: 1.5rem;">
           <p>{{ data.get("address") or "(address)" }}</p>
+          {% if data.get("access") %}<p class="mt-4">{{ data.get("access") }}</p>{% endif %}
+          {% if data.get("cost") %}<p class="mt-4 text-[var(--ink-faded)]">{{ data.get("cost") }}</p>{% endif %}
+          {% if temperature_line %}<p class="mt-4 text-[var(--ink-faded)]">{{ temperature_line }}</p>{% endif %}
+          {% if data.get("dress_code") %}<p class="mt-4">Dress code: {{ dress_code_labels.get(data.get("dress_code"), data.get("dress_code")) }}</p>{% endif %}
+          {% if session_gender_line %}<p class="mt-4">{{ session_gender_line }}</p>{% endif %}
+          {% if data.get("silence_policy") %}<p class="mt-4">{{ data.get("silence_policy") }}</p>{% endif %}
+          {% if data.get("phone_policy") %}<p class="mt-4">{{ data.get("phone_policy") }}</p>{% endif %}
+          {% if data.get("minimum_age") %}<p class="mt-4">Minimum age {{ data.get("minimum_age") }}</p>{% endif %}
           {% if data.get("website") %}
           <p class="mt-4">
             <a href="{{ data.get('website') }}" class="book-now-btn mono" target="_blank" rel="noopener">Book now</a>
           </p>
           {% endif %}
-          <p class="mt-4">
-            <a href="mailto:claim@bathers.example">Claim this listing</a>
-          </p>
+          <p class="mt-4 text-[var(--ink-faded)]">[Claim this listing — link becomes active once approved]</p>
+          {% if data.get("verified") %}
+          <p class="mt-4 text-[var(--ink-faded)]">Information verified {{ data.get("verified") }}</p>
+          {% endif %}
         </div>
       </article>
     </main>
 
     <style>
-      .notation-item .full { display: none; font-family: var(--font-body); }
-      .notation-item:hover .full, .notation-item:focus-within .full { display: inline; }
+      .feature-chip svg { flex-shrink: 0; }
     </style>
   </body>
 </html>

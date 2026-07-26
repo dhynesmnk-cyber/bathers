@@ -25,8 +25,11 @@ from starlette.requests import Request
 from admin.config import (
     ADMIN_PASSWORD,
     ADMIN_USERNAME,
+    AMENITY_KEYS,
     CATEGORY_LABELS,
     DRESS_CODE_LABELS,
+    FACILITY_KEYS,
+    FACILITY_LABELS,
     SESSION_GENDER_LABELS,
     SITE_BLOG_IMAGES_DIR,
     SITE_DIST_DIR,
@@ -37,7 +40,13 @@ from admin.config import (
     STRIPE_WEBHOOK_SECRET,
     VENUES_JSON_PATH,
 )
-from admin.mdx_preview import render_body_html
+from admin.mdx_preview import (
+    AMENITY_LABELS,
+    ICON_PATHS,
+    render_body_html,
+    session_gender_line,
+    temperature_line,
+)
 from admin.pipeline import blog, claims, claims_store, deploy, discovery, goatcounter, images, notify, orchestrator, places, staging, stripe_client
 from admin.pipeline.blog import ValidationFailed as BlogValidationFailed
 from admin.pipeline.staging import UndoExpired, ValidationFailed
@@ -188,13 +197,22 @@ def preview(request: Request, slug: str):
             entry = staging.get_published(slug)
         except FileNotFoundError:
             raise HTTPException(404, f"no draft or published venue for '{slug}'")
+    data = entry.frontmatter
     return templates.TemplateResponse(
         request,
         "preview.html",
         {
-            "data": entry.frontmatter,
+            "data": data,
             "body_html": render_body_html(entry.body),
             "css_hrefs": _site_css_hrefs(),
+            "amenity_keys": AMENITY_KEYS,
+            "amenity_labels": AMENITY_LABELS,
+            "facility_keys": FACILITY_KEYS,
+            "facility_labels": FACILITY_LABELS,
+            "dress_code_labels": DRESS_CODE_LABELS,
+            "icon_paths": ICON_PATHS,
+            "temperature_line": temperature_line(data.get("temperatures")),
+            "session_gender_line": session_gender_line(data),
         },
     )
 
