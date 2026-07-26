@@ -41,7 +41,7 @@ Discover and Harvest share the leftmost column, Discover on top — it's the pre
 
 A pre-fill step ahead of the harvest flow below, not a replacement for it (TRD.md §8 exception — admin-side discovery only, never public-site search). Lives at the top of the Harvest column, directly above the URL input — the first thing a reviewer sees there:
 
-- A state dropdown (reusing the same eight-state enum as everywhere else) and an optional free-text keyword override (defaults to `day spa, bathhouse, hot springs, thermal baths` if left blank). `Search` runs a Google Places Text Search for those terms in that state.
+- A state dropdown (reusing the same eight-state enum as everywhere else) and an optional free-text keyword override (defaults to `bathhouse, hot springs, thermal baths, sauna` if left blank — 2026-07-26: `day spa` dropped per TRD.md §8's scope note). `Search` runs a Google Places Text Search for those terms in that state.
 - Results appear as a checked-by-default list (name + formatted address), already deduplicated against every venue currently published or staged — a venue already in the pipeline never reappears as "new."
 - `Queue selected` sends each checked candidate's website through the **existing** single-URL harvest endpoint, one after another — this does not change the "one job at a time" harvest model (§1.1); it only automates pasting URLs a human would otherwise type in one at a time. Each queued item streams through the same live log pane as a normal harvest, including all of §1.5's failure states (a duplicate slug mid-batch fails that one item cleanly without stopping the rest).
 - Discovery itself never harvests, stages, or writes anything — it only returns a list for the reviewer to select from.
@@ -60,7 +60,7 @@ The human-in-the-loop verification surface. Split view:
 
 - **Left: rendered preview** of the MDX using the *actual public venue-page styles* (import the same CSS). Reviewing in a different skin from what ships is how errors slip through.
 - **Right: structured frontmatter editor.**
-  - Text fields (name, state) as inputs, plus a `category` dropdown (SCHEMA.md §2, 2026-07-22: `thermal_springs`/`bathhouse`/`day_spa`/`other`).
+  - Text fields (name, state) as inputs, plus a `category` dropdown (SCHEMA.md §2, 2026-07-26: `thermal_springs`/`bathhouse`/`hotel_spa`/`other`).
   - **No coordinate inputs (2026-07-22 removal).** Coordinates are geocoded from `address` automatically (Nominatim, cached) and are no longer reviewer-editable — a failed geocode just means the venue publishes with no map marker rather than blocking approval. The old paired lat/long inputs and static pin thumbnail are gone.
   - Amenity booleans as toggle chips using the field-notation abbreviations (`Mg` `IR` `SA` `CP` `LED`). Toggling updates frontmatter in place. This is where the reviewer corrects the AI's amenity extraction before it becomes canonical.
   - `Hours` and `Cost` as freeform text inputs (SCHEMA.md §2, 2026-07-21) — drafted by the Architect from harvested facts, reviewer-editable, left blank rather than guessed when undocumented.

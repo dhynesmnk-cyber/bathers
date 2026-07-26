@@ -7,7 +7,7 @@
 
 ## 1. Objective
 
-A textured, editorial directory of Australian day spas and bathhouses. A local Python admin app orchestrates an AI pipeline (scrape → extract → draft → polish) into a staging queue; a human approves drafts; approved MDX files and a derived data file are committed and pushed, triggering a static Netlify build. No cloud database, no CMS, no runtime backend for the public site.
+A textured, editorial directory of Australian bathhouses, thermal springs, and hotel spas — anywhere with a pool or a sauna as a central offering (2026-07-26: narrowed from "day spas and bathhouses"; see §8's scope note). A local Python admin app orchestrates an AI pipeline (scrape → extract → draft → polish) into a staging queue; a human approves drafts; approved MDX files and a derived data file are committed and pushed, triggering a static Netlify build. No cloud database, no CMS, no runtime backend for the public site.
 
 ## 2. Core Stack (fixed — do not substitute)
 
@@ -92,6 +92,8 @@ Also implement UX.md §6 (2026-07-21) — the `/blog` authoring screen and its o
 ## 8. Out of Scope (v1)
 
 Accounts/auth, reviews by users, search, analytics, image galleries (one image max), any hosted database, any serverless functions.
+
+**Scope note (user-approved, 2026-07-26):** pure treatment/wellness spas, head spas, and dental spas are out of scope — a venue must have a pool or a sauna as a central offering, not a menu add-on inside an otherwise massage/facial-led business. This retires `day_spa` as a category (SCHEMA.md §2) in favour of `hotel_spa` for hotel/lodge venues that do have a real bathing circuit; see `admin/pipeline/discovery.py` (discovery keywords), `PROMPTS/harvester.md` and `admin/pipeline/orchestrator.py` (the automated pool-or-sauna eligibility check) for enforcement. Eight previously published venues with no qualifying pool/sauna were removed under this rule (parked in `content-staging/_deleted/`, never destroyed).
 
 **Exception (user-approved, 2026-07-20):** a minimal, single-purpose exception to the "analytics" exclusion above — GoatCounter click tracking on the Book Now button only (no page-view analytics, no dashboards beyond a simple admin read-back of per-venue click counts). See `admin/pipeline/goatcounter.py`. Nothing else in this list is affected; general site analytics remains out of scope.
 

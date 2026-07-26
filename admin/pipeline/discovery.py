@@ -17,7 +17,7 @@ from admin.config import PUBLISHED_DIR, STAGING_DIR
 from admin.pipeline import places
 from admin.pipeline.staging import split_frontmatter
 
-DEFAULT_KEYWORDS = ("day spa", "bathhouse", "hot springs", "thermal baths")
+DEFAULT_KEYWORDS = ("bathhouse", "hot springs", "thermal baths", "sauna")  # "day spa" dropped 2026-07-26 — see TRD.md §8's scope note
 MAX_PAGES = 3  # ~20 results/page — a sane cap on paginated Text Search billing
 PAGE_TOKEN_DELAY_SECONDS = 2.0  # Places API needs a short delay before a nextPageToken is valid
 

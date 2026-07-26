@@ -35,7 +35,7 @@ Practical/logistics info, distinct from the bathing-experience amenities above �
 |---|---|---|---|
 | `name` | string | ✓ | Venue's actual trading name. |
 | `state` | enum | ✓ | One of `VIC NSW QLD SA WA TAS NT ACT`. |
-| `category` | enum | ✓ | *(2026-07-22)* One of `thermal_springs`, `bathhouse`, `day_spa`, `other` — matches the discovery-keyword vocabulary in UX.md §1.1. Set by the Architect from the Google Places block's `primaryType` or editorial judgement; reviewer-editable. |
+| `category` | enum | ✓ | *(2026-07-22, `day_spa` retired/`hotel_spa` added 2026-07-26)* One of `thermal_springs`, `bathhouse`, `hotel_spa`, `other`. The directory is scoped to venues with a pool or a sauna as a central offering; `hotel_spa` is for hotel/lodge venues with a real bathing circuit, not a treatment-only spa. Set by the Architect from the Google Places block's `primaryType` or editorial judgement; reviewer-editable. |
 | `suburb` | string | ✓ | |
 | `address` | string | ✓ | Street address, single line. |
 | `latitude` | number | – | *(2026-07-22: no longer required)* −44.0 … −9.0 (AU bounds when present; build fails outside). Null when geocoding the address found no match — the venue simply doesn't appear on the map, it is not blocked from publishing. No manual entry UI; see §4. |

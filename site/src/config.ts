@@ -65,15 +65,16 @@ export function poolTypeFromUrlSlug(segment: string): (typeof POOL_TYPES)[number
   return POOL_TYPES.find((t) => t.slug === segment);
 }
 
-// Venue categories (2026-07-22 addition — see SCHEMA.md §2). Values match the
-// discovery-keyword vocabulary already in use (UX.md §1.1): "day spa,
-// bathhouse, hot springs, thermal baths".
-export const CATEGORIES = ["thermal_springs", "bathhouse", "day_spa", "other"] as const;
+// Venue categories (2026-07-22 addition, day_spa retired 2026-07-26 — see
+// SCHEMA.md §2). A venue must have a pool or a sauna as a central offering;
+// hotel_spa covers hotel/lodge venues with a real bathing circuit, distinct
+// from a standalone communal bathhouse.
+export const CATEGORIES = ["thermal_springs", "bathhouse", "hotel_spa", "other"] as const;
 
 export const CATEGORY_LABELS: Record<(typeof CATEGORIES)[number], string> = {
   thermal_springs: "Thermal springs",
   bathhouse: "Bathhouse",
-  day_spa: "Day spa",
+  hotel_spa: "Hotel spa",
   other: "Other",
 };
 

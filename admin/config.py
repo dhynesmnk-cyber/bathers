@@ -127,13 +127,13 @@ AMENITY_KEYS = (
     "led_therapy",
 )
 
-# Venue categories (2026-07-22 addition) — see SCHEMA.md §2.
-CATEGORY_KEYS = ("thermal_springs", "bathhouse", "day_spa", "other")
+# Venue categories (2026-07-22 addition, day_spa retired 2026-07-26) — see SCHEMA.md §2.
+CATEGORY_KEYS = ("thermal_springs", "bathhouse", "hotel_spa", "other")
 
 CATEGORY_LABELS = {
     "thermal_springs": "Thermal springs",
     "bathhouse": "Bathhouse",
-    "day_spa": "Day spa",
+    "hotel_spa": "Hotel spa",
     "other": "Other",
 }
 

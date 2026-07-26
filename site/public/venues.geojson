@@ -6,43 +6,6 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          144.8509603,
-          -37.7784329
-        ]
-      },
-      "properties": {
-        "slug": "city-cave-braybrook",
-        "name": "City Cave Braybrook",
-        "state": "VIC",
-        "category": "day_spa",
-        "suburb": "Braybrook",
-        "status": "unclaimed",
-        "summary": "Float therapy, infrared sauna, and massage in a treatment-led day spa inside the Home and Co. complex on Ballarat Rd.",
-        "has_image": true,
-        "amenities": {
-          "magnesium_pool": false,
-          "infrared_sauna": true,
-          "traditional_sauna": false,
-          "cold_plunge": false,
-          "led_therapy": true
-        },
-        "facilities": {
-          "parking": false,
-          "towels_provided": false,
-          "changerooms": false,
-          "bookings_required": false,
-          "wheelchair_access": false,
-          "outdoor_pool": false,
-          "indoor_pool": false,
-          "natural_spring": false
-        }
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
           145.7182,
           -37.5493
         ]

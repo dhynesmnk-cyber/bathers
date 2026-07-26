@@ -210,6 +210,20 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False, allow_existing_
         yield from drain()
         return
 
+    # Pool-or-sauna eligibility (TRD.md §8's 2026-07-26 scope note): a venue
+    # must have a real pool or sauna as a central offering, not just a
+    # treatment menu. `facts.pools` (not just the `magnesium_pool` boolean)
+    # is checked too, since the Harvester only sets that boolean when the
+    # word "magnesium" appears — a genuine thermal-springs/artesian venue
+    # with no magnesium/sauna wording would otherwise be wrongly rejected.
+    amenities = harvester_data.get("amenities") or {}
+    has_sauna_or_named_pool = any(amenities.get(k) for k in ("magnesium_pool", "infrared_sauna", "traditional_sauna"))
+    has_pool_evidence = bool((harvester_data.get("facts") or {}).get("pools"))
+    if not (has_sauna_or_named_pool or has_pool_evidence):
+        log("no pool or sauna evidence on this page — out of scope for this directory", "error")
+        yield from drain()
+        return
+
     slug = slugify(name)
     if not allow_existing_slug:
         if (PUBLISHED_DIR / f"{slug}.mdx").exists():
