@@ -3,7 +3,6 @@ import { getCollection } from "astro:content";
 import CornerMenu from "../components/CornerMenu.astro";
 import GrainOverlay from "../components/GrainOverlay.astro";
 import SiteLogo from "../components/SiteLogo.astro";
-import ThemeToggle from "../components/ThemeToggle.astro";
 import { AMENITY_KEYS, AMENITY_NOTATION, CATEGORY_LABELS, GOATCOUNTER_SITE, SITE_NAME, SITE_TAGLINE, STATE_NAMES } from "../config";
 import "../styles/global.css";
 
@@ -90,7 +89,6 @@ const searchIndex = searchVenues.map((v) => ({
       <GrainOverlay />
       <div class="mx-auto max-w-3xl px-6 pt-6">
         <SiteLogo large={isHome} />
-        <ThemeToggle />
       </div>
       <slot />
       <CornerMenu />

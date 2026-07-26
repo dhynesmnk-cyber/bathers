@@ -32,7 +32,7 @@ AMENITY_FIELD_ORDER = (
 )
 FACILITY_FIELD_ORDER = (
     "parking", "towels_provided", "changerooms", "bookings_required", "wheelchair_access",
-    "outdoor_pool", "indoor_pool", "natural_spring",
+    "outdoor_pool", "indoor_pool", "natural_spring", "pregnancy_safe",
 )
 
 UNDO_WINDOW_SECONDS = 10  # client shows a 3s undo affordance; server keeps a wider grace window

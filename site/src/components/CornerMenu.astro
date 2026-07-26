@@ -2,9 +2,29 @@
 // Fixed corner menu (UX.md §3 / DESIGN.md §5b, 2026-07-22 exception) — the
 // site's one deliberate departure from "never fixed, never floating".
 // Rendered once from BaseLayout so it appears on every page.
+//
+// 2026-07-26 revision: reworked from a small dropdown panel into a
+// full-height slide-out drawer, and restructured into three tiers — state
+// (+ pool setting) as the primary tier, then a single "More" group holding
+// feature browsing, venue type, glossary and journal. See DESIGN.md §5b.
+//
+// 2026-07-26 addition: the light/dark ThemeToggle now renders here, in the
+// first tier alongside search + Home, instead of in-flow at the top of every
+// page — see DESIGN.md §5a/§5b.
 import { getCollection } from "astro:content";
+import Icon from "./Icon.astro";
 import SearchBox from "./SearchBox.astro";
-import { CATEGORIES, CATEGORY_LABELS, POOL_TYPES, STATE_NAMES, STATES, categoryUrlSlug } from "../config";
+import ThemeToggle from "./ThemeToggle.astro";
+import {
+  AMENITY_KEYS,
+  AMENITY_NOTATION,
+  CATEGORIES,
+  CATEGORY_LABELS,
+  POOL_TYPES,
+  STATE_NAMES,
+  STATES,
+  categoryUrlSlug,
+} from "../config";
 
 const venues = await getCollection("spas");
 
@@ -19,6 +39,7 @@ const stateMenu = STATES.filter((state) => venues.some((v) => v.data.state === s
   };
 });
 const presentCategories = CATEGORIES.filter((category) => venues.some((v) => v.data.category === category));
+const presentAmenities = AMENITY_KEYS.filter((key) => venues.some((v) => v.data.amenities?.[key]));
 ---
 
 <div class="corner-menu">
@@ -32,14 +53,16 @@ const presentCategories = CATEGORIES.filter((category) => venues.some((v) => v.d
   >
     MENU
   </button>
-  <nav id="corner-menu-panel" class="mono corner-menu-panel" aria-label="Site menu" hidden>
+  <nav id="corner-menu-panel" class="mono corner-menu-panel" aria-label="Site menu" aria-hidden="true" inert>
     <SearchBox id="search-corner" placeholder="Search venues…" />
     <a href="/">Home</a>
-    <span class="corner-menu-heading">Find a bath by state</span>
+    <ThemeToggle />
+
+    <span class="corner-menu-heading corner-menu-heading-primary">Find a bath by state</span>
     {
       stateMenu.map(({ state, poolTypes }) => (
         <div class="corner-menu-state">
-          <a href={`/${state.toLowerCase()}/`}>{STATE_NAMES[state]}</a>
+          <a class="corner-menu-state-link" href={`/${state.toLowerCase()}/`}>{STATE_NAMES[state]}</a>
           {poolTypes.length > 0 && (
             <div class="corner-menu-subrow">
               {poolTypes.map((t) => (
@@ -50,11 +73,31 @@ const presentCategories = CATEGORIES.filter((category) => venues.some((v) => v.d
         </div>
       ))
     }
-    <span class="corner-menu-heading">Find a bath by type</span>
-    {presentCategories.map((category) => <a href={`/category/${categoryUrlSlug(category)}/`}>{CATEGORY_LABELS[category]}</a>)}
+
     <span class="corner-menu-heading">More</span>
-    <a href="/glossary/">Glossary</a>
-    <a href="/blog/">Journal</a>
+    <div class="corner-menu-more">
+      <span class="corner-menu-subheading">Browse by feature</span>
+      <div class="corner-menu-features">
+        {
+          presentAmenities.map((key) => (
+            <a class="corner-menu-feature-link" href={`/?amenities=${key}#results-heading`}>
+              <Icon name={key} size={20} />
+              {AMENITY_NOTATION[key].full}
+            </a>
+          ))
+        }
+      </div>
+
+      <span class="corner-menu-subheading">By venue type</span>
+      {
+        presentCategories.map((category) => (
+          <a href={`/category/${categoryUrlSlug(category)}/`}>{CATEGORY_LABELS[category]}</a>
+        ))
+      }
+
+      <a href="/glossary/">Glossary</a>
+      <a href="/blog/">Journal</a>
+    </div>
   </nav>
 </div>
 
@@ -65,23 +108,25 @@ const presentCategories = CATEGORIES.filter((category) => venues.some((v) => v.d
     if (!btn || !panel) return;
 
     function setOpen(open) {
-      panel.hidden = !open;
+      panel.classList.toggle("is-open", open);
+      panel.toggleAttribute("inert", !open);
+      panel.setAttribute("aria-hidden", String(!open));
       btn.setAttribute("aria-expanded", String(open));
     }
 
     btn.addEventListener("click", function () {
-      setOpen(panel.hidden);
+      setOpen(!panel.classList.contains("is-open"));
     });
 
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && !panel.hidden) {
+      if (e.key === "Escape" && panel.classList.contains("is-open")) {
         setOpen(false);
         btn.focus();
       }
     });
 
     document.addEventListener("click", function (e) {
-      if (!panel.hidden && e.target !== btn && !panel.contains(e.target)) {
+      if (panel.classList.contains("is-open") && e.target !== btn && !panel.contains(e.target)) {
         setOpen(false);
       }
     });
@@ -110,34 +155,71 @@ const presentCategories = CATEGORIES.filter((category) => venues.some((v) => v.d
     color: var(--thermal);
   }
 
+  /* Slide-out drawer (2026-07-26 exception — DESIGN.md §9). Permanently
+     mounted, off-canvas via `transform`, not `hidden` — a `hidden`-attribute
+     toggle can't be transitioned. `inert`/`aria-hidden` (kept in sync by the
+     script above) stop the closed-but-in-DOM panel being tabbable. No
+     dimming scrim, deliberately — the page stays visible behind the drawer
+     so it reads as a folding-out panel, not an app-style off-canvas menu.
+     The transform transition is neutralised automatically by global.css's
+     reduced-motion kill-switch (it's a plain CSS transition, not JS-driven). */
   .corner-menu-panel {
-    position: absolute;
+    position: fixed;
+    top: 0;
     right: 0;
-    top: calc(100% + 0.5rem);
+    height: 100dvh;
+    width: min(88vw, 22rem);
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
-    min-width: 12rem;
-    max-height: 70vh;
     overflow-y: auto;
     background: var(--paper-raised);
-    border: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
-    padding: 1rem 1.25rem;
+    border-left: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
+    padding: 4rem 1.5rem 2rem;
+    transform: translateX(100%);
+    transition: transform 0.35s ease;
+  }
+
+  .corner-menu-panel.is-open {
+    transform: translateX(0);
   }
 
   .corner-menu-heading {
     display: block;
-    margin-top: 0.4rem;
+    margin-top: 1.5rem;
     color: var(--ink-faded);
+  }
+
+  /* Primary tier ("Find a bath by state") reads heavier than "More" now that
+     the drawer is a full hierarchy rather than two equal sections. */
+  .corner-menu-heading-primary {
+    color: var(--ink);
+    font-size: 14px;
+    letter-spacing: 0.08em;
+  }
+
+  .corner-menu-subheading {
+    display: block;
+    margin-top: 1rem;
+    color: var(--ink-faded);
+    font-size: 11px;
+  }
+
+  .corner-menu-more {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
   }
 
   .corner-menu-panel a {
     display: block;
     text-decoration-color: transparent;
+    transition: color 0.15s ease, text-decoration-color 0.15s ease;
   }
 
   .corner-menu-panel a:hover,
   .corner-menu-panel a:focus-visible {
+    color: var(--thermal);
     text-decoration-color: var(--thermal);
   }
 
@@ -145,6 +227,10 @@ const presentCategories = CATEGORIES.filter((category) => venues.some((v) => v.d
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
+  }
+
+  .corner-menu-state-link {
+    font-size: 15px;
   }
 
   /* Pool-type settings for a state, sitting under its name (2026-07-24). Same
@@ -160,5 +246,18 @@ const presentCategories = CATEGORIES.filter((category) => venues.some((v) => v.d
   .corner-menu-subrow a {
     font-size: 11px;
     color: var(--ink-faded);
+  }
+
+  .corner-menu-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+  }
+
+  .corner-menu-panel a.corner-menu-feature-link {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 12px;
   }
 </style>

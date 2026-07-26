@@ -81,7 +81,7 @@ const features: Feature[] = [
           class:list={[feature.secondary ? "text-[var(--ink-faded)]" : "text-[var(--ink)]"]}
           title={feature.title ?? feature.label}
         >
-          <Icon name={feature.icon} size={feature.secondary ? 12 : compact ? 14 : 16} />
+          <Icon name={feature.icon} size={feature.secondary ? 14 : compact ? 16 : 18} />
           {!compact && <span class="mono text-sm">{feature.label}</span>}
         </a>
       ) : (
@@ -90,7 +90,7 @@ const features: Feature[] = [
           class:list={[feature.secondary ? "text-[var(--ink-faded)]" : "text-[var(--ink)]"]}
           title={feature.title ?? feature.label}
         >
-          <Icon name={feature.icon} size={feature.secondary ? 12 : compact ? 14 : 16} />
+          <Icon name={feature.icon} size={feature.secondary ? 14 : compact ? 16 : 18} />
           {!compact && <span class="mono text-sm">{feature.label}</span>}
         </span>
       ),

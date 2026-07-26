@@ -34,4 +34,9 @@ export const GLOSSARY: Record<GlossaryKey, string> = {
     "The venue has a pool or bathing area under cover, inside a building or an enclosed structure. This flag says nothing about ventilation, natural light, or how the space feels — just that it's roofed.",
   natural_spring:
     "The bathing water is drawn from a natural spring or geothermal source, rather than being municipal water heated and mineral-dosed on site. Temperature, mineral composition, and flow vary by source and aren't independently verified here — check the venue's own page for specifics.",
+  // 2026-07-26 addition — manual reviewer-set flag only (SCHEMA.md §1a); no
+  // structured temperature/depth field exists to derive this automatically,
+  // so it's never Harvester/Architect/Gatekeeper-inferred.
+  pregnancy_safe:
+    "Marked here only when a venue's own materials explicitly describe pregnancy-safe conditions — for example, a specifically designated pool kept below a stated temperature, or an area excluded from the venue's higher-heat circuit. This is not medical guidance; confirm current conditions with the venue and with your own healthcare provider before bathing while pregnant.",
 };

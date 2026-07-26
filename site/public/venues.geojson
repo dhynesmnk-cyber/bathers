@@ -34,7 +34,8 @@
           "wheelchair_access": false,
           "outdoor_pool": true,
           "indoor_pool": true,
-          "natural_spring": true
+          "natural_spring": true,
+          "pregnancy_safe": false
         }
       }
     },
@@ -71,7 +72,8 @@
           "wheelchair_access": false,
           "outdoor_pool": true,
           "indoor_pool": true,
-          "natural_spring": false
+          "natural_spring": false,
+          "pregnancy_safe": false
         }
       }
     }

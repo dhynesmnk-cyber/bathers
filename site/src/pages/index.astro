@@ -5,7 +5,7 @@ import VenueEntry from "../components/VenueEntry.astro";
 import Icon from "../components/Icon.astro";
 import MarginAnimal from "../components/MarginAnimal.astro";
 import SearchBox from "../components/SearchBox.astro";
-import { AMENITY_KEYS, AMENITY_NOTATION, SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES } from "../config";
+import { AMENITY_KEYS, AMENITY_NOTATION, POOL_TYPES, SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES } from "../config";
 
 const venues = await getCollection("spas");
 
@@ -14,10 +14,17 @@ const byState = STATES.map((state) => ({
   venues: venues.filter((v) => v.data.state === state),
 })).filter((group) => group.venues.length > 0);
 
-// Homepage chooser (DESIGN.md §5/§6/§7, 2026-07-23 exception) — amenities
-// with at least one published venue, same "present only" rule as the corner
-// menu's state/category lists.
+// Homepage chooser (DESIGN.md §5/§6/§7, 2026-07-23 exception) — features
+// (formerly labelled "amenities" in copy; schema/field names unchanged, see
+// SCHEMA.md) with at least one published venue, same "present only" rule as
+// the corner menu's state/category lists.
 const presentAmenities = AMENITY_KEYS.filter((key) => venues.some((v) => v.data.amenities?.[key]));
+
+// 2026-07-26 — pool-setting column reinstated on the homepage chooser itself
+// (DESIGN.md §5, reversing the same-day-earlier removal note), reusing the
+// same POOL_TYPES.match() rule as the corner menu and /[state]/[filter]/ so
+// the grouping logic isn't reimplemented a third time.
+const presentPoolTypes = POOL_TYPES.filter((t) => venues.some((v) => t.match(v.data.facilities)));
 
 // 2026-07-26 — the map is gone (DESIGN.md §5, UX.md §2.1). Every venue still
 // renders server-side into the results area so it degrades to real markup,
@@ -60,9 +67,8 @@ const allVenues = venues.map((v) => ({
       <p>
         There are no ads here and no sponsored listings. Nothing ranks
         because a venue paid for it. Search by name or suburb, tell us where
-        you are, or browse by state or by the amenity you are after — a
-        proper sweat, magnesium water, a cold shock — and choose by feel
-        rather than guesswork.
+        you are, or browse by state or by the feature you are after — a
+        proper sweat, magnesium water, a cold shock — and choose by vibes.
       </p>
     </section>
 
@@ -74,10 +80,10 @@ const allVenues = venues.map((v) => ({
       </div>
       <p class="reading-spine mb-10">
         Search by name or suburb, tell us where you are, or browse below —
-        start with a state if you know where you're headed, or an amenity if
-        you know what you're after: magnesium water, a proper sweat, a cold
-        shock. Picking an amenity filters the results below to venues that
-        have it.
+        start with a state if you know where you're headed, or a pool setting
+        if you know what kind of soak you're after: indoor, outdoor, a
+        natural spring, or something else. Picking either filters the
+        results below.
       </p>
 
       <div class="finder-row">
@@ -121,19 +127,30 @@ const allVenues = venues.map((v) => ({
           </ul>
         </div>
         <div class="chooser-group">
-          <span class="mono chooser-group-label">By amenity</span>
-          <ul class="chooser-amenities">
-            {presentAmenities.map((key) => (
+          <span class="mono chooser-group-label">By pool setting</span>
+          <ul class="chooser-states">
+            {presentPoolTypes.map((t) => (
               <li>
-                <a class="chooser-amenity-link" href={`/?amenities=${key}#results-heading`}>
-                  <Icon name={key} size={32} />
-                  <span class="mono chooser-amenity-label">{AMENITY_NOTATION[key].full}</span>
+                <a class="mono chooser-state-link" href={`/?pooltype=${t.slug}#results-heading`}>
+                  {t.label}
                 </a>
               </li>
             ))}
           </ul>
         </div>
       </div>
+
+      <div class="mono mt-12 mb-6 chooser-secondary-label">Browse by feature</div>
+      <ul class="chooser-features">
+        {presentAmenities.map((key) => (
+          <li>
+            <a class="chooser-feature-link" href={`/?amenities=${key}#results-heading`}>
+              <Icon name={key} size={40} />
+              <span class="mono chooser-feature-label">{AMENITY_NOTATION[key].full}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
     </section>
 
     <section class="rise-in" style="animation-delay: 270ms; position: relative;" aria-labelledby="results-heading">
@@ -144,14 +161,15 @@ const allVenues = venues.map((v) => ({
       </div>
 
       <div id="amenity-filters" class="mono filter-bar" hidden></div>
+      <div id="pooltype-filters" class="mono filter-bar" hidden></div>
 
       <p id="results-direction" class="reading-spine text-[var(--ink-faded)]">
-        Pick an amenity above, or tell us where you are, to see venues here.
+        Pick a feature or pool setting above, or tell us where you are, to see venues here.
       </p>
 
       <noscript>
         <p class="mono" style="color: var(--ink-faded);">
-          Results require JavaScript — browse by state or amenity above.
+          Results require JavaScript — browse by state or feature above.
         </p>
       </noscript>
 
@@ -177,6 +195,7 @@ const allVenues = venues.map((v) => ({
           allVenues.map((v) => ({
             slug: v.slug,
             amenities: v.amenities,
+            facilities: v.facilities,
             latitude: v.latitude,
             longitude: v.longitude,
           })),
@@ -187,12 +206,13 @@ const allVenues = venues.map((v) => ({
 </BaseLayout>
 
 <script>
-  import { AMENITY_KEYS, AMENITY_NOTATION, haversineDistanceKm, formatDistanceKm } from "../config";
+  import { AMENITY_KEYS, AMENITY_NOTATION, POOL_TYPES, haversineDistanceKm, formatDistanceKm } from "../config";
   import { AU_PLACES } from "../data/au-places";
 
   interface VenueRow {
     slug: string;
     amenities: Record<string, boolean>;
+    facilities: Record<string, boolean> | undefined;
     latitude: number | null;
     longitude: number | null;
   }
@@ -201,12 +221,13 @@ const allVenues = venues.map((v) => ({
   const venueContents = document.getElementById("venue-contents") as HTMLElement | null;
   const directionLine = document.getElementById("results-direction") as HTMLElement | null;
   const filterBar = document.getElementById("amenity-filters") as HTMLDivElement | null;
+  const pooltypeFilterBar = document.getElementById("pooltype-filters") as HTMLDivElement | null;
   const nearMeForm = document.getElementById("near-me-form") as HTMLFormElement | null;
   const nearMeInput = document.getElementById("near-me-input") as HTMLInputElement | null;
   const nearMeClearBtn = document.getElementById("near-me-clear") as HTMLButtonElement | null;
   const nearMeMessage = document.getElementById("near-me-message") as HTMLParagraphElement | null;
 
-  if (venueContents && directionLine && filterBar) {
+  if (venueContents && directionLine && filterBar && pooltypeFilterBar) {
     const rows: VenueRow[] = JSON.parse(document.getElementById("venue-data")?.textContent || "[]");
     const rowBySlug = new Map(rows.map((r) => [r.slug, r]));
 
@@ -215,6 +236,11 @@ const allVenues = venues.map((v) => ({
       const raw = params.get("amenities");
       if (!raw) return new Set();
       return new Set(raw.split(",").filter((k) => (AMENITY_KEYS as readonly string[]).includes(k)));
+    }
+
+    function readPoolTypeFromUrl(): string | null {
+      const raw = new URLSearchParams(location.search).get("pooltype");
+      return raw && POOL_TYPES.some((t) => t.slug === raw) ? raw : null;
     }
 
     function writeParam(key: string, value: string | null) {
@@ -226,6 +252,7 @@ const allVenues = venues.map((v) => ({
     }
 
     let active = readActiveFromUrl();
+    let activePoolType: string | null = readPoolTypeFromUrl();
 
     const buttons: Record<string, HTMLButtonElement> = {};
     for (const key of AMENITY_KEYS) {
@@ -247,6 +274,32 @@ const allVenues = venues.map((v) => ({
       filterBar.appendChild(btn);
     }
     filterBar.hidden = false;
+
+    // Pool setting is a single-select facet (not a stacking filter like
+    // amenities) — POOL_TYPES.other is a catch-all, so allowing more than one
+    // active setting at once would be confusing rather than additive.
+    const poolTypeButtons: Record<string, HTMLButtonElement> = {};
+    for (const poolType of POOL_TYPES) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "filter-toggle";
+      btn.textContent = poolType.label;
+      btn.setAttribute("aria-pressed", activePoolType === poolType.slug ? "true" : "false");
+      btn.classList.toggle("active", activePoolType === poolType.slug);
+      btn.addEventListener("click", () => {
+        activePoolType = activePoolType === poolType.slug ? null : poolType.slug;
+        for (const t of POOL_TYPES) {
+          const isActive = activePoolType === t.slug;
+          poolTypeButtons[t.slug].classList.toggle("active", isActive);
+          poolTypeButtons[t.slug].setAttribute("aria-pressed", isActive ? "true" : "false");
+        }
+        writeParam("pooltype", activePoolType);
+        render();
+      });
+      poolTypeButtons[poolType.slug] = btn;
+      pooltypeFilterBar.appendChild(btn);
+    }
+    pooltypeFilterBar.hidden = false;
 
     function normalizePlace(s: string): string {
       return s
@@ -275,7 +328,7 @@ const allVenues = venues.map((v) => ({
     let currentPlace: { name: string; latitude: number; longitude: number } | null = null;
 
     function render() {
-      const hasFilter = active.size > 0;
+      const hasFilter = active.size > 0 || activePoolType !== null;
       const hasNear = currentPlace !== null;
 
       if (!hasFilter && !hasNear) {
@@ -286,10 +339,13 @@ const allVenues = venues.map((v) => ({
       directionLine!.hidden = true;
       venueContents!.hidden = false;
 
+      const activePoolTypeDef = activePoolType ? POOL_TYPES.find((t) => t.slug === activePoolType) : null;
+
       let visible = venueEls.filter((el) => {
         const row = rowBySlug.get(el.dataset.venueSlug!);
         if (!row) return false;
         for (const key of active) if (!row.amenities[key]) return false;
+        if (activePoolTypeDef && !activePoolTypeDef.match(row.facilities)) return false;
         return true;
       });
 
@@ -467,8 +523,17 @@ const allVenues = venues.map((v) => ({
 
   @media (min-width: 640px) {
     .chooser-groups {
-      grid-template-columns: 1fr 2fr;
+      grid-template-columns: 1fr 1fr;
     }
+  }
+
+  /* Quieter than .chooser-group-label's peer-section treatment — the
+     feature grid is secondary to the state/pool-setting chooser above it,
+     not a third equal column (2026-07-26). */
+  .chooser-secondary-label {
+    display: block;
+    color: var(--ink-faded);
+    text-transform: uppercase;
   }
 
   .chooser-group-label {
@@ -497,7 +562,7 @@ const allVenues = venues.map((v) => ({
     text-decoration-color: var(--thermal);
   }
 
-  .chooser-amenities {
+  .chooser-features {
     display: flex;
     flex-wrap: wrap;
     gap: 1.5rem 2rem;
@@ -506,28 +571,30 @@ const allVenues = venues.map((v) => ({
     margin: 0;
   }
 
-  .chooser-amenity-link {
+  .chooser-feature-link {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.5rem;
-    width: 6.5rem;
+    width: 7rem;
     color: var(--ink);
     text-decoration: none;
+    transition: color 0.15s ease;
   }
 
-  .chooser-amenity-link:hover,
-  .chooser-amenity-link:focus-visible {
+  .chooser-feature-link:hover,
+  .chooser-feature-link:focus-visible {
     color: var(--thermal);
   }
 
-  .chooser-amenity-label {
+  .chooser-feature-label {
     text-align: center;
     color: var(--ink-faded);
+    transition: color 0.15s ease;
   }
 
-  .chooser-amenity-link:hover .chooser-amenity-label,
-  .chooser-amenity-link:focus-visible .chooser-amenity-label {
+  .chooser-feature-link:hover .chooser-feature-label,
+  .chooser-feature-link:focus-visible .chooser-feature-label {
     color: var(--thermal);
   }
 

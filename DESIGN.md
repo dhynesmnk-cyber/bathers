@@ -53,6 +53,8 @@ It should **never** feel like: a SaaS product, an Airbnb listing, a Google Maps 
 
 `--paper`/`--paper-raised`/`--oxide` are unchanged. Because `--ink` is now itself green, `--thermal` moves cooler/tealer so the "one mineral accent" (see role description above) still reads as a distinct colour rather than a shade of the body text — `#2f6e78` (light) / `#6fb8bd` (dark), replacing the values in the tables above. The "~5% of a screen" thermal budget still applies unchanged. Verify actual contrast on screen before treating these hexes as final (§10).
 
+**2026-07-26 amendment (later, superseding the thermal values above) — `#496459` accent.** `--thermal` moves again, user-requested, to `#496459` for light mode (still ≥4.5:1 against light `--paper`, ≈5.1:1). Used verbatim, `#496459` only holds ≈3:1 against near-black dark `--paper` — both colours are dark — so dark mode gets a same-hue, lightened derivative instead: `#74b49a` (≈7.5:1 against dark `--paper`, matching the outgoing dark thermal's ≈7.9:1). Same deepen-for-light/lighten-for-dark method as the amendment above. `--ink`/`--ink-faded`/`--oxide` are unchanged.
+
 ---
 
 ## 3. Typography
@@ -89,42 +91,45 @@ This is what separates "dark editorial" from "dark dashboard":
 - **Single reading spine.** One column of prose, max 65ch, asymmetrically placed (offset left of centre on wide screens, with the wide right margin used for occasional mono margin-notes). Never centred symmetric hero layouts.
 - **No cards.** Venue listings on the index are typographic entries — name, dateline, one-line notation — separated by hairlines, like a table of contents. No thumbnails in lists.
 - **Whitespace is structural.** Section spacing at 6–10rem on desktop. When in doubt, add space, not decoration.
-- **Filters are text.** Amenity filters render as inline mono toggles (`magnesium pool · infrared · cold plunge`); active state = thermal underline. No sidebar, no checkboxes, no pills.
+- **Filters are text.** Feature filters (2026-07-26: user-facing copy renamed from "amenity" — schema/field names unchanged, SCHEMA.md) render as inline mono toggles (`magnesium pool · infrared · cold plunge`); active state = thermal underline. No sidebar, no checkboxes, no pills.
 - **2026-07-26 — map removed.** The map (Leaflet) chapter described in earlier revisions of this section is superseded: the homepage no longer carries a map. It's replaced by a manual-postcode "facilities around me" 50km radius list (UX.md §2.1) rendered in the same results slot as search. Kept here, struck through for the record: ~~The map (Leaflet) is a chapter within the index page, not the hero. Tiles must be styled/filtered to sit in the palette (CSS filter to warm-dark, or a dark tile theme with a warm overlay). Default markers replaced with a small thermal ring; active marker fills.~~
 
 **Exception (user-approved, 2026-07-23).** The homepage carries one icon-based chooser section (§6, §7) between the foreword and the results area — a narrow, scoped departure from "never centred symmetric hero layouts" and "filters are text... no pills" above. It stays inside the reading-spine rhythm (asymmetric, not full-bleed, not centred) so it reads as the next section of the pamphlet rather than a hero banner, and it fronts the site's existing plain-text amenity filter and state pages rather than replacing either. Everything else covered by these two rules — the inline amenity-filter toggle bar, state/amenity page nav, and all venue listings — is unaffected and stays plain mono text and card-free.
 
 **2026-07-25 extension.** The same chooser section also fronts a plain mono-text search field and a "near you" suburb/postcode field (TRD.md §8 exception), sitting above the existing by-state/by-amenity grid. Same idiom as everything else in §5 — text inputs and text buttons, underline-on-focus, no pill/card treatment, not a third icon grid or hero element. The search field also appears inside the corner menu panel (§5b) so it's reachable from every page, not just the homepage.
 
-**2026-07-26 extension.** Below the chooser, a results area (also §7) replaces the former map-plus-contents-list pairing: empty by default with a direction line, populated by the amenity filter and/or the near-me 50km radius list (search keeps its own dropdown under the search field, unchanged), each row the existing `VenueEntry` typographic-entry treatment (§5, "no cards"). The pool-type grouping (thermal springs/indoor/outdoor/other) that the removed default contents list used to sort by no longer has a homepage entry point — it remains reachable via each state's `/[state]/[pooltype]/` pages (UX.md §2.3, unchanged) and is otherwise surfaced per-venue via promoted feature badges (§6, DESIGN.md's Features.astro ordering) rather than a new sitewide browse column, since no sitewide pool-type route exists to link to.
+**2026-07-26 extension.** Below the chooser, a results area (also §7) replaces the former map-plus-contents-list pairing: empty by default with a direction line, populated by the feature filter and/or the near-me 50km radius list (search keeps its own dropdown under the search field, unchanged), each row the existing `VenueEntry` typographic-entry treatment (§5, "no cards"). ~~The pool-type grouping (thermal springs/indoor/outdoor/other) that the removed default contents list used to sort by no longer has a homepage entry point — it remains reachable via each state's `/[state]/[pooltype]/` pages (UX.md §2.3, unchanged) and is otherwise surfaced per-venue via promoted feature badges (§6, DESIGN.md's Features.astro ordering) rather than a new sitewide browse column, since no sitewide pool-type route exists to link to.~~ (superseded below, same day.)
+
+**2026-07-26 revision (later, reversing the note above).** The pool-type grouping is reinstated with a homepage entry point after all — a "By pool setting" column sits alongside "By state" in the chooser grid (indoor/outdoor/springs/other, present-only), reusing the same `POOL_TYPES.match()` rule already shared by the corner menu and the `/[state]/[pooltype]/` pages rather than reimplementing it a third time. The corner menu's per-state pool-type sub-rows (§5b) are also promoted to primary-tier status, not an afterthought under "More." The amenity/feature icon grid (§6, §7) moves below this row as a secondary, demoted block — see §7.
 
 ---
 
-## 5a. Theme Toggle (2026-07-21 addition)
+## 5a. Theme Toggle (2026-07-21 addition, moved into the Corner Menu 2026-07-26)
 
-A narrow, deliberate exception to the site's otherwise icon-free, toggle-free chrome — the second interactive control on the public site after the Book Now button (§7a).
+A narrow, deliberate exception to the site's otherwise icon-free, toggle-free chrome — an interactive control on the public site alongside the Book Now button (§7a) and the Corner Menu (§5b).
 
-- Renders in-flow at the top of every page, above that page's own opening content (masthead on the index, the venue name on a venue page, the foreword on a programmatic page, the post title on a blog page) — never fixed, never floating (§3/UX.md's floating-UI ban still holds).
+- **2026-07-26 revision.** No longer renders in-flow at the top of the page. It now renders inside the Corner Menu's slide-out drawer (§5b), in the first tier alongside search and Home, reachable from the same top-right control on every page — user-requested, so the toggle no longer needs its own position and doesn't compete with the site logo for space at the top of the page. It is still not itself fixed/floating; it sits inside the drawer's normal document flow, and the drawer remains the site's one named "never fixed, never floating" exception (§5b).
 - A plain mono text control, in the "filters are text" idiom (§5) — not an icon, switch, or pill.
 - Auto-detects the visitor's OS preference (`prefers-color-scheme`) by default; a click/keyboard-activated override persists via `localStorage` across the visit.
 - No animated transition on switch — a plain state change, consistent with the site's restrained motion posture (§9) and `prefers-reduced-motion`.
 - Admin app: auto (`prefers-color-scheme`) only, no manual toggle — it's a private, single-operator workbench (§8), not a visitor-facing surface.
 
-## 5b. Corner Menu (2026-07-22 exception)
+## 5b. Corner Menu (2026-07-22 exception, reworked into a slide-out drawer 2026-07-26)
 
 **Exception (user-approved, 2026-07-22).** A small fixed navigation control, superseding §3/§5a's "never fixed, never floating" rule — narrowly, for this one control only. Everything else in §3/§5a still holds: no modals, no toasts, no other floating chrome.
 
-- A single button fixed to the top-right corner of the viewport on every page (*2026-07-23: moved from bottom-right at the user's request; no other change to this control*), labelled `MENU` in mono text (no new icon — matches the "filters are text" idiom of §5 rather than adding an 11th icon to the set in §6).
-- Click/tap opens a panel listing: Home, every state with ≥1 published venue, every category with ≥1 published venue, and links to the glossary and journal. Click-to-open, not hover-only, for touch/mobile parity.
-- The panel itself keeps the rest of the visual system exactly: `--paper-raised` background, hairline `--ink-faded` border, no border-radius above 2px, no box-shadow, no banned colours or gradients (§2/§4).
-- Keyboard-operable: reachable by Tab, opens on Enter/Space, closes on `Escape` (focus returns to the button), same posture as any other interactive control on the site.
+- A single button fixed to the top-right corner of the viewport on every page (*2026-07-23: moved from bottom-right at the user's request; no other change to this control*), labelled `MENU` in mono text (no new icon on the button itself — matches the "filters are text" idiom of §5).
+- **2026-07-26 revision.** Click/tap now slides a full-height panel in from the right edge (`transform: translateX`, 0.35s ease) rather than dropping a small panel below the button — still click-to-open, not hover-only, for touch/mobile parity. No dimming scrim behind it: the page stays visible so the drawer reads as a folding-out leaf of the pamphlet, not an app-style off-canvas menu (§10's "generic dark-mode template" failure mode is exactly what a scrim risks). The panel is permanently mounted and toggled via a class plus `inert`/`aria-hidden` (not the `hidden` attribute, which can't be transitioned).
+- **Contents, restructured into three tiers (2026-07-26):** (1) search + Home + the theme toggle (§5a, moved in here the same day); (2) primary tier, "Find a bath by state" — every state with ≥1 published venue, each with its present pool-type sub-rows (indoor/outdoor/springs/other) directly beneath it, reinstated from the 2026-07-26-earlier removal (§5); (3) a single "More" group holding three sub-sections — "Browse by feature" (the five amenities, now with a small 20px icon each, a narrow exception to §5b's prior icon-free posture for this one new usage), "By venue type" (the four business categories, relabelled from "Find a bath by type" to avoid reading as a duplicate of the state tier), and Glossary/Journal.
+- The panel itself keeps the rest of the visual system exactly: `--paper-raised` background, hairline `--ink-faded` border (now a left border, drawer-style), no border-radius above 2px, no box-shadow, no banned colours or gradients (§2/§4).
+- Keyboard-operable: reachable by Tab, opens on Enter/Space, closes on `Escape` (focus returns to the button), same posture as any other interactive control on the site. The closed drawer is `inert` so its links aren't tabbable while off-screen.
 
 ## 5c. Site Logo / Home Button (2026-07-26 addition)
 
 **Exception (user-approved, 2026-07-26), narrowly superseding §1's "never a logo mark, pure typography" posture.** The seal is the site's mascot — the user designated it the "main character" — and gets a persistent home-link lockup (seal artwork, DESIGN.md §6a's `icons/animals.ts` `seal` entry, + the `Bathers'` wordmark) rendered by `BaseLayout.astro` on **every page**, above that page's own opening content, same in-flow-never-floating posture as §5a:
 
 - One shared renderer (`site/src/components/SiteLogo.astro`): the seal icon recoloured via the same CSS-mask technique as §6a's margin animals (`--ink-faded` light mode, pure white dark mode), beside the wordmark in Fraunces.
-- Two sizes, not scaled per-page beyond these two: **large** (`clamp(2.5rem, 6vw, 4.5rem)` text / 4rem icon) on the index only, replacing what was previously a page-specific `<h1>{SITE_NAME}</h1>` there — same visual weight as before, just componentised and now also a working `<a href="/">`. **Default** (`clamp(1.75rem, 4vw, 3rem)` text / 2rem icon) on every other page — deliberately smaller than the index treatment so it reads as a persistent home button rather than repeating the hero treatment on top of each page's own heading (a venue name, a state foreword, a post title).
+- Two sizes, not scaled per-page beyond these two: **large** (`clamp(2.75rem, 6vw, 5rem)` text / 4.5rem icon — bumped one size tier up 2026-07-26, was `clamp(2.5rem, 6vw, 4.5rem)`/4rem) on the index only, replacing what was previously a page-specific `<h1>{SITE_NAME}</h1>` there — same visual weight as before, just componentised and now also a working `<a href="/">`. **Default** (`clamp(1.75rem, 4vw, 3rem)` text / 2rem icon, unchanged) on every other page — deliberately smaller than the index treatment so it reads as a persistent home button rather than repeating the hero treatment on top of each page's own heading (a venue name, a state foreword, a post title).
 - A real `<a href="/">`, not a decorative image — this is navigation chrome, not a §6a margin motif (those stay purely decorative and unlinked).
 
 **Favicon and social share image (same 2026-07-26 exception):** the seal also replaces the earlier inline thermal-ring SVG favicon — `site/public/favicon-16x16.png` / `favicon-32x32.png` / `apple-touch-icon.png`, generated from the same source artwork (opaque `--paper`-coloured background on the apple-touch variant only, per Apple's guidance against transparency there; the two browser favicons stay transparent). `site/public/images/og-share.webp` (1200×630, the default `og:image`/`twitter:image` across the site unless a page sets its own) is the same lockup — seal, wordmark, tagline — on the light-mode palette, since share-card surfaces are outside this site's own theme toggle and light reads reliably across chat/social clients. Neither asset is theme-aware; both are static files, not rendered per request.
@@ -144,7 +149,20 @@ Icon rules:
 - Full-size context (venue page) shows icon + label text; compact context (index/list entries) shows icon only with a `title` attribute for the full label, keeping list rows to one line.
 - No icon package/font — every icon is hand-authored inline SVG, kept to simple primitives (circles, rects, short paths) for visual consistency across the set.
 
-**Second icon-rendering context (2026-07-23 exception).** The homepage chooser section (§7) reuses this exact renderer and these exact rules — 24×24 viewBox, stroke-only, `currentColor`, no fill — at a single larger size, 32px, roughly double the largest existing usage (16px, full-size venue-page context). This is the only place icons render above 18px; nowhere else on the site should adopt this larger size without a further documented exception.
+**Second icon-rendering context (2026-07-23 exception, sizes bumped one tier up 2026-07-26).** The homepage chooser section (§7) reuses this exact renderer and these exact rules — 24×24 viewBox, stroke-only, `currentColor`, no fill — at larger sizes than the base venue-feature set. Icon-size exceptions now in force, enumerated so they don't read as contradicting each other:
+
+| Context | Size |
+|---|---|
+| Venue-feature "full" (venue page) | 18px (was 16px) |
+| Venue-feature "compact" (list/card entries) | 16px (was 14px) |
+| Venue-feature "secondary" (logistics chips) | 14px (was 12px) |
+| State/state-filter page header | 16px (unified, was 14–15px) |
+| Glossary index | 20px (was 18px) |
+| Glossary detail page | 32px (was 28px) |
+| Corner-menu "Browse by feature" (new usage) | 20px |
+| Homepage chooser (feature tiles) | 40px (was 32px) |
+
+Nowhere else on the site should adopt a size above this table without a further documented exception (margin animals, §6a, are a separately-scoped decorative exception, not a "venue-feature icon" one).
 
 Superseded text, kept for record: amenities were previously recorded as a naturalist's notation — a two-to-three-letter mono abbreviation (`Mg` magnesium pool · `IR` infrared sauna · `SA` traditional sauna · `CP` cold plunge · `LED` light therapy), expanding to the full name on hover/focus. That system is no longer in use for venue-feature display as of 2026-07-21.
 
@@ -163,7 +181,7 @@ A narrow, homepage-only exception adding sparse decorative illustration where §
 
 ## 7. Page-Specific Notes
 
-- **Index:** the large site logo (§5c) serves as the masthead — seal + site name in large Fraunces, like a pamphlet title page — followed by a one-line mono subtitle, then a short editorial foreword (real prose, 2–3 paragraphs), then a chooser section (*2026-07-23 exception, extended 2026-07-26, see §5*) — one short line of plain-prose usage guidance, a search field and a "near you" field, plus two ways into the directory: by state (plain mono text links) and by amenity (large icon+label triggers, §6) — then the results area (§5, §7), empty by default, populated by the amenity filter and/or the near-me 50km radius list (search has its own dropdown under the search field).
+- **Index:** the large site logo (§5c) serves as the masthead — seal + site name in large Fraunces, like a pamphlet title page — followed by a one-line mono subtitle, then a short editorial foreword (real prose, 2–3 paragraphs, ending "...choose by vibes" as of 2026-07-26), then a chooser section (*2026-07-23 exception, extended 2026-07-26, see §5*) — one short line of plain-prose usage guidance, a search field and a "near you" field, plus two equal-billing ways into the directory: by state and by pool setting (indoor/outdoor/springs/other), both plain mono text links (*2026-07-26: pool setting reinstated as a homepage column, see §5*) — below that row, a demoted, secondary "Browse by feature" block (large icon+label triggers, §6), quieter than the primary row's heading treatment so it reads as secondary rather than a third equal column — then the results area (§5, §7), empty by default, populated by the feature filter, the pool-setting filter, and/or the near-me 50km radius list (search has its own dropdown under the search field).
 - **Venue page:** name → dateline/notation row → prose with 1–2 pull-quotes → tipped-in photo if one exists (mid-article, never top) → FAQ (if present) → appendix block (`--paper-raised`, mono, hairline-topped) with address, the Book Now button, hours, and the claim-this-listing button (*2026-07-23: upgraded from a plain mailto line to a `.book-now-btn`-styled button linking to `/claim/[slug]/`, hidden once `status` is `claimed`*). FAQ sits above the appendix, not inside it — it's still editorial content ("what is this place like"), while the appendix is the page's practical/logistics close and should stay a stable landing spot regardless of how much FAQ content exists.
 - **Claim page** (*2026-07-23 addition*): same shell and prose register as a venue page — no pricing-table/SaaS treatment. Ends in a second usage of `.book-now-btn` (§7a) as its submit CTA. See UX.md §2.5.
 
@@ -192,6 +210,13 @@ The admin hub inherits the palette (both modes, §2) and the mono utility face b
 Responsive to 360px. Visible keyboard focus (thermal 1px outline, offset 2px). `prefers-reduced-motion` respected — the only motion on the public site is subtle anyway (link underline transitions, map interactions; no scroll-triggered reveals, no parallax). Semantic HTML; the site must read correctly with CSS off.
 
 **Homepage on-load motion (user-approved, 2026-07-24 exception).** The homepage — and only the homepage — carries one restrained load animation: its top-level sections fade and rise ~10px into place, and the two section-divider hairlines draw in left-to-right. It runs once, on load; there are still no scroll-triggered reveals and no parallax anywhere. It is CSS-only (`rise-in` / `draw-line` in `global.css`), the at-rest state is the final state, and the existing `prefers-reduced-motion` kill-switch renders everything in place with no flash. This is a narrow exception to the "link underlines and map states only" posture, scoped to the homepage; it does not license motion on other pages or reopen scroll/parallax effects.
+
+**Sitewide restrained motion (user-approved, 2026-07-26 exception — extends the above beyond the homepage).** Two additions, both CSS-only and neutralised automatically by the same `prefers-reduced-motion` kill-switch (plain CSS transitions, not JS-driven animation):
+
+1. The corner-menu drawer (§5b) slides in/out via a `transform` transition rather than an instant `hidden`-attribute toggle.
+2. Subtle hover/focus colour transitions (the existing 0.15s link-underline idiom) extend to icon colour sitewide — icons use `stroke="currentColor"`, so transitioning `color` on the svg element animates the stroke wherever an ancestor's hover/focus state changes it (feature chips, corner-menu links, chooser tiles).
+
+Still no scroll-triggered reveals, no parallax, and no looping anywhere on the site. This exception widens *where* the existing restrained-motion idiom applies, not *what kind* of motion is allowed.
 
 ## 10. The Test
 

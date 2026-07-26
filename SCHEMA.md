@@ -14,7 +14,7 @@ One contract, four consumers: the zod content schema, the SQLite tables, the Har
 
 This order is used everywhere amenities are displayed.
 
-### 1a. Facility keys (2026-07-21 addition, optional; pool-type keys added 2026-07-23)
+### 1a. Facility keys (2026-07-21 addition, optional; pool-type keys added 2026-07-23; `pregnancy_safe` added 2026-07-26)
 
 Practical/logistics info, distinct from the bathing-experience amenities above — absent on venues published before this date, defaulting to `false`/unset. The three pool-type keys (2026-07-23) drive the homepage's pool-type grouping (UX.md §2.1) — a venue can have more than one true.
 
@@ -28,6 +28,9 @@ Practical/logistics info, distinct from the bathing-experience amenities above �
 | `outdoor_pool` | Outdoor pool |
 | `indoor_pool` | Indoor pool |
 | `natural_spring` | Natural spring |
+| `pregnancy_safe` | Pregnancy-safe bathing |
+
+**`pregnancy_safe` (2026-07-26) is manual-reviewer-set only.** No structured temperature/depth field exists anywhere in this schema to ground a "pregnancy-safe" determination automatically, so it must never be set by the Harvester, Architect, or Gatekeeper (CLAUDE.md rule 6 — honesty in generated content applies to safety claims, not just prose). A reviewer toggles it in the admin app only when a venue's own published materials explicitly describe pregnancy-safe conditions. Glossary copy (`site/src/data/glossary.ts`): "Marked here only when a venue's own materials explicitly describe pregnancy-safe conditions — for example, a specifically designated pool kept below a stated temperature, or an area excluded from the venue's higher-heat circuit. This is not medical guidance; confirm current conditions with the venue and with your own healthcare provider before bathing while pregnant."
 
 ## 2. MDX Frontmatter
 
@@ -42,7 +45,7 @@ Practical/logistics info, distinct from the bathing-experience amenities above �
 | `longitude` | number | – | *(2026-07-22: no longer required)* 112.0 … 154.0 when present. Same null handling as `latitude`. |
 | `website` | string (url) | ✓ | The venue's own site. |
 | `amenities` | object | ✓ | Exactly the five boolean keys from §1, all required, no extras (zod `.strict()`). |
-| `facilities` | object | – | *(2026-07-21, extended 2026-07-23)* The eight boolean keys from §1a. Optional — omit entirely on venues where none are known; individual keys default `false`. |
+| `facilities` | object | – | *(2026-07-21, extended 2026-07-23, extended 2026-07-26)* The nine boolean keys from §1a. Optional — omit entirely on venues where none are known; individual keys default `false`. |
 | `hours` | string | – | *(2026-07-21)* Freeform display string, e.g. `"Mon–Sun 6am–10pm"`. Drafted by the Architect from `facts.hours`, never fabricated. |
 | `cost` | string | – | *(2026-07-21)* Freeform display string, e.g. `"$45–120 per session"`. Drafted by the Architect from `facts.pricing`, never fabricated. |
 | `access` | string | – | *(2026-07-21)* Freeform display string, for venues gated by hotel-guest or membership status, e.g. `"Guests of the hotel, or Langham members — day spa visitors can also book a treatment to get pool access for the day."` Drafted by the Architect from `facts`, never fabricated. Omitted for the majority of standalone venues with no such restriction. |
@@ -93,7 +96,8 @@ CREATE TABLE facilities (
   wheelchair_access INTEGER NOT NULL DEFAULT 0,
   outdoor_pool INTEGER NOT NULL DEFAULT 0,
   indoor_pool INTEGER NOT NULL DEFAULT 0,
-  natural_spring INTEGER NOT NULL DEFAULT 0
+  natural_spring INTEGER NOT NULL DEFAULT 0,
+  pregnancy_safe INTEGER NOT NULL DEFAULT 0  -- 2026-07-26, manual reviewer-set only, see §1a
 );
 ```
 

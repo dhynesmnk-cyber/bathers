@@ -16,7 +16,7 @@ const urlSlug = (k: string) => k.replace(/_/g, "-");
 
 <BaseLayout
   title={`Glossary — Bathers'`}
-  description="What the amenity and facility icons on Bathers' mean."
+  description="What the feature and facility icons on Bathers' mean."
   canonicalPath="/glossary/"
 >
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
@@ -37,7 +37,7 @@ const urlSlug = (k: string) => k.replace(/_/g, "-");
           keys.map((key) => (
             <li>
               <a href={`/glossary/${urlSlug(key)}/`} class="inline-flex items-center gap-2">
-                <Icon name={key as IconKey} size={18} />
+                <Icon name={key as IconKey} size={20} />
                 <span>{LABELS[key]}</span>
               </a>
             </li>

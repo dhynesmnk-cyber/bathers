@@ -40,7 +40,7 @@ const pageTitle = `Bathhouses of ${STATE_NAMES[state]}${notation ? ` — ${notat
           <p class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[var(--ink-faded)]">
             {presentAmenities.map((key) => (
               <span class="inline-flex items-center gap-1">
-                <Icon name={key as IconKey} size={15} />
+                <Icon name={key as IconKey} size={16} />
                 <span class="mono text-sm">{AMENITY_NOTATION[key].full}</span>
               </span>
             ))}
@@ -59,10 +59,10 @@ const pageTitle = `Bathhouses of ${STATE_NAMES[state]}${notation ? ` — ${notat
 
     {
       presentAmenities.length > 0 && (
-        <nav class="mb-16 flex flex-wrap gap-x-4 gap-y-2 text-[var(--ink-faded)]" aria-label="Filter by amenity">
+        <nav class="mb-16 flex flex-wrap gap-x-4 gap-y-2 text-[var(--ink-faded)]" aria-label="Filter by feature">
           {presentAmenities.map((key) => (
             <a href={`/${state.toLowerCase()}/${amenityUrlSlug(key)}/`} class="mono inline-flex items-center gap-1">
-              <Icon name={key as IconKey} size={14} />
+              <Icon name={key as IconKey} size={16} />
               {AMENITY_NOTATION[key].full}
             </a>
           ))}

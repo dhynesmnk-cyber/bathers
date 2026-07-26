@@ -1,9 +1,10 @@
 ---
 // Programmatic state x filter page (UX.md §2.3, TRD.md §4.2). One dynamic
-// route serving two filter kinds off the same /[state]/<slug>/ slot:
+// route serving three filter kinds off the same /[state]/<slug>/ slot:
 //   - amenity filters (magnesium-pool, cold-plunge, …) — the original pages
 //   - pool-type settings (thermal-springs, indoor, outdoor, other) — 2026-07-24
-// Amenity and pool-type slugs are disjoint, so one file can host both without
+//   - cross-cutting facility filters (pregnancy-safe) — 2026-07-26
+// All three slug sets are disjoint, so one file can host them without
 // collision, and Astro only permits one dynamic route per path depth anyway.
 // Generated only for combinations with >=1 published venue.
 import { getCollection } from "astro:content";
@@ -13,6 +14,7 @@ import Icon from "../../components/Icon.astro";
 import {
   AMENITY_KEYS,
   AMENITY_NOTATION,
+  CROSS_CUTTING_FACILITY_FILTERS,
   POOL_TYPES,
   STATE_NAMES,
   STATES,
@@ -46,19 +48,36 @@ export async function getStaticPaths() {
         props: { kind: "pooltype", state, poolLabel: poolType.label, filterSlug: poolType.slug, venues: matching },
       });
     }
+
+    for (const facilityFilter of CROSS_CUTTING_FACILITY_FILTERS) {
+      const matching = stateVenues.filter((v) => v.data.facilities?.[facilityFilter.key]);
+      if (matching.length === 0) continue;
+      paths.push({
+        params: { state: state.toLowerCase(), filter: facilityFilter.slug },
+        props: {
+          kind: "facility",
+          state,
+          poolLabel: facilityFilter.label,
+          filterSlug: facilityFilter.slug,
+          facilityKey: facilityFilter.key,
+          venues: matching,
+        },
+      });
+    }
   }
   return paths;
 }
 
 const props = Astro.props as {
-  kind: "amenity" | "pooltype";
+  kind: "amenity" | "pooltype" | "facility";
   state: (typeof STATES)[number];
   amenityKey?: (typeof AMENITY_KEYS)[number];
   poolLabel?: string;
   filterSlug?: string;
+  facilityKey?: (typeof CROSS_CUTTING_FACILITY_FILTERS)[number]["key"];
   venues: VenueList;
 };
-const { kind, state, amenityKey, poolLabel, venues } = props;
+const { kind, state, amenityKey, poolLabel, facilityKey, venues } = props;
 
 const notation = kind === "amenity" && amenityKey ? AMENITY_NOTATION[amenityKey] : null;
 const subhead = notation ? notation.full : (poolLabel ?? "");
@@ -84,7 +103,8 @@ const pageTitle = `Bathhouses of ${STATE_NAMES[state]} — ${notation ? notation
         Bathhouses of {STATE_NAMES[state]}
       </h1>
       <p class="mt-2 inline-flex items-center gap-1 text-[var(--ink-faded)]">
-        {kind === "amenity" && amenityKey && <Icon name={amenityKey} size={15} />}
+        {kind === "amenity" && amenityKey && <Icon name={amenityKey} size={16} />}
+        {kind === "facility" && facilityKey && <Icon name={facilityKey} size={16} />}
         <span class="mono text-sm">{subhead}</span>
       </p>
     </header>

@@ -20,7 +20,8 @@ export type IconKey =
   | "wheelchair_access"
   | "outdoor_pool"
   | "indoor_pool"
-  | "natural_spring";
+  | "natural_spring"
+  | "pregnancy_safe";
 
 export const ICON_PATHS: Record<IconKey, string> = {
   magnesium_pool: `
@@ -93,5 +94,13 @@ export const ICON_PATHS: Record<IconKey, string> = {
     <path d="M4 20c2-6 4-9 8-9s6 3 8 9" />
     <path d="M8 20c1-3 2-4.5 4-4.5s3 1.5 4 4.5" />
     <path d="M12 4c1.6 2 2.2 3.4 2.2 4.6a2.2 2.2 0 1 1-4.4 0C9.8 7.4 10.4 6 12 4z" />
+  `,
+  // 2026-07-26 addition — simple stroke-only figure, same primitive language
+  // as the rest of the set (circle head + curved body), no fill.
+  pregnancy_safe: `
+    <circle cx="9.5" cy="5" r="2.2" />
+    <path d="M9.5 7.5c-2.6 0-4.3 1.8-4.3 4.4v2.6" />
+    <path d="M9.5 11a4.6 4.6 0 0 1 4.6 4.6V21" />
+    <path d="M5.2 21v-3.4" />
   `,
 };

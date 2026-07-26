@@ -1,11 +1,11 @@
 ---
 // 2026-07-26 addition (DESIGN.md §5c) — the seal is the site's mascot/"main
 // character": a persistent home-link logo lockup (seal artwork + wordmark)
-// rendered by BaseLayout on every page, above that page's own content, same
-// in-flow-never-floating posture as ThemeToggle (§5a). Reuses the seal
-// artwork already prepared for margin decoration (icons/animals.ts,
-// DESIGN.md §6a) recoloured the same way (CSS mask, --ink-faded light /
-// white dark) rather than a second favicon-style asset.
+// rendered by BaseLayout on every page, above that page's own content,
+// in-flow, never fixed or floating. Reuses the seal artwork already
+// prepared for margin decoration (icons/animals.ts, DESIGN.md §6a)
+// recoloured the same way (CSS mask, --ink-faded light / white dark) rather
+// than a second favicon-style asset.
 import { ANIMAL_SRC } from "../icons/animals";
 import { SITE_NAME } from "../config";
 
@@ -56,13 +56,15 @@ const { large = false } = Astro.props;
     line-height: 1;
   }
 
+  /* 2026-07-26 exception (DESIGN.md §5c) — bumped one size tier up from
+     4rem/clamp(2.5rem,6vw,4.5rem); homepage-only, default logo unchanged. */
   .site-logo-large .site-logo-icon {
-    width: 4rem;
-    height: 4rem;
+    width: 4.5rem;
+    height: 4.5rem;
   }
 
   .site-logo-large .site-logo-text {
-    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-size: clamp(2.75rem, 6vw, 5rem);
   }
 
   :root[data-theme="dark"] .site-logo-icon {

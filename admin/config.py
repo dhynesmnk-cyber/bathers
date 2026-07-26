@@ -169,6 +169,7 @@ FACILITY_KEYS = (
     "outdoor_pool",
     "indoor_pool",
     "natural_spring",
+    "pregnancy_safe",
 )
 
 FACILITY_LABELS = {
@@ -180,4 +181,8 @@ FACILITY_LABELS = {
     "outdoor_pool": "Outdoor pool",
     "indoor_pool": "Indoor pool",
     "natural_spring": "Natural spring",
+    # 2026-07-26 addition (SCHEMA.md §1a) — manual reviewer-set flag only,
+    # never Harvester/Architect/Gatekeeper-derived: no structured
+    # temperature/depth field exists to determine this automatically.
+    "pregnancy_safe": "Pregnancy-safe bathing",
 }

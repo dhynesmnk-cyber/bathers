@@ -28,6 +28,7 @@ export const FACILITY_KEYS = [
   "outdoor_pool",
   "indoor_pool",
   "natural_spring",
+  "pregnancy_safe",
 ] as const;
 
 export const FACILITY_LABELS: Record<(typeof FACILITY_KEYS)[number], string> = {
@@ -39,7 +40,25 @@ export const FACILITY_LABELS: Record<(typeof FACILITY_KEYS)[number], string> = {
   outdoor_pool: "Outdoor pool",
   indoor_pool: "Indoor pool",
   natural_spring: "Natural spring",
+  // 2026-07-26 addition (SCHEMA.md §1a) — manual reviewer-set flag only, never
+  // Harvester/Architect/Gatekeeper-derived: no structured temperature/depth
+  // field exists in the schema to determine this automatically.
+  pregnancy_safe: "Pregnancy-safe bathing",
 };
+
+// Cross-cutting facility filters (2026-07-26 addition) — single-facility
+// booleans that get their own /[state]/[filter]/ listing route, the same way
+// POOL_TYPES does, but without belonging to the pool-type grouping itself.
+// Extensible for any future flag of this shape.
+export const CROSS_CUTTING_FACILITY_FILTERS = [
+  { slug: "pregnancy-safe", key: "pregnancy_safe" as const, label: "Pregnancy-safe bathing" },
+] as const;
+
+export function crossCuttingFacilityFromUrlSlug(
+  segment: string,
+): (typeof CROSS_CUTTING_FACILITY_FILTERS)[number] | undefined {
+  return CROSS_CUTTING_FACILITY_FILTERS.find((f) => f.slug === segment);
+}
 
 // Pool-type settings (2026-07-24 addition). Not a schema field of their own —
 // derived from the three pool-related `facilities` booleans (SCHEMA.md §1a).
@@ -75,7 +94,10 @@ export const CATEGORY_LABELS: Record<(typeof CATEGORIES)[number], string> = {
   thermal_springs: "Thermal springs",
   bathhouse: "Bathhouse",
   hotel_spa: "Hotel spa",
-  other: "Other",
+  // 2026-07-26: labelled "Other venues" (not "Other") to avoid reading as a
+  // duplicate of the pool-setting POOL_TYPES.other entry now that both sit
+  // in the corner menu together.
+  other: "Other venues",
 };
 
 export const STATES = ["VIC", "NSW", "QLD", "SA", "WA", "TAS", "NT", "ACT"] as const;

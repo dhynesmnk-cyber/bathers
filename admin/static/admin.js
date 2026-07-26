@@ -11,6 +11,7 @@
     "outdoor_pool",
     "indoor_pool",
     "natural_spring",
+    "pregnancy_safe",
   ];
   const UNDO_SECONDS = 3;
 
