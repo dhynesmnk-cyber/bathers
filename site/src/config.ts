@@ -29,6 +29,9 @@ export const FACILITY_KEYS = [
   "indoor_pool",
   "natural_spring",
   "pregnancy_safe",
+  "step_free_entry",
+  "hoist_available",
+  "accessible_changerooms",
 ] as const;
 
 export const FACILITY_LABELS: Record<(typeof FACILITY_KEYS)[number], string> = {
@@ -44,6 +47,30 @@ export const FACILITY_LABELS: Record<(typeof FACILITY_KEYS)[number], string> = {
   // Harvester/Architect/Gatekeeper-derived: no structured temperature/depth
   // field exists in the schema to determine this automatically.
   pregnancy_safe: "Pregnancy-safe bathing",
+  // 2026-07-26 additions (SCHEMA.md §1a) — ordinary Architect-settable facts.
+  step_free_entry: "Step-free entry",
+  hoist_available: "Hoist available",
+  accessible_changerooms: "Accessible changerooms",
+};
+
+// Dress code / session-gender (2026-07-26 addition, SCHEMA.md §2). Small
+// closed enums, same pattern as CATEGORIES/CATEGORY_LABELS — used by both the
+// admin editor's <select> and any future site copy.
+export const DRESS_CODE_KEYS = ["nude", "swimwear", "swimwear_optional", "mixed"] as const;
+
+export const DRESS_CODE_LABELS: Record<(typeof DRESS_CODE_KEYS)[number], string> = {
+  nude: "Nude",
+  swimwear: "Swimwear required",
+  swimwear_optional: "Swimwear optional",
+  mixed: "Mixed (varies by area/session)",
+};
+
+export const SESSION_GENDER_KEYS = ["mixed", "single_sex", "varies"] as const;
+
+export const SESSION_GENDER_LABELS: Record<(typeof SESSION_GENDER_KEYS)[number], string> = {
+  mixed: "Mixed",
+  single_sex: "Single-sex",
+  varies: "Varies (see note)",
 };
 
 // Cross-cutting facility filters (2026-07-26 addition) — single-facility
@@ -210,6 +237,34 @@ export function priceRange(cost: string): string | null {
   const fmt = (n: number) => `$${n % 1 === 0 ? n.toLocaleString("en-AU") : n.toFixed(2)}`;
   if (min === max) return /\bfrom\b/i.test(cost) ? `from ${fmt(min)}` : fmt(min);
   return `${fmt(min)}–${fmt(max)}`;
+}
+
+// Temperature display (2026-07-26). `temperatures` frontmatter (SCHEMA.md §2)
+// prefers a hand-drafted display string when a venue has more than one heat
+// source at materially different temperatures; falls back to the structured
+// min/max otherwise. Same "prefer structured, fall back to raw" posture as
+// priceRange above. Returns null when nothing is set so callers can omit the
+// line entirely.
+interface TemperatureRange {
+  sauna_min_c?: number | null;
+  sauna_max_c?: number | null;
+  sauna_display?: string | null;
+  cold_plunge_min_c?: number | null;
+  cold_plunge_max_c?: number | null;
+  cold_plunge_display?: string | null;
+}
+
+function formatTempRange(min?: number | null, max?: number | null): string | null {
+  if (min == null || max == null) return null;
+  return min === max ? `${min}°C` : `${min}–${max}°C`;
+}
+
+export function saunaTemperatureLine(t: TemperatureRange): string | null {
+  return t.sauna_display ?? formatTempRange(t.sauna_min_c, t.sauna_max_c);
+}
+
+export function coldPlungeTemperatureLine(t: TemperatureRange): string | null {
+  return t.cold_plunge_display ?? formatTempRange(t.cold_plunge_min_c, t.cold_plunge_max_c);
 }
 
 export const SITE_NAME = "Bathers'";

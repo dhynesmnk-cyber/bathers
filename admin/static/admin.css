@@ -362,7 +362,8 @@ body {
   border-color: var(--oxide);
 }
 
-#faq-section.field-invalid {
+#faq-section.field-invalid,
+#temperatures-field-row.field-invalid {
   border: 1px solid var(--oxide);
   border-radius: 2px;
   padding: 0.5rem;

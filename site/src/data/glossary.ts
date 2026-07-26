@@ -39,4 +39,11 @@ export const GLOSSARY: Record<GlossaryKey, string> = {
   // so it's never Harvester/Architect/Gatekeeper-inferred.
   pregnancy_safe:
     "Marked here only when a venue's own materials explicitly describe pregnancy-safe conditions — for example, a specifically designated pool kept below a stated temperature, or an area excluded from the venue's higher-heat circuit. This is not medical guidance; confirm current conditions with the venue and with your own healthcare provider before bathing while pregnant.",
+  // 2026-07-26 additions.
+  step_free_entry:
+    "The venue states step-free entry to at least part of the site — no stairs to get in. This doesn't guarantee every pool, sauna, or changeroom is step-free; call ahead if a specific area matters for your visit.",
+  hoist_available:
+    "A hoist is available on-site to help with getting into or out of a pool or bath. Coverage of specific pools varies by venue — check ahead if a particular facility matters for your visit.",
+  accessible_changerooms:
+    "At least one changeroom is set up for accessible use (wider doorways, grab rails, or similar). This is distinct from wheelchair access to the bathing areas themselves — check the venue's own page if both matter for your visit.",
 };

@@ -63,7 +63,10 @@ CREATE TABLE facilities (
   outdoor_pool INTEGER NOT NULL DEFAULT 0,
   indoor_pool INTEGER NOT NULL DEFAULT 0,
   natural_spring INTEGER NOT NULL DEFAULT 0,
-  pregnancy_safe INTEGER NOT NULL DEFAULT 0
+  pregnancy_safe INTEGER NOT NULL DEFAULT 0,
+  step_free_entry INTEGER NOT NULL DEFAULT 0,
+  hoist_available INTEGER NOT NULL DEFAULT 0,
+  accessible_changerooms INTEGER NOT NULL DEFAULT 0
 );
 """
 
@@ -145,14 +148,15 @@ def upsert_venue(conn: sqlite3.Connection, slug: str, data: dict[str, Any]) -> N
     facilities = data.get("facilities") or {}
     conn.execute(
         """
-        INSERT INTO facilities (slug, parking, towels_provided, changerooms, bookings_required, wheelchair_access, outdoor_pool, indoor_pool, natural_spring, pregnancy_safe)
-        VALUES (:slug, :parking, :towels_provided, :changerooms, :bookings_required, :wheelchair_access, :outdoor_pool, :indoor_pool, :natural_spring, :pregnancy_safe)
+        INSERT INTO facilities (slug, parking, towels_provided, changerooms, bookings_required, wheelchair_access, outdoor_pool, indoor_pool, natural_spring, pregnancy_safe, step_free_entry, hoist_available, accessible_changerooms)
+        VALUES (:slug, :parking, :towels_provided, :changerooms, :bookings_required, :wheelchair_access, :outdoor_pool, :indoor_pool, :natural_spring, :pregnancy_safe, :step_free_entry, :hoist_available, :accessible_changerooms)
         ON CONFLICT(slug) DO UPDATE SET
           parking = excluded.parking, towels_provided = excluded.towels_provided,
           changerooms = excluded.changerooms, bookings_required = excluded.bookings_required,
           wheelchair_access = excluded.wheelchair_access, outdoor_pool = excluded.outdoor_pool,
           indoor_pool = excluded.indoor_pool, natural_spring = excluded.natural_spring,
-          pregnancy_safe = excluded.pregnancy_safe
+          pregnancy_safe = excluded.pregnancy_safe, step_free_entry = excluded.step_free_entry,
+          hoist_available = excluded.hoist_available, accessible_changerooms = excluded.accessible_changerooms
         """,
         {
             "slug": slug,
@@ -168,7 +172,8 @@ def fetch_all_venues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
                v.status, v.summary, v.has_image, v.hours, v.cost, v.access,
                a.magnesium_pool, a.infrared_sauna, a.traditional_sauna, a.cold_plunge, a.led_therapy,
                f.parking, f.towels_provided, f.changerooms, f.bookings_required, f.wheelchair_access,
-               f.outdoor_pool, f.indoor_pool, f.natural_spring, f.pregnancy_safe
+               f.outdoor_pool, f.indoor_pool, f.natural_spring, f.pregnancy_safe,
+               f.step_free_entry, f.hoist_available, f.accessible_changerooms
         FROM venues v
         JOIN amenities a ON a.slug = v.slug
         JOIN facilities f ON f.slug = v.slug
@@ -181,6 +186,7 @@ def fetch_all_venues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         mg, ir, sa, cp, led,
         parking, towels, changerooms, bookings, wheelchair,
         outdoor_pool, indoor_pool, natural_spring, pregnancy_safe,
+        step_free_entry, hoist_available, accessible_changerooms,
     ) in rows:
         venues.append(
             {
@@ -214,6 +220,9 @@ def fetch_all_venues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
                     "indoor_pool": bool(indoor_pool),
                     "natural_spring": bool(natural_spring),
                     "pregnancy_safe": bool(pregnancy_safe),
+                    "step_free_entry": bool(step_free_entry),
+                    "hoist_available": bool(hoist_available),
+                    "accessible_changerooms": bool(accessible_changerooms),
                 },
             }
         )

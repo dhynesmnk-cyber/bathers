@@ -7,6 +7,10 @@ import TippedPhoto from "../../components/TippedPhoto.astro";
 import FAQ from "../../components/FAQ.astro";
 import {
   CATEGORY_LABELS,
+  coldPlungeTemperatureLine,
+  DRESS_CODE_LABELS,
+  saunaTemperatureLine,
+  SESSION_GENDER_LABELS,
   STATE_NAMES,
   categoryUrlSlug,
   formatDistanceKm,
@@ -46,6 +50,11 @@ export async function getStaticPaths() {
 const { venue, nearby } = Astro.props;
 const { data } = venue;
 const { Content } = await render(venue);
+
+// Temperature appendix lines (2026-07-26) — prefer the Architect's display
+// string, fall back to the structured min/max range; null when neither is set.
+const saunaLine = data.temperatures ? saunaTemperatureLine(data.temperatures) : null;
+const coldPlungeLine = data.temperatures ? coldPlungeTemperatureLine(data.temperatures) : null;
 
 // LocalBusiness + (when present) FAQPage structured data (2026-07-24 SEO/GEO
 // pass) — same facts already rendered visibly on this page (address, cost,
@@ -160,6 +169,24 @@ const faqLd = data.faq && data.faq.length > 0
         {/* Full cost detail — the dateline chip above compresses this to a
             price range (config.ts priceRange), so the long form lives here. */}
         {data.cost && <p class="mt-4 text-[var(--ink-faded)]">{data.cost}</p>}
+        {(saunaLine || coldPlungeLine) && (
+          <p class="mt-4 text-[var(--ink-faded)]">
+            {saunaLine && <>Sauna {saunaLine}</>}
+            {saunaLine && coldPlungeLine && <>. </>}
+            {coldPlungeLine && <>Cold plunge {coldPlungeLine}</>}
+          </p>
+        )}
+        {data.dress_code && <p class="mt-4">Dress code: {DRESS_CODE_LABELS[data.dress_code]}</p>}
+        {(data.session_gender || data.session_gender_note) && (
+          <p class="mt-4">
+            {data.session_gender && <>{SESSION_GENDER_LABELS[data.session_gender]}</>}
+            {data.session_gender && data.session_gender_note && <>. </>}
+            {data.session_gender_note}
+          </p>
+        )}
+        {data.silence_policy && <p class="mt-4">{data.silence_policy}</p>}
+        {data.phone_policy && <p class="mt-4">{data.phone_policy}</p>}
+        {data.minimum_age && <p class="mt-4">Minimum age {data.minimum_age}</p>}
         {data.website && (
           <p class="mt-4">
             <a

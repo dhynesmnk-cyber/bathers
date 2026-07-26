@@ -15,13 +15,19 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
-from admin.config import AMENITY_KEYS, CATEGORY_KEYS, FACILITY_KEYS, STATES
+from admin.config import AMENITY_KEYS, CATEGORY_KEYS, DRESS_CODE_KEYS, FACILITY_KEYS, SESSION_GENDER_KEYS, STATES
 
 AU_LATITUDE_BOUNDS = (-44.0, -9.0)
 AU_LONGITUDE_BOUNDS = (112.0, 154.0)
 SUMMARY_MAX_CHARS = 160
 MIN_PROSE_WORDS = 300
 FAQ_MAX_ITEMS = 8
+SAUNA_TEMP_BOUNDS = (0, 150)
+COLD_PLUNGE_TEMP_BOUNDS = (-5, 40)
+TEMPERATURE_KEYS = (
+    "sauna_min_c", "sauna_max_c", "sauna_display",
+    "cold_plunge_min_c", "cold_plunge_max_c", "cold_plunge_display",
+)
 
 _URL_RE = re.compile(r"^https?://[^\s/$.?#].[^\s]*$", re.IGNORECASE)
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -119,6 +125,46 @@ def validate_frontmatter(data: dict[str, Any]) -> list[FieldError]:
         if value is not None and not isinstance(value, str):
             errors.append(FieldError(field, f"'{field}' must be a string"))
 
+    temperatures = data.get("temperatures")
+    if temperatures is not None:
+        if not isinstance(temperatures, dict):
+            errors.append(FieldError("temperatures", "temperatures must be an object"))
+        else:
+            extra = [key for key in temperatures if key not in TEMPERATURE_KEYS]
+            if extra:
+                errors.append(FieldError("temperatures", f"temperatures has unexpected keys: {', '.join(extra)}"))
+            for min_key, max_key, bounds in (
+                ("sauna_min_c", "sauna_max_c", SAUNA_TEMP_BOUNDS),
+                ("cold_plunge_min_c", "cold_plunge_max_c", COLD_PLUNGE_TEMP_BOUNDS),
+            ):
+                min_val, max_val = temperatures.get(min_key), temperatures.get(max_key)
+                for key, value in ((min_key, min_val), (max_key, max_val)):
+                    if value is not None and (not _is_number(value) or not (bounds[0] <= value <= bounds[1])):
+                        errors.append(FieldError("temperatures", f"temperatures.{key} must be a number between {bounds[0]} and {bounds[1]}"))
+                if min_val is not None and max_val is not None and _is_number(min_val) and _is_number(max_val) and min_val > max_val:
+                    errors.append(FieldError("temperatures", f"temperatures.{min_key} must not exceed {max_key}"))
+            for key in ("sauna_display", "cold_plunge_display"):
+                value = temperatures.get(key)
+                if value is not None and not isinstance(value, str):
+                    errors.append(FieldError("temperatures", f"temperatures.{key} must be a string"))
+
+    dress_code = data.get("dress_code")
+    if dress_code is not None and dress_code not in DRESS_CODE_KEYS:
+        errors.append(FieldError("dress_code", f"dress_code must be one of {', '.join(DRESS_CODE_KEYS)}"))
+
+    session_gender = data.get("session_gender")
+    if session_gender is not None and session_gender not in SESSION_GENDER_KEYS:
+        errors.append(FieldError("session_gender", f"session_gender must be one of {', '.join(SESSION_GENDER_KEYS)}"))
+
+    for field in ("session_gender_note", "silence_policy", "phone_policy"):
+        value = data.get(field)
+        if value is not None and not isinstance(value, str):
+            errors.append(FieldError(field, f"'{field}' must be a string"))
+
+    minimum_age = data.get("minimum_age")
+    if minimum_age is not None and (not isinstance(minimum_age, int) or isinstance(minimum_age, bool) or minimum_age <= 0):
+        errors.append(FieldError("minimum_age", "minimum_age must be a positive integer"))
+
     status = data.get("status", "unclaimed")
     if status not in ("unclaimed", "claimed"):
         errors.append(FieldError("status", "status must be 'unclaimed' or 'claimed'"))
@@ -168,6 +214,8 @@ def validate_frontmatter(data: dict[str, Any]) -> list[FieldError]:
         "name", "state", "category", "suburb", "address", "latitude", "longitude", "website",
         "amenities", "facilities", "hours", "cost", "access", "status", "summary", "drafted", "verified", "source_url",
         "image", "image_source", "image_caption", "faq",
+        "temperatures", "dress_code", "session_gender", "session_gender_note",
+        "silence_policy", "phone_policy", "minimum_age",
     }
     extra_fields = [key for key in data if key not in known_fields]
     if extra_fields:

@@ -14,7 +14,7 @@ One contract, four consumers: the zod content schema, the SQLite tables, the Har
 
 This order is used everywhere amenities are displayed.
 
-### 1a. Facility keys (2026-07-21 addition, optional; pool-type keys added 2026-07-23; `pregnancy_safe` added 2026-07-26)
+### 1a. Facility keys (2026-07-21 addition, optional; pool-type keys added 2026-07-23; `pregnancy_safe` and accessibility keys added 2026-07-26)
 
 Practical/logistics info, distinct from the bathing-experience amenities above — absent on venues published before this date, defaulting to `false`/unset. The three pool-type keys (2026-07-23) drive the homepage's pool-type grouping (UX.md §2.1) — a venue can have more than one true.
 
@@ -29,8 +29,13 @@ Practical/logistics info, distinct from the bathing-experience amenities above �
 | `indoor_pool` | Indoor pool |
 | `natural_spring` | Natural spring |
 | `pregnancy_safe` | Pregnancy-safe bathing |
+| `step_free_entry` | Step-free entry |
+| `hoist_available` | Hoist available |
+| `accessible_changerooms` | Accessible changerooms |
 
 **`pregnancy_safe` (2026-07-26) is manual-reviewer-set only.** No structured temperature/depth field exists anywhere in this schema to ground a "pregnancy-safe" determination automatically, so it must never be set by the Harvester, Architect, or Gatekeeper (CLAUDE.md rule 6 — honesty in generated content applies to safety claims, not just prose). A reviewer toggles it in the admin app only when a venue's own published materials explicitly describe pregnancy-safe conditions. Glossary copy (`site/src/data/glossary.ts`): "Marked here only when a venue's own materials explicitly describe pregnancy-safe conditions — for example, a specifically designated pool kept below a stated temperature, or an area excluded from the venue's higher-heat circuit. This is not medical guidance; confirm current conditions with the venue and with your own healthcare provider before bathing while pregnant."
+
+**`step_free_entry`, `hoist_available`, `accessible_changerooms` (2026-07-26)** follow the ordinary `facilities` posture (Architect-settable from explicit evidence in `facts`, reviewer-editable) — unlike `pregnancy_safe`, they describe observable physical features rather than a safety judgement call, so no manual-only restriction applies.
 
 ## 2. MDX Frontmatter
 
@@ -49,6 +54,13 @@ Practical/logistics info, distinct from the bathing-experience amenities above �
 | `hours` | string | – | *(2026-07-21)* Freeform display string, e.g. `"Mon–Sun 6am–10pm"`. Drafted by the Architect from `facts.hours`, never fabricated. |
 | `cost` | string | – | *(2026-07-21)* Freeform display string, e.g. `"$45–120 per session"`. Drafted by the Architect from `facts.pricing`, never fabricated. |
 | `access` | string | – | *(2026-07-21)* Freeform display string, for venues gated by hotel-guest or membership status, e.g. `"Guests of the hotel, or Langham members — day spa visitors can also book a treatment to get pool access for the day."` Drafted by the Architect from `facts`, never fabricated. Omitted for the majority of standalone venues with no such restriction. |
+| `temperatures` | object | – | *(2026-07-26)* Optional; every key inside is also optional/nullable. `sauna_min_c`/`sauna_max_c` (number), `sauna_display` (string), `cold_plunge_min_c`/`cold_plunge_max_c` (number), `cold_plunge_display` (string). Set `_min_c`/`_max_c` (equal for a single figure) only for one continuous heat source/range; use `_display` instead whenever a venue has more than one distinct sauna/plunge at materially different temperatures (e.g. `"Rock sauna 99°C, wood-fired sauna 85°C"`) rather than collapsing them into a misleading range. Drafted by the Architect from `facts`, never fabricated; omit the whole object, or individual keys, rather than guess. Not stored in SQLite — rendered content only, same posture as `verified`. |
+| `dress_code` | enum | – | *(2026-07-26)* One of `nude`, `swimwear`, `swimwear_optional`, `mixed` (`mixed` = varies by area/session, e.g. nude sauna with a swimwear pool). Drafted by the Architect only on explicit evidence in `facts`; never inferred from venue category or reputation. Not stored in SQLite. |
+| `session_gender` | enum | – | *(2026-07-26)* One of `mixed`, `single_sex`, `varies`. Distinct from `dress_code` — this is about who's present, not what they're wearing. Not stored in SQLite. |
+| `session_gender_note` | string | – | *(2026-07-26)* Freeform detail the enum can't carry, e.g. `"Women-only Wednesdays 10am–2pm"`. Not stored in SQLite. |
+| `silence_policy` | string | – | *(2026-07-26)* Freeform, e.g. `"Quiet before midday"`. Not stored in SQLite. |
+| `phone_policy` | string | – | *(2026-07-26)* Freeform, e.g. `"No phones in the bathing area"`. Not stored in SQLite. |
+| `minimum_age` | number | – | *(2026-07-26)* Positive integer. Not stored in SQLite. |
 | `status` | enum | ✓ | `unclaimed` \| `claimed`. Default `unclaimed`. |
 | `summary` | string | ✓ | ≤160 chars. Index one-liner + meta description. Written by the Architect, in register. |
 | `drafted` | date (YYYY-MM-DD) | ✓ | Date the draft was generated. |
@@ -97,13 +109,18 @@ CREATE TABLE facilities (
   outdoor_pool INTEGER NOT NULL DEFAULT 0,
   indoor_pool INTEGER NOT NULL DEFAULT 0,
   natural_spring INTEGER NOT NULL DEFAULT 0,
-  pregnancy_safe INTEGER NOT NULL DEFAULT 0  -- 2026-07-26, manual reviewer-set only, see §1a
+  pregnancy_safe INTEGER NOT NULL DEFAULT 0,  -- 2026-07-26, manual reviewer-set only, see §1a
+  step_free_entry INTEGER NOT NULL DEFAULT 0,        -- 2026-07-26
+  hoist_available INTEGER NOT NULL DEFAULT 0,        -- 2026-07-26
+  accessible_changerooms INTEGER NOT NULL DEFAULT 0  -- 2026-07-26
 );
 ```
 
 The DB is derived and disposable (TRD §5): rebuildable in full from `_published` frontmatter. Approve = upsert on `slug`.
 
 **Note on FAQ:** not stored in SQLite — like the MDX body, it is rendered content, not a query/filter dimension.
+
+**Note on `temperatures`/`dress_code`/`session_gender`/`session_gender_note`/`silence_policy`/`phone_policy`/`minimum_age` (2026-07-26):** none of these are stored in SQLite, same posture as `verified` — rendered content only, not a query/filter dimension today. If a future feature needs to filter or sort on these (e.g. "cold plunge under 10°C"), add real columns then; don't retrofit silently.
 
 ## 4. Harvester JSON output
 
@@ -138,6 +155,8 @@ Rules: amenity `true` only on explicit evidence in the scraped text; unknown sca
 **Note on `hours`/`cost`/`facilities`/`access` (2026-07-21):** same division of labour — the Harvester's JSON contract is unchanged; `facts.hours` and `facts.pricing` already exist and are reused as the Architect's source material for the frontmatter `hours`/`cost` strings, and `facts` generally for `facilities` and `access` (there's no dedicated Harvester bucket for "who can book" — guest/member-access details typically land in `facts.setting` or `facts.other` when a venue's own site mentions them). No new Harvester fields.
 
 **Note on `category`/`verified` (2026-07-22):** same division of labour again — no new Harvester fields. `category` is an Architect-level judgement call like `hours`/`cost`/`access`, drawn from the appended Google Places verification block's `primaryType` when present, else from the harvested facts; it is required, so unlike those optional fields it must never be left blank (default to `other` only when genuinely ambiguous). `verified` is set by the pipeline at finalize time (`admin/pipeline/orchestrator.py`), not by any agent.
+
+**Note on `temperatures`/dress-code/session/policy fields (2026-07-26):** same division of labour as `hours`/`cost`/`facilities`/`access` — no new Harvester fields. The Architect drafts `temperatures` and the six policy fields from the existing `facts` buckets (temperatures typically land in `facts.pools`/`facts.heat`/`facts.cold`; dress code, session structure, silence/phone policy and minimum age typically land in `facts.setting` or `facts.other` when a venue's own site states them) — set a key only on explicit evidence, omit rather than guess. These fields have long had a home in FAQ prose (the Architect prompt already asks for swimwear/accessibility/age/temperature mentions there); this is the structured, filterable-in-future form of facts that already existed in prose, not a new sourcing requirement.
 
 **Note on review-signal prose (2026-07-22):** when the appended Google Places verification block carries `rating`/`user_rating_count` (and optionally `reviews`), the Architect may write one brief, non-negative-leaning sentence characterising the review signal, grounded only in that real data — never inventing sentiment. Omitted entirely when no review data exists, same "omit if thin" posture as everything else in this section. This is body prose; there is no dedicated frontmatter field for it.
 

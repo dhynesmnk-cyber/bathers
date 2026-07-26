@@ -35,7 +35,10 @@
           "outdoor_pool": true,
           "indoor_pool": true,
           "natural_spring": true,
-          "pregnancy_safe": false
+          "pregnancy_safe": false,
+          "step_free_entry": false,
+          "hoist_available": false,
+          "accessible_changerooms": false
         }
       }
     },
@@ -73,7 +76,10 @@
           "outdoor_pool": true,
           "indoor_pool": true,
           "natural_spring": false,
-          "pregnancy_safe": false
+          "pregnancy_safe": false,
+          "step_free_entry": false,
+          "hoist_available": false,
+          "accessible_changerooms": false
         }
       }
     }

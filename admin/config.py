@@ -170,6 +170,9 @@ FACILITY_KEYS = (
     "indoor_pool",
     "natural_spring",
     "pregnancy_safe",
+    "step_free_entry",
+    "hoist_available",
+    "accessible_changerooms",
 )
 
 FACILITY_LABELS = {
@@ -185,4 +188,27 @@ FACILITY_LABELS = {
     # never Harvester/Architect/Gatekeeper-derived: no structured
     # temperature/depth field exists to determine this automatically.
     "pregnancy_safe": "Pregnancy-safe bathing",
+    # 2026-07-26 additions (SCHEMA.md §1a) — ordinary Architect-settable facts.
+    "step_free_entry": "Step-free entry",
+    "hoist_available": "Hoist available",
+    "accessible_changerooms": "Accessible changerooms",
+}
+
+# Dress code / session-gender (2026-07-26 addition, SCHEMA.md §2) — mirrors
+# site/src/config.ts's DRESS_CODE_KEYS/SESSION_GENDER_KEYS exactly.
+DRESS_CODE_KEYS = ("nude", "swimwear", "swimwear_optional", "mixed")
+
+DRESS_CODE_LABELS = {
+    "nude": "Nude",
+    "swimwear": "Swimwear required",
+    "swimwear_optional": "Swimwear optional",
+    "mixed": "Mixed (varies by area/session)",
+}
+
+SESSION_GENDER_KEYS = ("mixed", "single_sex", "varies")
+
+SESSION_GENDER_LABELS = {
+    "mixed": "Mixed",
+    "single_sex": "Single-sex",
+    "varies": "Varies (see note)",
 }

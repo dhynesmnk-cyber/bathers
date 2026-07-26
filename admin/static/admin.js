@@ -12,6 +12,13 @@
     "indoor_pool",
     "natural_spring",
     "pregnancy_safe",
+    "step_free_entry",
+    "hoist_available",
+    "accessible_changerooms",
+  ];
+  const TEMPERATURE_KEYS = [
+    "sauna_min_c", "sauna_max_c", "sauna_display",
+    "cold_plunge_min_c", "cold_plunge_max_c", "cold_plunge_display",
   ];
   const UNDO_SECONDS = 3;
 
@@ -40,6 +47,18 @@
   const fieldHours = el("field-hours");
   const fieldCost = el("field-cost");
   const fieldAccess = el("field-access");
+  const fieldSaunaMin = el("field-sauna-min");
+  const fieldSaunaMax = el("field-sauna-max");
+  const fieldSaunaDisplay = el("field-sauna-display");
+  const fieldColdPlungeMin = el("field-cold-plunge-min");
+  const fieldColdPlungeMax = el("field-cold-plunge-max");
+  const fieldColdPlungeDisplay = el("field-cold-plunge-display");
+  const fieldDressCode = el("field-dress-code");
+  const fieldSessionGender = el("field-session-gender");
+  const fieldSessionGenderNote = el("field-session-gender-note");
+  const fieldSilencePolicy = el("field-silence-policy");
+  const fieldPhonePolicy = el("field-phone-policy");
+  const fieldMinimumAge = el("field-minimum-age");
   const fieldVerified = el("field-verified");
   const verifyTodayBtn = el("verify-today-btn");
   const fieldBody = el("field-body");
@@ -244,6 +263,19 @@
     fieldHours.value = fm.hours || "";
     fieldCost.value = fm.cost || "";
     fieldAccess.value = fm.access || "";
+    const temperatures = fm.temperatures || {};
+    fieldSaunaMin.value = temperatures.sauna_min_c ?? "";
+    fieldSaunaMax.value = temperatures.sauna_max_c ?? "";
+    fieldSaunaDisplay.value = temperatures.sauna_display || "";
+    fieldColdPlungeMin.value = temperatures.cold_plunge_min_c ?? "";
+    fieldColdPlungeMax.value = temperatures.cold_plunge_max_c ?? "";
+    fieldColdPlungeDisplay.value = temperatures.cold_plunge_display || "";
+    fieldDressCode.value = fm.dress_code || "";
+    fieldSessionGender.value = fm.session_gender || "";
+    fieldSessionGenderNote.value = fm.session_gender_note || "";
+    fieldSilencePolicy.value = fm.silence_policy || "";
+    fieldPhonePolicy.value = fm.phone_policy || "";
+    fieldMinimumAge.value = fm.minimum_age ?? "";
     fieldVerified.textContent = fm.verified || "not yet verified";
     fieldVerified.classList.toggle("verified-missing", !fm.verified);
     fieldBody.value = entry.body || "";
@@ -468,6 +500,13 @@
     hours: fieldHours,
     cost: fieldCost,
     access: fieldAccess,
+    temperatures: el("temperatures-field-row"),
+    dress_code: fieldDressCode,
+    session_gender: fieldSessionGender,
+    session_gender_note: fieldSessionGenderNote,
+    silence_policy: fieldSilencePolicy,
+    phone_policy: fieldPhonePolicy,
+    minimum_age: fieldMinimumAge,
     verified: fieldVerified,
     body: fieldBody,
     faq: el("faq-section"),
@@ -544,6 +583,34 @@
   fieldCost.addEventListener("input", () => queuePatch("cost", fieldCost.value));
   fieldAccess.addEventListener("input", () => queuePatch("access", fieldAccess.value));
   fieldBody.addEventListener("input", () => queuePatch("body", fieldBody.value));
+
+  // Temperatures (2026-07-26) — six inputs compose into one `temperatures`
+  // object per patch, same "compose then queuePatch" pattern as amenities/
+  // facilities toggles below. Empty inputs become null (never sent as "").
+  function composeTemperatures() {
+    const numOrNull = (input) => (input.value === "" ? null : Number(input.value));
+    const strOrNull = (input) => (input.value.trim() === "" ? null : input.value.trim());
+    return {
+      sauna_min_c: numOrNull(fieldSaunaMin),
+      sauna_max_c: numOrNull(fieldSaunaMax),
+      sauna_display: strOrNull(fieldSaunaDisplay),
+      cold_plunge_min_c: numOrNull(fieldColdPlungeMin),
+      cold_plunge_max_c: numOrNull(fieldColdPlungeMax),
+      cold_plunge_display: strOrNull(fieldColdPlungeDisplay),
+    };
+  }
+  [fieldSaunaMin, fieldSaunaMax, fieldSaunaDisplay, fieldColdPlungeMin, fieldColdPlungeMax, fieldColdPlungeDisplay].forEach((input) => {
+    input.addEventListener("input", () => queuePatch("temperatures", composeTemperatures()));
+  });
+
+  fieldDressCode.addEventListener("change", () => queuePatch("dress_code", fieldDressCode.value || null));
+  fieldSessionGender.addEventListener("change", () => queuePatch("session_gender", fieldSessionGender.value || null));
+  fieldSessionGenderNote.addEventListener("input", () => queuePatch("session_gender_note", fieldSessionGenderNote.value));
+  fieldSilencePolicy.addEventListener("input", () => queuePatch("silence_policy", fieldSilencePolicy.value));
+  fieldPhonePolicy.addEventListener("input", () => queuePatch("phone_policy", fieldPhonePolicy.value));
+  fieldMinimumAge.addEventListener("input", () =>
+    queuePatch("minimum_age", fieldMinimumAge.value === "" ? null : Number(fieldMinimumAge.value)),
+  );
 
   document.querySelectorAll(".toggle-chip[data-amenity]").forEach((btn) => {
     btn.addEventListener("click", () => {

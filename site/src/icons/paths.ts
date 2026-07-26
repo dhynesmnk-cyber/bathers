@@ -21,7 +21,10 @@ export type IconKey =
   | "outdoor_pool"
   | "indoor_pool"
   | "natural_spring"
-  | "pregnancy_safe";
+  | "pregnancy_safe"
+  | "step_free_entry"
+  | "hoist_available"
+  | "accessible_changerooms";
 
 export const ICON_PATHS: Record<IconKey, string> = {
   magnesium_pool: `
@@ -102,5 +105,21 @@ export const ICON_PATHS: Record<IconKey, string> = {
     <path d="M9.5 7.5c-2.6 0-4.3 1.8-4.3 4.4v2.6" />
     <path d="M9.5 11a4.6 4.6 0 0 1 4.6 4.6V21" />
     <path d="M5.2 21v-3.4" />
+  `,
+  // 2026-07-26 additions — same stroke-only primitive language as the rest of the set.
+  step_free_entry: `
+    <path d="M2 20h20" />
+    <path d="M5 20L14 8h5" />
+    <path d="M14 8v4.5" />
+  `,
+  hoist_available: `
+    <path d="M12 4v8" />
+    <path d="M9 12a3 3 0 0 0 6 0" />
+    <circle cx="12" cy="17" r="2.2" />
+  `,
+  accessible_changerooms: `
+    <rect x="6" y="3" width="10" height="18" rx="1.2" />
+    <circle cx="16.5" cy="16.5" r="3" />
+    <path d="M16.5 13.5v3l2.3 1.3" />
   `,
 };

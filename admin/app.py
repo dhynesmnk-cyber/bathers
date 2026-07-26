@@ -26,6 +26,8 @@ from admin.config import (
     ADMIN_PASSWORD,
     ADMIN_USERNAME,
     CATEGORY_LABELS,
+    DRESS_CODE_LABELS,
+    SESSION_GENDER_LABELS,
     SITE_BLOG_IMAGES_DIR,
     SITE_DIST_DIR,
     SITE_FONTS_DIR,
@@ -159,6 +161,8 @@ def index(request: Request):
         {
             "states": STATES,
             "categories": CATEGORY_LABELS,
+            "dress_codes": DRESS_CODE_LABELS,
+            "session_genders": SESSION_GENDER_LABELS,
             "site_url": SITE_URL,
             "static_version": _static_version(),
         },

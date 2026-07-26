@@ -1,6 +1,15 @@
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
-import { AMENITY_KEYS, AU_LATITUDE_BOUNDS, AU_LONGITUDE_BOUNDS, CATEGORIES, FACILITY_KEYS, STATES } from "../config";
+import {
+  AMENITY_KEYS,
+  AU_LATITUDE_BOUNDS,
+  AU_LONGITUDE_BOUNDS,
+  CATEGORIES,
+  DRESS_CODE_KEYS,
+  FACILITY_KEYS,
+  SESSION_GENDER_KEYS,
+  STATES,
+} from "../config";
 
 // Mirrors SCHEMA.md §2 exactly. Any change to this file must be propagated
 // to the SQLite schema, the Harvester JSON contract, and the admin
@@ -26,6 +35,21 @@ const facilitiesSchema = z
   .strict()
   .optional();
 
+// Optional — added 2026-07-26 (SCHEMA.md §2). Sanity bounds only, not a
+// strict physical limit: catches data-entry errors without being fussy about
+// the odd hot-spring outlier.
+const temperaturesSchema = z
+  .object({
+    sauna_min_c: z.number().min(0).max(150).nullable().optional(),
+    sauna_max_c: z.number().min(0).max(150).nullable().optional(),
+    sauna_display: z.string().nullable().optional(),
+    cold_plunge_min_c: z.number().min(-5).max(40).nullable().optional(),
+    cold_plunge_max_c: z.number().min(-5).max(40).nullable().optional(),
+    cold_plunge_display: z.string().nullable().optional(),
+  })
+  .strict()
+  .optional();
+
 const spasCollection = defineCollection({
   // Astro globs directly into _published — content-staging/_staging and
   // _rejected live outside site/src/content entirely (TRD.md §3), so this
@@ -47,6 +71,13 @@ const spasCollection = defineCollection({
       hours: z.string().nullable().optional(),
       cost: z.string().nullable().optional(),
       access: z.string().nullable().optional(),
+      temperatures: temperaturesSchema,
+      dress_code: z.enum(DRESS_CODE_KEYS).nullable().optional(),
+      session_gender: z.enum(SESSION_GENDER_KEYS).nullable().optional(),
+      session_gender_note: z.string().nullable().optional(),
+      silence_policy: z.string().nullable().optional(),
+      phone_policy: z.string().nullable().optional(),
+      minimum_age: z.number().int().positive().nullable().optional(),
       status: z.enum(["unclaimed", "claimed"]).default("unclaimed"),
       summary: z.string().max(160),
       drafted: z.date(),

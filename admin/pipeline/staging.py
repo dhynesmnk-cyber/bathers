@@ -24,7 +24,9 @@ from admin.schema import FieldError, count_prose_words, staging_status, validate
 
 FRONTMATTER_FIELD_ORDER = (
     "name", "state", "category", "suburb", "address", "latitude", "longitude", "website",
-    "amenities", "facilities", "hours", "cost", "access", "status", "summary", "drafted", "verified", "source_url",
+    "amenities", "facilities", "hours", "cost", "access",
+    "temperatures", "dress_code", "session_gender", "session_gender_note", "silence_policy", "phone_policy", "minimum_age",
+    "status", "summary", "drafted", "verified", "source_url",
     "image", "image_source", "image_caption", "faq",
 )
 AMENITY_FIELD_ORDER = (
@@ -33,6 +35,11 @@ AMENITY_FIELD_ORDER = (
 FACILITY_FIELD_ORDER = (
     "parking", "towels_provided", "changerooms", "bookings_required", "wheelchair_access",
     "outdoor_pool", "indoor_pool", "natural_spring", "pregnancy_safe",
+    "step_free_entry", "hoist_available", "accessible_changerooms",
+)
+TEMPERATURE_FIELD_ORDER = (
+    "sauna_min_c", "sauna_max_c", "sauna_display",
+    "cold_plunge_min_c", "cold_plunge_max_c", "cold_plunge_display",
 )
 
 UNDO_WINDOW_SECONDS = 10  # client shows a 3s undo affordance; server keeps a wider grace window
@@ -99,6 +106,8 @@ def render_frontmatter(data: dict[str, Any]) -> str:
             ordered[key] = {ak: data[key].get(ak) for ak in AMENITY_FIELD_ORDER if ak in data[key]}
         elif key == "facilities" and isinstance(data[key], dict):
             ordered[key] = {fk: data[key].get(fk) for fk in FACILITY_FIELD_ORDER if fk in data[key]}
+        elif key == "temperatures" and isinstance(data[key], dict):
+            ordered[key] = {tk: data[key].get(tk) for tk in TEMPERATURE_FIELD_ORDER if tk in data[key]}
         elif key in ("drafted", "verified"):
             ordered[key] = _coerce_date(data[key])
         else:
