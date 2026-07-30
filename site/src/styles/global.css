@@ -174,6 +174,38 @@ a:focus-visible {
   animation-delay: 0.3s;
 }
 
+/* Sitewide "Notebook Depth" motion (DESIGN.md §9 / UX.md §3, 2026-07-30
+   exception) — shared tokens so the new GSAP-driven motion (parallax,
+   hairline draw-on-view, line-by-line reveal — site/src/scripts/motion.ts)
+   feels like one system with the plain-CSS motion above, not a second,
+   flashier one. --ease-graceful is deliberately close to the plain
+   ease-out already used by rise-in/draw-line. */
+:root {
+  --ease-graceful: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-line-stagger: 60ms;
+  --motion-parallax-max: 40px;
+}
+
+/* Section dividers that draw themselves in the first time they scroll into
+   view (sitewide extension of .draw-line above, which stays homepage/
+   on-load-only). Default is fully drawn — motion.ts only pushes an
+   off-screen divider to a prospective scaleX(0) start state at setup time,
+   checked against the viewport first, so nothing already visible ever
+   flashes hidden then re-appears (the classic reveal-on-scroll FOUC bug). */
+.draw-line-on-view {
+  transform-origin: left center;
+  transform: scaleX(1);
+}
+
+/* The hero-photo page transition's box-morph (VenueEntry.astro's list
+   thumbnail <-> TippedPhoto.astro's <img>, both tagged
+   transition:name={`venue-photo-${slug}`}) isn't scopable from either
+   component's own styles — it has to live here. */
+::view-transition-group(venue-photo) {
+  animation-duration: 0.6s;
+  animation-timing-function: var(--ease-graceful);
+}
+
 /* 2026-07-26 exception (DESIGN.md §9) — extends the 0.15s link-underline
    idiom above to icon colour, sitewide (not homepage-only). Icons use
    stroke="currentColor" (Icon.astro), so transitioning `color` on the svg
@@ -184,6 +216,12 @@ svg {
   transition: color 0.15s ease;
 }
 
+/* Covers every plain-CSS transition/animation above (link underlines, icon
+   colour, drawer slide, rise-in/draw-line). It does NOT cover GSAP
+   (site/src/scripts/motion.ts) — GSAP writes inline transform/opacity via
+   requestAnimationFrame, not the transition/animation CSS properties, so
+   this rule can't touch it. motion.ts must gate its own setup separately,
+   via gsap.matchMedia() keyed to "(prefers-reduced-motion: no-preference)". */
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;

@@ -42,7 +42,7 @@ const presentCategories = CATEGORIES.filter((category) => venues.some((v) => v.d
 const presentAmenities = AMENITY_KEYS.filter((key) => venues.some((v) => v.data.amenities?.[key]));
 ---
 
-<div class="corner-menu">
+<div class="corner-menu" transition:name="corner-menu" transition:persist>
   <button
     type="button"
     id="corner-menu-btn"

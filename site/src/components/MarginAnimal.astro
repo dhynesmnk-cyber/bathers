@@ -17,6 +17,7 @@ const { name, size = 48 } = Astro.props;
 ---
 
 <span
+  data-parallax
   class="margin-animal"
   aria-hidden="true"
   style={`width:${size}px; height:${size}px; --animal-src: url(${ANIMAL_SRC[name]});`}

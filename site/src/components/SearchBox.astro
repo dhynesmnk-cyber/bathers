@@ -210,5 +210,23 @@ const { id, placeholder = "Search by name or suburb…" } = Astro.props;
     });
   }
 
-  document.querySelectorAll<HTMLElement>("[data-search-box]").forEach(initSearchBox);
+  // The corner-menu instance persists across <ClientRouter /> navigations
+  // (transition:persist, CornerMenu.astro) so it only ever needs binding
+  // once — but the homepage's own second instance (index.astro's
+  // `search-home`) is ordinary page content that gets replaced by a fresh,
+  // unbound DOM node on every navigation. This script itself only executes
+  // once (Astro dedups identical scripts across soft navigations), so
+  // rebinding on every astro:page-load — guarded so an already-bound,
+  // persisted instance is never double-bound — is what catches that case.
+  function initAll() {
+    document
+      .querySelectorAll<HTMLElement>("[data-search-box]:not([data-search-bound])")
+      .forEach((root) => {
+        root.setAttribute("data-search-bound", "");
+        initSearchBox(root);
+      });
+  }
+
+  initAll();
+  document.addEventListener("astro:page-load", initAll);
 </script>

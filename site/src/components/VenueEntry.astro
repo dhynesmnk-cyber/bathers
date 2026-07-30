@@ -11,9 +11,13 @@ interface Props {
   amenities: Record<(typeof AMENITY_KEYS)[number], boolean>;
   facilities?: Partial<Record<(typeof FACILITY_KEYS)[number], boolean>>;
   withId?: boolean;
+  // DESIGN.md §5, 2026-07-30 exception — a small thumbnail, present only for
+  // photo-bearing venues, that gives the sitewide hero-photo page transition
+  // (§9) a shared element to carry from this row to the venue's own page.
+  image?: string;
 }
 
-const { name, slug, suburb, state, summary, amenities, facilities, withId = true } = Astro.props;
+const { name, slug, suburb, state, summary, amenities, facilities, withId = true, image } = Astro.props;
 ---
 
 <article
@@ -22,13 +26,22 @@ const { name, slug, suburb, state, summary, amenities, facilities, withId = true
   class="py-6"
   style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent); scroll-margin-top: 2rem;"
 >
-  <a href={`/spa/${slug}/`}>
-    <h3 class="font-display text-3xl font-light text-[var(--ink)]">{name}</h3>
+  <a href={`/spa/${slug}/`} class="flex items-center gap-4">
+    {image && (
+      <img
+        src={image}
+        alt=""
+        transition:name={`venue-photo-${slug}`}
+        class="block h-16 w-16 shrink-0 object-cover"
+        loading="lazy"
+      />
+    )}
+    <h3 data-reveal-lines class="font-display text-3xl font-light text-[var(--ink)]">{name}</h3>
   </a>
   <div class="mt-1 mono text-[var(--ink-faded)]">
     {suburb}
     <span class="mono" data-distance-slot hidden></span>
   </div>
   <Features state={state} amenities={amenities} facilities={facilities} compact />
-  <p class="mt-2 max-w-[65ch] italic text-[var(--ink-faded)]">{summary}</p>
+  <p data-reveal-lines class="mt-2 max-w-[65ch] italic text-[var(--ink-faded)]">{summary}</p>
 </article>

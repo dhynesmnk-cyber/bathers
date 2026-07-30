@@ -157,7 +157,7 @@ const faqLd = data.faq && data.faq.length > 0
         <section class="mono mt-16" aria-labelledby="nearby-heading">
           <div class="mb-6 flex items-center gap-4 text-[var(--ink-faded)]">
             <span id="nearby-heading">NEARBY</span>
-            <span class="h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
+            <span class="draw-line-on-view h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
           </div>
           <ul>
             {nearby.map(({ item, distanceKm }) => (
@@ -215,10 +215,16 @@ const faqLd = data.faq && data.faq.length > 0
 </BaseLayout>
 
 <script>
-  const claimStatus = new URLSearchParams(window.location.search).get("claim");
-  if (claimStatus === "success") {
-    document.getElementById("claim-status-success")?.removeAttribute("hidden");
-  } else if (claimStatus === "cancelled") {
-    document.getElementById("claim-status-cancelled")?.removeAttribute("hidden");
-  }
+  // Runs on astro:page-load (fires on first load and every <ClientRouter />
+  // navigation) rather than as a bare top-level script, so a visitor landing
+  // here via a client-side navigation — not just a fresh full load — still
+  // gets the correct banner. This page's own claim-status elements are
+  // ordinary page content (not transition:persist'd), so each navigation
+  // here is a fresh, correctly-hidden pair of banners re-queried from
+  // scratch — no stale-state guard needed.
+  document.addEventListener("astro:page-load", () => {
+    const claimStatus = new URLSearchParams(window.location.search).get("claim");
+    document.getElementById("claim-status-success")?.toggleAttribute("hidden", claimStatus !== "success");
+    document.getElementById("claim-status-cancelled")?.toggleAttribute("hidden", claimStatus !== "cancelled");
+  });
 </script>

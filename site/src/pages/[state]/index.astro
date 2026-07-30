@@ -73,7 +73,7 @@ const pageTitle = `Bathhouses of ${STATE_NAMES[state]}${notation ? ` — ${notat
     <section aria-labelledby="contents-heading">
       <div class="mono mb-8 flex items-center gap-4 text-[var(--ink-faded)]">
         <span>CONTENTS</span>
-        <span class="h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
+        <span class="draw-line-on-view h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
       </div>
       {
         venues.map((venue) => (
@@ -85,6 +85,7 @@ const pageTitle = `Bathhouses of ${STATE_NAMES[state]}${notation ? ` — ${notat
             summary={venue.data.summary}
             amenities={venue.data.amenities}
             facilities={venue.data.facilities}
+            image={venue.data.image}
           />
         ))
       }

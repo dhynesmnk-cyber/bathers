@@ -89,7 +89,7 @@ This is what separates "dark editorial" from "dark dashboard":
 ## 5. Layout Grammar
 
 - **Single reading spine.** One column of prose, max 65ch, asymmetrically placed (offset left of centre on wide screens, with the wide right margin used for occasional mono margin-notes). Never centred symmetric hero layouts.
-- **No cards.** Venue listings on the index are typographic entries — name, dateline, one-line notation — separated by hairlines, like a table of contents. No thumbnails in lists.
+- **No cards.** Venue listings on the index are typographic entries — name, dateline, one-line notation — separated by hairlines, like a table of contents. ~~No thumbnails in lists.~~ *(Narrowly superseded 2026-07-30 — see below.)*
 - **Whitespace is structural.** Section spacing at 6–10rem on desktop. When in doubt, add space, not decoration.
 - **Filters are text.** Feature filters (2026-07-26: user-facing copy renamed from "amenity" — schema/field names unchanged, SCHEMA.md) render as inline mono toggles (`magnesium pool · infrared · cold plunge`); active state = thermal underline. No sidebar, no checkboxes, no pills.
 - **2026-07-26 — map removed.** The map (Leaflet) chapter described in earlier revisions of this section is superseded: the homepage no longer carries a map. It's replaced by a manual-postcode "facilities around me" 50km radius list (UX.md §2.1) rendered in the same results slot as search. Kept here, struck through for the record: ~~The map (Leaflet) is a chapter within the index page, not the hero. Tiles must be styled/filtered to sit in the palette (CSS filter to warm-dark, or a dark tile theme with a warm overlay). Default markers replaced with a small thermal ring; active marker fills.~~
@@ -101,6 +101,8 @@ This is what separates "dark editorial" from "dark dashboard":
 **2026-07-26 extension.** Below the chooser, a results area (also §7) replaces the former map-plus-contents-list pairing: empty by default with a direction line, populated by the feature filter and/or the near-me 50km radius list (search keeps its own dropdown under the search field, unchanged), each row the existing `VenueEntry` typographic-entry treatment (§5, "no cards"). ~~The pool-type grouping (thermal springs/indoor/outdoor/other) that the removed default contents list used to sort by no longer has a homepage entry point — it remains reachable via each state's `/[state]/[pooltype]/` pages (UX.md §2.3, unchanged) and is otherwise surfaced per-venue via promoted feature badges (§6, DESIGN.md's Features.astro ordering) rather than a new sitewide browse column, since no sitewide pool-type route exists to link to.~~ (superseded below, same day.)
 
 **2026-07-26 revision (later, reversing the note above).** The pool-type grouping is reinstated with a homepage entry point after all — a "By pool setting" column sits alongside "By state" in the chooser grid (indoor/outdoor/springs/other, present-only), reusing the same `POOL_TYPES.match()` rule already shared by the corner menu and the `/[state]/[pooltype]/` pages rather than reimplementing it a third time. The corner menu's per-state pool-type sub-rows (§5b) are also promoted to primary-tier status, not an afterthought under "More." The amenity/feature icon grid (§6, §7) moves below this row as a secondary, demoted block — see §7.
+
+**Exception (user-approved, 2026-07-30) — a small thumbnail on venues with a published photo, narrowly superseding "No thumbnails in lists" above.** `VenueEntry` shows a small (~56–72px), unbordered, unrotated thumbnail of the venue's own tipped-in photograph (§4) when one exists, beside the existing name/dateline/notation text — no card, no shadow, no mount border, no change to the hairline-separated "table of contents" rhythm otherwise. Venues with the zero-image default (§7) show nothing extra, exactly as before. This exists solely to give §9's sitewide hero-photo page transition a shared element to carry between a venue's listing row and its own page — it is not a general reintroduction of thumbnails/cards to list views, and nothing else about "No cards" above is affected.
 
 ---
 
@@ -220,7 +222,7 @@ The admin hub inherits the palette (both modes, §2) and the mono utility face b
 
 ## 9. Quality Floor
 
-Responsive to 360px. Visible keyboard focus (thermal 1px outline, offset 2px). `prefers-reduced-motion` respected — the only motion on the public site is subtle anyway (link underline transitions, map interactions; no scroll-triggered reveals, no parallax). Semantic HTML; the site must read correctly with CSS off.
+Responsive to 360px. Visible keyboard focus (thermal 1px outline, offset 2px). `prefers-reduced-motion` respected — the only motion on the public site is subtle anyway (link underline transitions, map interactions; ~~no scroll-triggered reveals, no parallax~~ — *superseded 2026-07-30, see "Notebook Depth" below*). Semantic HTML; the site must read correctly with CSS off — and, as of the exception below, with JavaScript off too.
 
 **Homepage on-load motion (user-approved, 2026-07-24 exception).** The homepage — and only the homepage — carries one restrained load animation: its top-level sections fade and rise ~10px into place, and the two section-divider hairlines draw in left-to-right. It runs once, on load; there are still no scroll-triggered reveals and no parallax anywhere. It is CSS-only (`rise-in` / `draw-line` in `global.css`), the at-rest state is the final state, and the existing `prefers-reduced-motion` kill-switch renders everything in place with no flash. This is a narrow exception to the "link underlines and map states only" posture, scoped to the homepage; it does not license motion on other pages or reopen scroll/parallax effects.
 
@@ -229,7 +231,24 @@ Responsive to 360px. Visible keyboard focus (thermal 1px outline, offset 2px). `
 1. The corner-menu drawer (§5b) slides in/out via a `transform` transition rather than an instant `hidden`-attribute toggle.
 2. Subtle hover/focus colour transitions (the existing 0.15s link-underline idiom) extend to icon colour sitewide — icons use `stroke="currentColor"`, so transitioning `color` on the svg element animates the stroke wherever an ancestor's hover/focus state changes it (feature chips, corner-menu links, chooser tiles).
 
-Still no scroll-triggered reveals, no parallax, and no looping anywhere on the site. This exception widens *where* the existing restrained-motion idiom applies, not *what kind* of motion is allowed.
+~~Still no scroll-triggered reveals, no parallax, and no looping anywhere on the site. This exception widens *where* the existing restrained-motion idiom applies, not *what kind* of motion is allowed.~~ *(Superseded 2026-07-30 — the exception below now widens both where and what kind.)*
+
+**Sitewide "Notebook Depth" motion (user-approved, 2026-07-30 exception — supersedes the "no scroll-triggered reveals, no parallax" restriction above, in both the base paragraph and the 2026-07-26 exception's closing line).** Four additions, governed by the same `prefers-reduced-motion` kill-switch and a parallel no-JS-safe rule below:
+
+1. **Restrained parallax.** The tipped-in photograph (§4) and margin-animal illustrations (§6a) drift a few pixels slower than the page scrolls — tuned tight enough to read as the weight of paper, not a product-site hero-parallax. Hard ceiling: no more than **~40px of accumulated offset** from a layer's natural scroll position over its full scroll-through, applied only to those two decorative/photographic layers — never to text or interactive elements.
+2. **Section-divider hairlines draw themselves in.** The existing `draw-line` idiom (the 2026-07-24 exception above), previously homepage-load-only, now triggers sitewide — once per divider, the first time it scrolls into view, at the same 0.9s timing already in use.
+3. **Line-by-line text reveal.** Headings and body copy stagger in by line as they enter view, ~60ms between lines, each line using the same fade-and-rise timing as the existing `rise-in` idiom — not a new, faster animation. A run longer than ~8–10 lines compresses rather than keeps stretching, so no block ever meaningfully outruns the ~0.7–0.9s family the rest of the site's motion already settles within.
+4. **A persisting hero photograph between list and detail.** Where a venue has a published photo (§4), the transition from its listing row to its own page carries that photograph across as one continuous element, via Astro's native View Transitions — not a JS animation library. Venues with no photo (the zero-image default, §7) simply navigate normally.
+
+Items 1–3 are implemented via a JS animation library (TRD.md §2, 2026-07-30 exception); item 4 via Astro's own `<ClientRouter />`. Both are dated exceptions to CLAUDE.md's "ask before adding any dependency" rule and to this file's prior posture.
+
+**Binding no-JS rule (all four items).** Every element renders fully visible, in its final position, by plain CSS with no JavaScript at all — motion is something JS *adds* on top of an already-correct page, never something a missing script leaves hidden or broken. This is also what keeps the admin review pane's preview (which never loads site JS) rendering correctly.
+
+**Binding reduced-motion rule.** `prefers-reduced-motion` renders the same final state, no flash, exactly as the 2026-07-24 exception already promises — for both the CSS kill-switch and the animation library's own reduced-motion handling.
+
+Still governed by §10 — if in doubt, prefer less motion, not more.
+
+Item 4's shared element requires a small, separately-scoped exception to §5's "No cards... No thumbnails in lists" — see §5's 2026-07-30 exception.
 
 ## 10. The Test
 

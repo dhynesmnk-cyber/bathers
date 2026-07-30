@@ -1,5 +1,6 @@
 ---
 import { getCollection } from "astro:content";
+import { ClientRouter } from "astro:transitions";
 import CornerMenu from "../components/CornerMenu.astro";
 import Footer from "../components/Footer.astro";
 import GrainOverlay from "../components/GrainOverlay.astro";
@@ -84,6 +85,10 @@ const searchIndex = searchVenues.map((v) => ({
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <title>{title}</title>
+    <!-- DESIGN.md §9 / UX.md §3, 2026-07-30 exception — governs all in-app
+         navigation. Browsers without support (Firefox, early 2026) fall back
+         to Astro's own documented plain-navigation behaviour automatically. -->
+    <ClientRouter />
   </head>
   <body>
     <div class="page-frame">
@@ -100,5 +105,38 @@ const searchIndex = searchVenues.map((v) => ({
       data-goatcounter={`https://${GOATCOUNTER_SITE}.goatcounter.com/count`}
       async
       src="//gc.zgo.at/count.js"></script>
+    <script is:inline>
+      // count.js (above) auto-counts the very first page view on load;
+      // <ClientRouter /> soft navigations need a manual re-count per
+      // GoatCounter's documented SPA pattern (goatcounter.com/help/spa) — the
+      // very first astro:page-load is skipped since count.js already
+      // covered it. This registers once (Astro dedups identical inline
+      // scripts across navigations) and the listener persists on
+      // `document`, which survives every soft navigation.
+      (function () {
+        var firstLoad = true;
+        document.addEventListener("astro:page-load", function () {
+          if (firstLoad) {
+            firstLoad = false;
+            return;
+          }
+          if (window.goatcounter && window.goatcounter.count) {
+            window.goatcounter.count({ path: location.pathname + location.search });
+          }
+        });
+      })();
+    </script>
+    <script>
+      // Sitewide "Notebook Depth" motion (DESIGN.md §9, 2026-07-30). Both
+      // calls are needed: astro:page-load only fires once <ClientRouter />
+      // is on the page (and covers every subsequent soft navigation once it
+      // is); the direct call covers plain hard navigations and this page's
+      // very first load either way. Calling both on a first load post-
+      // <ClientRouter /> just re-runs initMotion() harmlessly (it tears down
+      // and rebuilds its own triggers each time) rather than skipping it.
+      import { initMotion } from "../scripts/motion";
+      document.addEventListener("astro:page-load", initMotion);
+      initMotion();
+    </script>
   </body>
 </html>

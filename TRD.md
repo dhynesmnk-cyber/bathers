@@ -21,6 +21,15 @@ A textured, editorial directory of Australian bathhouses, thermal springs, and h
 | Scraping | httpx + trafilatura; Playwright only as explicit user-triggered fallback for JS-heavy sites | Respect robots.txt; 20s timeout; one job at a time. |
 | AI | Anthropic API | Harvester + Gatekeeper: `claude-haiku-4-5`. Architect: `claude-sonnet-4-6`. Model IDs configurable via .env; never hardcode. |
 | Deploy | git push → Netlify build | Triggered from admin UI per UX.md §1.4. |
+| Motion | `gsap` (core + `ScrollTrigger` + `SplitText` submodules) for in-page scroll effects; Astro's built-in `<ClientRouter />` for page-to-page hero-photo persistence | **2026-07-30 exception** — see below. |
+
+**Exception (user-approved, 2026-07-30) — a new frontend dependency, `gsap`.** CLAUDE.md rule 2 ("ask before adding any dependency … state what it's for and what the no-dependency alternative would be") applies; this is that ask, documented as approved. Added for DESIGN.md §9's 2026-07-30 "Notebook Depth" motion — restrained parallax on the tipped-in photograph (§4) and margin animals (§6a), sitewide hairline self-draw on enter-view, and ~60ms-per-line staggered text reveal on enter-view.
+
+*No-dependency alternative considered:* native CSS `animation-timeline: scroll()`/`view()`. Rejected — Firefox has not shipped scroll-driven animations as of early 2026, and the specific combination this vocabulary needs (per-line stagger measured against actual rendered line breaks, which reflow with viewport width and this project's `font-display: swap` variable fonts, plus a tunable custom-eased parallax) is materially harder to hand-roll robustly than with a mature scroll-animation library.
+
+*Why `gsap` specifically:* one npm package, no separate packages to track; "Standard no-charge license" (gsap.com/standard-license, verified against the published npm package, `gsap@3.15.0`), free for this project's use including `ScrollTrigger`/`SplitText`, both free only since Webflow's 2024 GreenSock acquisition. `SplitText` specifically solves "split into actual rendered lines, not just words," which a hand-rolled measurement approach would otherwise reimplement. Bundle cost: ~27KB gzipped for core (measured at `gsap@3.15.0`, 2026-07-30) plus roughly 10–15KB combined for the two submodules actually imported — confirm the exact tree-shaken figure at implementation time.
+
+*Page-to-page hero-photo persistence uses Astro's own `<ClientRouter />` instead — zero new dependency, ships inside the already-installed `astro` package.* `gsap` is scoped to in-page scroll-linked effects only.
 
 ## 3. Repository Structure
 

@@ -1,7 +1,8 @@
 ---
 // Rotation removed 2026-07-22 (DESIGN.md §4) — mount border/padding
-// treatment unchanged, photo now sits flat. `slug` is kept in Props since
-// staging.py's <TippedPhoto> tag always passes it.
+// treatment unchanged, photo now sits flat. `slug` now also names this
+// image's transition:name (DESIGN.md §9, 2026-07-30) so it matches
+// VenueEntry.astro's list thumbnail across the page transition.
 interface Props {
   slug: string;
   src: string;
@@ -10,12 +11,12 @@ interface Props {
   sourceUrl: string;
 }
 
-const { src, alt, caption, sourceUrl } = Astro.props;
+const { slug, src, alt, caption, sourceUrl } = Astro.props;
 ---
 
 <figure class="my-12 flex flex-col items-start">
-  <div class="p-1 pb-8" style="background: var(--paper-raised); border: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);">
-    <img src={src} alt={alt} class="block max-w-full" loading="lazy" />
+  <div data-parallax class="p-1 pb-8" style="background: var(--paper-raised); border: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);">
+    <img src={src} alt={alt} transition:name={`venue-photo-${slug}`} class="block max-w-full" loading="lazy" />
   </div>
   <figcaption class="mono mt-2 text-[var(--ink-faded)]">
     {caption}

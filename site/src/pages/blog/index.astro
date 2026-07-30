@@ -19,7 +19,7 @@ const posts = (await getCollection("blog")).sort(
     <section aria-labelledby="contents-heading">
       <div class="mono mb-8 flex items-center gap-4 text-[var(--ink-faded)]">
         <span>CONTENTS</span>
-        <span class="h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
+        <span class="draw-line-on-view h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
       </div>
       {posts.length === 0 && <p class="mono text-[var(--ink-faded)]">No entries yet.</p>}
       {

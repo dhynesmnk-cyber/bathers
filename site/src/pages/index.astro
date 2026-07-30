@@ -41,6 +41,7 @@ const allVenues = venues.map((v) => ({
   facilities: v.data.facilities,
   latitude: v.data.latitude ?? null,
   longitude: v.data.longitude ?? null,
+  image: v.data.image,
 }));
 ---
 
@@ -184,6 +185,7 @@ const allVenues = venues.map((v) => ({
               summary={venue.summary}
               amenities={venue.amenities}
               facilities={venue.facilities}
+              image={venue.image}
             />
           ))
         }

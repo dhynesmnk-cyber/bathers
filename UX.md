@@ -167,7 +167,21 @@ A second admin screen at `/claims`, linked from the hub header next to Blog — 
 ## 3. Interaction Rules (site-wide)
 
 - No modals, no toasts, no cookie banners, no floating buttons on the public site. **Exception (user-approved, 2026-07-22, repositioned 2026-07-23, reworked into a slide-out drawer 2026-07-26):** a small fixed corner menu (top-right, click/tap-to-open) sliding a full-height panel in from the right edge, listing search + Home + the theme toggle (§2.4, moved in the same day), then (primary tier) states with their pool-type sub-rows, then ("More") feature browsing, venue types, glossary, and journal — see DESIGN.md §5b. Scoped narrowly to this one navigation control; it does not reopen the door to modals, toasts, or banners generally.
-- Transitions: none beyond link underline colour and map marker states. `prefers-reduced-motion` disables even those. **Exception (user-approved, 2026-07-24, extended sitewide 2026-07-26):** a one-time, on-load-only settle on the homepage — top-level sections fade and rise a few pixels, and the two section-divider hairlines draw in left-to-right, once, when the page loads. No scroll-triggered reveals, no parallax, no looping. CSS-only, and `prefers-reduced-motion` shows everything in its final state with no flash. **2026-07-26 extension:** the corner-menu drawer's open/close slide, and subtle icon-colour hover/focus transitions (same 0.15s idiom as link underlines), now apply sitewide — not homepage-only. Still no scroll-triggered reveals, parallax, or looping anywhere.
+- Transitions: none beyond link underline colour and map marker states. `prefers-reduced-motion` disables even those. **Exception (user-approved, 2026-07-24, extended sitewide 2026-07-26):** a one-time, on-load-only settle on the homepage — top-level sections fade and rise a few pixels, and the two section-divider hairlines draw in left-to-right, once, when the page loads. ~~No scroll-triggered reveals, no parallax, no looping.~~ *(superseded 2026-07-30, see below)* CSS-only, and `prefers-reduced-motion` shows everything in its final state with no flash. **2026-07-26 extension:** the corner-menu drawer's open/close slide, and subtle icon-colour hover/focus transitions (same 0.15s idiom as link underlines), now apply sitewide — not homepage-only. ~~Still no scroll-triggered reveals, parallax, or looping anywhere.~~ *(superseded below)*
+
+  **Exception (user-approved, 2026-07-30) — "Notebook Depth" motion, supersedes "no scroll-triggered reveals, no parallax, no looping" above (DESIGN.md §9).** Four behavioural additions, all governed by the rules below:
+  - Restrained parallax drift on the tipped-in photo and margin-animal illustrations as the page scrolls (capped, DESIGN.md §9).
+  - Section-divider hairlines draw themselves in the first time they scroll into view, sitewide (extends the existing on-load-only `draw-line` idiom to a scroll-triggered one).
+  - Headings/body copy reveal line-by-line as they scroll into view, staggered ~60ms/line.
+  - A venue's hero photograph persists/morphs between its listing row and its own page on navigation (DESIGN.md §5's 2026-07-30 thumbnail exception is the shared element this needs).
+
+  **No-JS parity (binding).** Every page renders full, final content and layout with JavaScript disabled — motion is additive only, nothing hidden or gated behind a script running. Extends the existing "renders correctly with CSS off" posture to JS, for this feature specifically.
+
+  **Reduced motion (binding).** `prefers-reduced-motion: reduce` shows the same final, correct state with no flash — both the existing CSS kill-switch and the animation library's own reduced-motion handling honour this identically.
+
+  **Keyboard/focus.** The hero-photo transition never traps focus or alters tab order.
+
+  **Page transitions generally.** Astro's built-in View Transitions (`<ClientRouter />`) now govern in-app navigation, sitewide — not just the hero-photo case. Browsers without support (Firefox, as of early 2026) get Astro's existing plain-navigation fallback — a normal full page load, not a broken one; this is Astro's own documented behaviour, not new engineering here.
 - All interactive elements reachable and operable by keyboard; focus order follows reading order.
 
 ---
