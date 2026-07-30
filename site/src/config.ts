@@ -267,8 +267,13 @@ export function coldPlungeTemperatureLine(t: TemperatureRange): string | null {
   return t.cold_plunge_display ?? formatTempRange(t.cold_plunge_min_c, t.cold_plunge_max_c);
 }
 
-export const SITE_NAME = "Bathers'";
+export const SITE_NAME = "Where We Bathe";
 export const SITE_TAGLINE = "A field guide to Australian saunas, hot pools and bathhouses.";
+
+// Footer contact/social links (2026-07-27 addition, DESIGN.md §5d).
+export const SITE_CONTACT_EMAIL = "sebastian@wherewebathe.com";
+export const SITE_BLUESKY_URL = ""; // TODO: real Bluesky handle URL
+export const SITE_TIKTOK_URL = ""; // TODO: real TikTok handle URL
 
 // Claim-listing CTA (2026-07-23 addition — TRD.md §8 exception, UX.md §2.5).
 // No longer used by the claim page itself since the 2026-07-25 form/payment

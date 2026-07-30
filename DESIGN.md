@@ -134,6 +134,19 @@ A narrow, deliberate exception to the site's otherwise icon-free, toggle-free ch
 
 **Favicon and social share image (same 2026-07-26 exception):** the seal also replaces the earlier inline thermal-ring SVG favicon — `site/public/favicon-16x16.png` / `favicon-32x32.png` / `apple-touch-icon.png`, generated from the same source artwork (opaque `--paper`-coloured background on the apple-touch variant only, per Apple's guidance against transparency there; the two browser favicons stay transparent). `site/public/images/og-share.webp` (1200×630, the default `og:image`/`twitter:image` across the site unless a page sets its own) is the same lockup — seal, wordmark, tagline — on the light-mode palette, since share-card surfaces are outside this site's own theme toggle and light reads reliably across chat/social clients. Neither asset is theme-aware; both are static files, not rendered per request.
 
+**2026-07-27 rebrand.** The site's name changes from `Bathers'` to `Where We Bathe` (`SITE_NAME`, `site/src/config.ts`) — new logo artwork, same seal mascot (a fresh seal-with-towel illustration replacing the earlier seal source, still masked/recoloured the same way). This section's earlier references to the `Bathers'` wordmark above are superseded by this note, kept unedited for the record. The lockup mechanics described above — seal icon + live Fraunces text beside/above it, the favicon set, and `og-share.webp` — are unchanged in *technique*; only the wordmark text and the mascot source artwork change.
+
+---
+
+## 5d. Footer (2026-07-27 addition)
+
+**Exception (user-approved, 2026-07-27), a narrow extension of §6's icon-free posture (previously scoped only to venue-feature display, the corner menu's "Browse by feature" list, and the homepage chooser) to one additional use: three social/contact links in a new sitewide footer.**
+
+- One shared component (`site/src/components/Footer.astro`), rendered once from `BaseLayout.astro` on every public page, as the last in-flow element of `.page-frame` — public site only, no equivalent in the admin app (§8).
+- A single hairline top border (`--ink-faded` at 25% opacity, the same divider idiom used throughout §4/§5) — no card, no box, no background distinct from `--paper`.
+- Three mono-text links (Bluesky, TikTok, email), each an icon (§6's renderer, 20px — matching the corner menu's "Browse by feature" size) plus a visible mono label, not icon-only. `--ink-faded` at rest, `--thermal` on hover/focus — the same treatment as every other interactive element on the site (§7a, §5b).
+- A single mono colophon line beneath the links (site name + tagline). No further nav, no sitemap-style link column — this is a printer's colophon, not a SaaS footer.
+
 ---
 
 ## 6. Venue Feature Display — Icon System

@@ -104,7 +104,7 @@ const faqLd = data.faq && data.faq.length > 0
   : null;
 ---
 
-<BaseLayout title={`${data.name} — Bathers'`} description={data.summary} image={data.image ?? undefined}>
+<BaseLayout title={`${data.name} — Where We Bathe`} description={data.summary} image={data.image ?? undefined}>
   <script type="application/ld+json" set:html={JSON.stringify(localBusinessLd)} />
   {faqLd && <script type="application/ld+json" set:html={JSON.stringify(faqLd)} />}
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">

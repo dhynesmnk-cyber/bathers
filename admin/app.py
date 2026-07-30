@@ -64,7 +64,7 @@ PUBLIC_PATH_PREFIXES = ("/claim-action/",)
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
-app = FastAPI(title="Bathers' Admin")
+app = FastAPI(title="Where We Bathe Admin")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="admin-static")
 # Mounted unconditionally (dir created if missing) so a later `npm run build`
 # becomes visible on the next request with no admin restart required.
@@ -96,7 +96,7 @@ async def require_basic_auth(request: Request, call_next):
     if not ADMIN_USERNAME and not ADMIN_PASSWORD:
         return await call_next(request)
     if not _basic_auth_ok(request.headers.get("authorization")):
-        return Response(status_code=401, headers={"WWW-Authenticate": 'Basic realm="Bathers Admin"'})
+        return Response(status_code=401, headers={"WWW-Authenticate": 'Basic realm="Where We Bathe Admin"'})
     return await call_next(request)
 
 

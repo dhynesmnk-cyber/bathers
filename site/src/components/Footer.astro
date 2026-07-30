@@ -1,0 +1,56 @@
+---
+// 2026-07-27 addition (DESIGN.md §5d) — a narrow extension of §6's
+// icon-free posture to one further use: three social/contact links in a
+// sitewide footer. Public site only, rendered once from BaseLayout on
+// every page as the last in-flow element of .page-frame.
+import Icon from "./Icon.astro";
+import { SITE_BLUESKY_URL, SITE_CONTACT_EMAIL, SITE_NAME, SITE_TAGLINE, SITE_TIKTOK_URL } from "../config";
+---
+
+<footer class="site-footer">
+  <div class="mx-auto max-w-3xl px-6 py-10">
+    <div class="mono site-footer-links">
+      <a href={SITE_BLUESKY_URL || "#"} class="site-footer-link" target="_blank" rel="noopener">
+        <Icon name="bluesky" size={20} /><span>Bluesky</span>
+      </a>
+      <a href={SITE_TIKTOK_URL || "#"} class="site-footer-link" target="_blank" rel="noopener">
+        <Icon name="tiktok" size={20} /><span>TikTok</span>
+      </a>
+      <a href={`mailto:${SITE_CONTACT_EMAIL}`} class="site-footer-link">
+        <Icon name="email" size={20} /><span>Email</span>
+      </a>
+    </div>
+    <p class="mono site-footer-line">{SITE_NAME} — {SITE_TAGLINE}</p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
+  }
+
+  .site-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .site-footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--ink-faded);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .site-footer-link:hover,
+  .site-footer-link:focus-visible {
+    color: var(--thermal);
+  }
+
+  .site-footer-line {
+    margin-top: 1rem;
+    color: var(--ink-faded);
+  }
+</style>

@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import CornerMenu from "../components/CornerMenu.astro";
+import Footer from "../components/Footer.astro";
 import GrainOverlay from "../components/GrainOverlay.astro";
 import SiteLogo from "../components/SiteLogo.astro";
 import { AMENITY_KEYS, AMENITY_NOTATION, CATEGORY_LABELS, GOATCOUNTER_SITE, SITE_NAME, SITE_TAGLINE, STATE_NAMES } from "../config";
@@ -53,7 +54,7 @@ const searchIndex = searchVenues.map((v) => ({
     <script is:inline>
       (function () {
         try {
-          var stored = localStorage.getItem("bathers-theme");
+          var stored = localStorage.getItem("where-we-bathe-theme");
           if (stored === "light" || stored === "dark") {
             document.documentElement.setAttribute("data-theme", stored);
           }
@@ -92,6 +93,7 @@ const searchIndex = searchVenues.map((v) => ({
       </div>
       <slot />
       <CornerMenu />
+      <Footer />
     </div>
     <script
       is:inline

@@ -16,7 +16,7 @@ import trafilatura
 
 TIMEOUT_SECONDS = 20.0
 THIN_EXTRACTION_CHARS = 500
-USER_AGENT = "BathersDirectoryBot/1.0 (local admin tool; contact via venue's own listing)"
+USER_AGENT = "WhereWeBatheBot/1.0 (local admin tool; contact via venue's own listing)"
 
 
 class ScrapeError(Exception):

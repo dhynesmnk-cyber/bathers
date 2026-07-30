@@ -24,7 +24,10 @@ export type IconKey =
   | "pregnancy_safe"
   | "step_free_entry"
   | "hoist_available"
-  | "accessible_changerooms";
+  | "accessible_changerooms"
+  | "bluesky"
+  | "tiktok"
+  | "email";
 
 export const ICON_PATHS: Record<IconKey, string> = {
   magnesium_pool: `
@@ -121,5 +124,22 @@ export const ICON_PATHS: Record<IconKey, string> = {
     <rect x="6" y="3" width="10" height="18" rx="1.2" />
     <circle cx="16.5" cy="16.5" r="3" />
     <path d="M16.5 13.5v3l2.3 1.3" />
+  `,
+  // 2026-07-27 additions (DESIGN.md §5d, footer) — same stroke-only
+  // primitive language as the rest of the set: simplified, not literal,
+  // brand-mark tracings.
+  bluesky: `
+    <path d="M12 8c-.5-3.5-3.8-6-8-5.5-.8 3.6.8 8 5.5 9.6.9.3 1.9.2 2.5-.4z" />
+    <path d="M12 8c.5-3.5 3.8-6 8-5.5.8 3.6-.8 8-5.5 9.6-.9.3-1.9.2-2.5-.4z" />
+    <path d="M12 8c-1 2-1 4.5 0 6.5 1-2 1-4.5 0-6.5z" />
+  `,
+  tiktok: `
+    <circle cx="9.3" cy="17.5" r="3.2" />
+    <path d="M12.5 17.5V4" />
+    <path d="M12.5 4c2.2-.2 3.8 1 4 3" />
+  `,
+  email: `
+    <rect x="3" y="5" width="18" height="14" rx="1.5" />
+    <path d="M3.5 6.2L12 13l8.5-6.8" />
   `,
 };

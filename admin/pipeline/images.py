@@ -23,7 +23,7 @@ from admin.config import IMAGES_DIR, SITE_IMAGES_DIR
 MAX_CANDIDATES = 5
 MAX_DIMENSION = 1600
 FETCH_TIMEOUT = 20.0
-USER_AGENT = "BathersDirectoryBot/1.0 (local admin tool; contact via venue's own listing)"
+USER_AGENT = "WhereWeBatheBot/1.0 (local admin tool; contact via venue's own listing)"
 
 _SKIP_HINTS = (
     "logo", "icon", "sprite", "favicon", "avatar", "pixel.gif", "1x1",
