@@ -108,9 +108,9 @@ SMTP_FROM = _ENV.get("SMTP_FROM", "")
 CLAIM_NOTIFY_EMAIL = _ENV.get("CLAIM_NOTIFY_EMAIL", "") or "d.hynes.mnk@gmail.com"
 ADMIN_BASE_URL = _ENV.get("ADMIN_BASE_URL", "").rstrip("/")
 # Deployed public-site origin — the Done panel's "view" links target it.
-# Defaults to the Netlify production URL; override in .env (e.g. once a
-# custom domain exists), or set empty to fall back to /site-dist.
-SITE_URL = (_ENV.get("SITE_URL") or "https://bathers-directory.netlify.app").rstrip("/")
+# Defaults to the production custom domain; override in .env, or set empty
+# to fall back to /site-dist.
+SITE_URL = (_ENV.get("SITE_URL") or "https://wherewebathe.com").rstrip("/")
 
 # Netlify deploy verification (the site host — repo-connected, builds on
 # push to main). The site id isn't secret (.netlify/state.json is just

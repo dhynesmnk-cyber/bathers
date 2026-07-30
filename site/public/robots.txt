@@ -22,4 +22,4 @@ Allow: /
 User-agent: CCBot
 Allow: /
 
-Sitemap: https://bathers-directory.netlify.app/sitemap.xml
+Sitemap: https://wherewebathe.com/sitemap.xml

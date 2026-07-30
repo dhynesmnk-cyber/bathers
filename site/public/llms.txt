@@ -19,6 +19,6 @@ Longer-form writing about the project — its mission, values, and the people be
 
 ## Links
 
-- Homepage: https://bathers-directory.netlify.app/
-- Journal: https://bathers-directory.netlify.app/blog/
-- Sitemap: https://bathers-directory.netlify.app/sitemap.xml
+- Homepage: https://wherewebathe.com/
+- Journal: https://wherewebathe.com/blog/
+- Sitemap: https://wherewebathe.com/sitemap.xml
