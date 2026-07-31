@@ -41,6 +41,7 @@ ALLOWED_PREFIXES = (
     "site/src/data/venues.json",
     "site/public/venues.geojson",
     "site/src/data/forewords.json",
+    "site/src/data/articles-meta.json",
     "site/src/content/blog/_published/",
     "site/public/blog-images/",
 )

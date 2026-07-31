@@ -46,6 +46,11 @@ DB_PATH = ROOT / "data" / "directory.db"
 VENUES_JSON_PATH = ROOT / "site" / "src" / "data" / "venues.json"
 VENUES_GEOJSON_PATH = ROOT / "site" / "public" / "venues.geojson"
 FOREWORDS_JSON_PATH = ROOT / "site" / "src" / "data" / "forewords.json"
+# Hybrid-article staleness metadata (Editorial Gate E1, 2026-08-01) — derived
+# from venues.json + the comparison registry by site/scripts/refresh-articles.ts,
+# committed and read by the site build. Same derived-artifact posture as
+# venues.json; regenerated via admin/pipeline/article_store.py.
+ARTICLES_META_JSON_PATH = ROOT / "site" / "src" / "data" / "articles-meta.json"
 
 # Claim-request records (2026-07-25, TRD.md §8 exception) — a separate SQLite
 # file from DB_PATH because data_store.rebuild() deletes and fully recreates

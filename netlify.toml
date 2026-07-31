@@ -12,3 +12,13 @@
   to = "https://wherewebathe.com/:splat"
   status = 301
   force = true
+
+# Editorial Gate E1 (2026-08-01): comparison intents voiced as an article are
+# canonical at /blog/ and the matching generated /compare/<query_key>/ page is
+# suppressed (site/src/data/articles.ts). One 301 per migrated intent keeps the
+# old, indexed /compare/ URL pointing at its article — one intent, one URL.
+# Add a line here whenever an article claims a comparison query_key.
+[[redirects]]
+  from = "/compare/cheapest/"
+  to = "/blog/cheapest-bathhouses-in-australia/"
+  status = 301

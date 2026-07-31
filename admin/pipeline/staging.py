@@ -1,7 +1,7 @@
 """Review-queue primitives: list/read/update staging entries, reject, approve
 and undo. Frontmatter is the canonical source (CLAUDE.md); this module never
 writes to `_published` except via `approve`, and never touches the DB/JSON
-directly — it always goes through `data_store.rebuild()` so the derived
+directly — it always goes through `_rebuild_derived()` so the derived
 artefacts stay a full-rebuild-from-published (TRD.md §5), consistent with
 how Gate 2 already guarantees idempotency.
 """
@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import logging
 import re
 import time
 from dataclasses import dataclass, field
@@ -19,8 +20,26 @@ from typing import Any
 import yaml
 
 from admin.config import DELETED_DIR, PUBLISHED_DIR, REJECTED_DIR, SITE_IMAGES_DIR, STAGING_DIR
-from admin.pipeline import data_store, forewords, images, places
+from admin.pipeline import article_store, data_store, forewords, images, places
 from admin.schema import FieldError, count_prose_words, staging_status, validate_frontmatter
+
+_logger = logging.getLogger("admin.staging")
+
+
+def _rebuild_derived() -> int:
+    """Rebuild the venue-derived data (directory.db + venues.json/geojson), then
+    the article-derived staleness metadata (articles-meta.json), which reads the
+    freshly written venues.json. Every published-venue write goes through here so
+    a price/temperature change reflows the hybrid articles' staleness. The
+    article refresh is best-effort: a node/refresh failure must never block a
+    venue publish (the deploy pre-push + /validate freshness check still catch a
+    drifted articles-meta.json), so it is logged, not raised."""
+    count = data_store.rebuild()
+    try:
+        article_store.rebuild()
+    except Exception as exc:  # noqa: BLE001 — non-fatal by design
+        _logger.warning("article-meta refresh skipped: %s", exc)
+    return count
 
 FRONTMATTER_FIELD_ORDER = (
     "name", "state", "category", "suburb", "address", "latitude", "longitude", "website",
@@ -305,7 +324,7 @@ def update_published(slug: str, patch: dict[str, Any]) -> StagingEntry:
     so `_published/` never holds a file that would fail the schema check
     `approve()` already guarantees on the way in."""
     entry = _apply_patch(PUBLISHED_DIR, slug, patch, validate=True)
-    data_store.rebuild()
+    _rebuild_derived()
     return entry
 
 
@@ -344,7 +363,7 @@ def publish_image_fields_on_published(slug: str, fields: dict[str, str]) -> Stag
         raise ValidationFailed(errors)
     body = _insert_tipped_photo(_strip_tipped_photo(body), _tipped_photo_tag(slug, fields))
     path.write_text(render_mdx(data, body), encoding="utf-8")
-    data_store.rebuild()
+    _rebuild_derived()
     return _entry_from_path(path)
 
 
@@ -399,7 +418,7 @@ def approve(slug: str) -> int:
 
     dest.write_text(staged_text, encoding="utf-8")
     src.unlink()
-    count = data_store.rebuild()
+    count = _rebuild_derived()
     forewords.ensure_forewords()  # UX.md §2.3 — generated once, on first venue in a new state/amenity combo
 
     _UNDO_STORE[slug] = _UndoRecord(
@@ -431,7 +450,7 @@ def delete_published(slug: str) -> None:
         image_path = SITE_IMAGES_DIR / Path(image).name
         image_path.unlink(missing_ok=True)
 
-    data_store.rebuild()
+    _rebuild_derived()
 
 
 def remove_published_image(slug: str) -> None:
@@ -448,7 +467,7 @@ def remove_published_image(slug: str) -> None:
         data.pop(key, None)
     body = _strip_tipped_photo(body)
     path.write_text(render_mdx(data, body), encoding="utf-8")
-    data_store.rebuild()
+    _rebuild_derived()
 
 
 def undo_approve(slug: str) -> None:
@@ -468,5 +487,5 @@ def undo_approve(slug: str) -> None:
     STAGING_DIR.mkdir(parents=True, exist_ok=True)
     (STAGING_DIR / f"{slug}.mdx").write_text(record.staged_text, encoding="utf-8")
 
-    data_store.rebuild()
+    _rebuild_derived()
     del _UNDO_STORE[slug]
