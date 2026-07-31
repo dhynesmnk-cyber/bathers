@@ -4,9 +4,15 @@
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { resolveComparisons, comparePath } from "../../data/comparisons";
+import { HEAD_TO_HEAD } from "../../data/headtohead";
 
 const venues = await getCollection("spas");
+const bySlug = new Map(venues.map((v) => [v.id, v]));
 const { eligible } = resolveComparisons(venues);
+const headToHead = HEAD_TO_HEAD.filter((p) => bySlug.has(p.a) && bySlug.has(p.b)).map((p) => ({
+  slug: p.slug,
+  title: `${bySlug.get(p.a)!.data.name} vs ${bySlug.get(p.b)!.data.name}`,
+}));
 
 const KIND_LABELS: Record<string, string> = {
   superlative: "By the numbers",
@@ -53,6 +59,22 @@ const groups = ["superlative", "occasion", "constraint"].map((kind) => ({
           </ul>
         </section>
       ))
+    }
+    {
+      headToHead.length > 0 && (
+        <section class="mb-14">
+          <h2 class="mono mb-4 text-[var(--ink-faded)]" style="text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.8rem;">
+            Head to head
+          </h2>
+          <ul class="reading-spine">
+            {headToHead.map((p) => (
+              <li class="mb-3">
+                <a href={comparePath(p.slug)}>{p.title}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
     }
   </main>
 </BaseLayout>

@@ -86,6 +86,11 @@ export const GET: APIRoute = async ({ site }) => {
   for (const c of resolveComparisons(venues).eligible) {
     entries.push({ path: comparePath(c.slug) });
   }
+  const { HEAD_TO_HEAD } = await import("../data/headtohead");
+  const venueIds = new Set(venues.map((v) => v.id));
+  for (const p of HEAD_TO_HEAD) {
+    if (venueIds.has(p.a) && venueIds.has(p.b)) entries.push({ path: comparePath(p.slug) });
+  }
   const regionCounts = new Map<string, number>();
   for (const v of venues) {
     const r = regionForSuburb(v.data.state, v.data.suburb);

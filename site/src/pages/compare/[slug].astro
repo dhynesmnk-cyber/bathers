@@ -1,26 +1,55 @@
 ---
-// Comparison page (Gate 10, 2026-07-31). Superlative/constraint/occasion
-// tables generated from the Gate 7 fact model (site/src/data/comparisons.ts).
-// Only comparisons clearing the >=5-venue threshold generate; the rest are
-// logged here at build time (skip-and-log, not a failure).
+// Comparison page (Gate 10, 2026-07-31). One dynamic /compare/ route serving
+// two kinds (Astro allows one dynamic route per depth), a `kind` discriminator
+// picking the layout:
+//   - "ranked": superlative/constraint/occasion tables from the Gate 7 fact
+//     model (comparisons.ts); only those clearing the >=5-venue threshold
+//     generate, the rest are skip-and-logged.
+//   - "h2h": user-approved head-to-head pairs (headtohead.ts), rendered as a
+//     transposed two-venue table.
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { resolveComparisons, comparePath } from "../../data/comparisons";
+import { HEAD_TO_HEAD, H2H_ROWS, h2hLead, h2hTitle } from "../../data/headtohead";
 
 export async function getStaticPaths() {
   const venues = await getCollection("spas");
+  const bySlug = new Map(venues.map((v) => [v.id, v]));
   const { eligible, skipped } = resolveComparisons(venues);
   for (const s of skipped) {
-    console.info(`[compare] skipped '${s.slug}' — ${s.count} venue(s), below the ${5}-venue threshold`);
+    console.info(`[compare] skipped '${s.slug}' — ${s.count} venue(s), below the 5-venue threshold`);
   }
-  return eligible.map((c) => ({ params: { slug: c.slug }, props: { comparison: c } }));
+  const ranked = eligible.map((c) => ({ params: { slug: c.slug }, props: { kind: "ranked" as const, comparison: c } }));
+  const h2h = HEAD_TO_HEAD.filter((p) => bySlug.has(p.a) && bySlug.has(p.b)).map((p) => ({
+    params: { slug: p.slug },
+    props: { kind: "h2h" as const, slug: p.slug, a: bySlug.get(p.a)!, b: bySlug.get(p.b)! },
+  }));
+  return [...ranked, ...h2h];
 }
 
-const { comparison } = Astro.props;
-const { title, metaDescription, lead, caption, columns, venues } = comparison;
-const canonicalPath = comparePath(comparison.slug);
-
+const props = Astro.props;
 const site = Astro.site;
+
+let title: string;
+let metaDescription: string;
+let lead: string;
+let canonicalPath: string;
+let itemVenues: { id: string; name: string }[];
+
+if (props.kind === "ranked") {
+  title = props.comparison.title;
+  metaDescription = props.comparison.metaDescription;
+  lead = props.comparison.lead;
+  canonicalPath = comparePath(props.comparison.slug);
+  itemVenues = props.comparison.venues.map((v) => ({ id: v.id, name: v.data.name }));
+} else {
+  title = h2hTitle(props.a, props.b);
+  metaDescription = `${props.a.data.name} vs ${props.b.data.name}: adult drop-in price, features, temperatures and hours compared side by side.`;
+  lead = h2hLead(props.a, props.b);
+  canonicalPath = comparePath(props.slug);
+  itemVenues = [props.a, props.b].map((v) => ({ id: v.id, name: v.data.name }));
+}
+
 const breadcrumbLd = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
@@ -34,12 +63,12 @@ const itemList = {
   "@context": "https://schema.org",
   "@type": "ItemList",
   name: title,
-  numberOfItems: venues.length,
-  itemListElement: venues.map((v, i) => ({
+  numberOfItems: itemVenues.length,
+  itemListElement: itemVenues.map((v, i) => ({
     "@type": "ListItem",
     position: i + 1,
     url: new URL(`/spa/${v.id}/`, site).href,
-    name: v.data.name,
+    name: v.name,
   })),
 };
 ---
@@ -51,34 +80,58 @@ const itemList = {
     </nav>
     <header class="mb-10">
       <h1 class="font-display font-light" style="font-size: clamp(2.25rem, 5vw, 3.75rem);">{title}</h1>
-      <p class="mt-2 mono text-sm text-[var(--ink-faded)]">{venues.length} venues</p>
+      <p class="mt-2 mono text-sm text-[var(--ink-faded)]">{itemVenues.length} venues</p>
     </header>
 
     <section class="reading-spine mb-12">
       <p>{lead}</p>
     </section>
 
-    <div class="compare-scroll" role="region" aria-label={caption} tabindex="0">
-      <table class="compare-table">
-        <caption class="mono">{caption}</caption>
-        <thead>
-          <tr>
-            <th scope="col">Venue</th>
-            {columns.map((c) => <th scope="col">{c.header}</th>)}
-          </tr>
-        </thead>
-        <tbody>
-          {
-            venues.map((v) => (
+    {
+      props.kind === "ranked" ? (
+        <div class="compare-scroll" role="region" aria-label={props.comparison.caption} tabindex="0">
+          <table class="compare-table">
+            <caption class="mono">{props.comparison.caption}</caption>
+            <thead>
               <tr>
-                <th scope="row"><a href={`/spa/${v.id}/`}>{v.data.name}</a></th>
-                {columns.map((c) => <td>{c.cell(v) ?? "—"}</td>)}
+                <th scope="col">Venue</th>
+                {props.comparison.columns.map((c) => <th scope="col">{c.header}</th>)}
               </tr>
-            ))
-          }
-        </tbody>
-      </table>
-    </div>
+            </thead>
+            <tbody>
+              {props.comparison.venues.map((v) => (
+                <tr>
+                  <th scope="row"><a href={`/spa/${v.id}/`}>{v.data.name}</a></th>
+                  {props.comparison.columns.map((c) => <td>{c.cell(v) ?? "—"}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div class="compare-scroll" role="region" aria-label={`${props.a.data.name} versus ${props.b.data.name}`} tabindex="0">
+          <table class="compare-table">
+            <caption class="mono">{props.a.data.name} versus {props.b.data.name}, compared</caption>
+            <thead>
+              <tr>
+                <th scope="col"><span class="sr-only">Attribute</span></th>
+                <th scope="col"><a href={`/spa/${props.a.id}/`}>{props.a.data.name}</a></th>
+                <th scope="col"><a href={`/spa/${props.b.id}/`}>{props.b.data.name}</a></th>
+              </tr>
+            </thead>
+            <tbody>
+              {H2H_ROWS.map((row) => (
+                <tr>
+                  <th scope="row">{row.label}</th>
+                  <td>{row.value(props.a) ?? "—"}</td>
+                  <td>{row.value(props.b) ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+    }
   </main>
 
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbLd)} is:inline />
@@ -86,40 +139,22 @@ const itemList = {
 
   <style>
     .compare-scroll { overflow-x: auto; }
-    .compare-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.95rem;
-    }
+    .compare-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
     .compare-table caption {
-      text-align: left;
-      font-size: 0.72rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--ink-faded);
-      padding-bottom: 0.75rem;
+      text-align: left; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--ink-faded); padding-bottom: 0.75rem;
     }
-    .compare-table th,
-    .compare-table td {
-      text-align: left;
-      padding: 0.7rem 1rem 0.7rem 0;
-      vertical-align: top;
-    }
+    .compare-table th, .compare-table td { text-align: left; padding: 0.7rem 1rem 0.7rem 0; vertical-align: top; }
     .compare-table thead th {
-      font-family: var(--font-mono, monospace);
-      font-weight: 400;
-      font-size: 0.75rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--ink-faded);
+      font-family: var(--font-mono, monospace); font-weight: 400; font-size: 0.75rem;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faded);
       border-bottom: 1px solid color-mix(in srgb, var(--ink-faded) 35%, transparent);
     }
-    .compare-table tbody tr {
-      border-bottom: 1px solid color-mix(in srgb, var(--ink-faded) 18%, transparent);
-    }
-    .compare-table tbody th[scope="row"] {
-      font-weight: 400;
-      padding-right: 1.5rem;
+    .compare-table tbody tr { border-bottom: 1px solid color-mix(in srgb, var(--ink-faded) 18%, transparent); }
+    .compare-table tbody th[scope="row"] { font-weight: 400; padding-right: 1.5rem; }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
     }
   </style>
 </BaseLayout>
