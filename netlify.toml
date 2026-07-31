@@ -2,3 +2,13 @@
   base = "site"
   command = "npm run build"
   publish = "dist"
+
+# Gate 6 (SEO/AI-citation remediation, 2026-07-31): the Netlify default
+# subdomain still resolves and served canonical/og tags on itself until
+# today's custom-domain switch. Force every request there to the apex so no
+# duplicate host stays crawlable or shareable.
+[[redirects]]
+  from = "https://bathers-directory.netlify.app/*"
+  to = "https://wherewebathe.com/:splat"
+  status = 301
+  force = true

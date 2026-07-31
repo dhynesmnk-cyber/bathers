@@ -8,6 +8,7 @@ import { getCollection } from "astro:content";
 import {
   AMENITY_KEYS,
   CATEGORIES,
+  CROSS_CUTTING_FACILITY_FILTERS,
   FACILITY_KEYS,
   POOL_TYPES,
   STATES,
@@ -58,6 +59,19 @@ export const GET: APIRoute = async ({ site }) => {
   for (const category of CATEGORIES) {
     if (venues.some((v) => v.data.category === category)) {
       entries.push({ path: `/category/${categoryUrlSlug(category)}/` });
+    }
+  }
+
+  // National amenity/facility routes (2026-07-31, Gate 6) — same /[scope]/
+  // slot as the state pages above; see site/src/pages/[scope]/index.astro.
+  for (const amenityKey of AMENITY_KEYS) {
+    if (venues.some((v) => v.data.amenities[amenityKey])) {
+      entries.push({ path: `/${amenityUrlSlug(amenityKey)}/` });
+    }
+  }
+  for (const facilityFilter of CROSS_CUTTING_FACILITY_FILTERS) {
+    if (venues.some((v) => v.data.facilities?.[facilityFilter.key])) {
+      entries.push({ path: `/${facilityFilter.slug}/` });
     }
   }
 

@@ -1,12 +1,14 @@
 ---
 // Programmatic state x filter page (UX.md §2.3, TRD.md §4.2). One dynamic
-// route serving three filter kinds off the same /[state]/<slug>/ slot:
+// route serving three filter kinds off the same /[scope]/<slug>/ slot:
 //   - amenity filters (magnesium-pool, cold-plunge, …) — the original pages
 //   - pool-type settings (thermal-springs, indoor, outdoor, other) — 2026-07-24
 //   - cross-cutting facility filters (pregnancy-safe) — 2026-07-26
 // All three slug sets are disjoint, so one file can host them without
 // collision, and Astro only permits one dynamic route per path depth anyway.
-// Generated only for combinations with >=1 published venue.
+// Generated only for combinations with >=1 published venue. Parent folder
+// renamed [state] -> [scope] 2026-07-31 (Gate 6) so /[scope]/index.astro can
+// also host national amenity/facility pages at the same depth.
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import VenueEntry from "../../components/VenueEntry.astro";
@@ -23,10 +25,14 @@ import {
 import forewords from "../../data/forewords.json";
 
 type VenueList = Awaited<ReturnType<typeof getCollection<"spas">>>;
+type Forewords = {
+  [state: string]: { amenity_meta_descriptions?: Record<string, string> } | undefined;
+};
+const FOREWORDS = forewords as Forewords;
 
 export async function getStaticPaths() {
   const venues = await getCollection("spas");
-  const paths: { params: { state: string; filter: string }; props: Record<string, unknown> }[] = [];
+  const paths: { params: { scope: string; filter: string }; props: Record<string, unknown> }[] = [];
   for (const state of STATES) {
     const stateVenues = venues.filter((v) => v.data.state === state);
     if (stateVenues.length === 0) continue;
@@ -35,7 +41,7 @@ export async function getStaticPaths() {
       const matching = stateVenues.filter((v) => v.data.amenities[amenityKey]);
       if (matching.length === 0) continue;
       paths.push({
-        params: { state: state.toLowerCase(), filter: amenityUrlSlug(amenityKey) },
+        params: { scope: state.toLowerCase(), filter: amenityUrlSlug(amenityKey) },
         props: { kind: "amenity", state, amenityKey, venues: matching },
       });
     }
@@ -44,7 +50,7 @@ export async function getStaticPaths() {
       const matching = stateVenues.filter((v) => poolType.match(v.data.facilities));
       if (matching.length === 0) continue;
       paths.push({
-        params: { state: state.toLowerCase(), filter: poolType.slug },
+        params: { scope: state.toLowerCase(), filter: poolType.slug },
         props: { kind: "pooltype", state, poolLabel: poolType.label, filterSlug: poolType.slug, venues: matching },
       });
     }
@@ -53,7 +59,7 @@ export async function getStaticPaths() {
       const matching = stateVenues.filter((v) => v.data.facilities?.[facilityFilter.key]);
       if (matching.length === 0) continue;
       paths.push({
-        params: { state: state.toLowerCase(), filter: facilityFilter.slug },
+        params: { scope: state.toLowerCase(), filter: facilityFilter.slug },
         props: {
           kind: "facility",
           state,
@@ -78,23 +84,21 @@ const props = Astro.props as {
   venues: VenueList;
 };
 const { kind, state, amenityKey, poolLabel, facilityKey, venues } = props;
+const venueCount = venues.length;
+const venueNoun = venueCount === 1 ? "venue" : "venues";
 
-const notation = kind === "amenity" && amenityKey ? AMENITY_NOTATION[amenityKey] : null;
-const subhead = notation ? notation.full : (poolLabel ?? "");
+const full = kind === "amenity" && amenityKey ? AMENITY_NOTATION[amenityKey].full : (poolLabel ?? "");
 const filterSlug = kind === "amenity" && amenityKey ? amenityUrlSlug(amenityKey) : (props.filterSlug ?? "");
 
-// Forewords exist for amenity combinations only; pool-type pages fall back to
-// the plain contents list (the template already renders no foreword cleanly).
-const foreword: string =
-  kind === "amenity" && amenityKey
-    ? (forewords as Record<string, { amenities?: Record<string, string> }>)[state]?.amenities?.[amenityKey] ?? ""
-    : "";
-const pageTitle = `Bathhouses of ${STATE_NAMES[state]} — ${notation ? notation.short : subhead}`;
+const description: string =
+  (kind === "amenity" && amenityKey ? FOREWORDS[state]?.amenity_meta_descriptions?.[amenityKey] : "") ||
+  `${full} in ${STATE_NAMES[state]}: ${venueCount} ${venueNoun}.`;
+const pageTitle = `${full} in ${STATE_NAMES[state]} — ${venueCount} ${venueNoun}`;
 ---
 
 <BaseLayout
   title={`${pageTitle} — Where We Bathe`}
-  description={foreword || pageTitle}
+  description={description}
   canonicalPath={`/${state.toLowerCase()}/${filterSlug}/`}
 >
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
@@ -105,17 +109,13 @@ const pageTitle = `Bathhouses of ${STATE_NAMES[state]} — ${notation ? notation
       <p class="mt-2 inline-flex items-center gap-1 text-[var(--ink-faded)]">
         {kind === "amenity" && amenityKey && <Icon name={amenityKey} size={16} />}
         {kind === "facility" && facilityKey && <Icon name={facilityKey} size={16} />}
-        <span class="mono text-sm">{subhead}</span>
+        <span class="mono text-sm">{full}</span>
       </p>
     </header>
 
-    {
-      foreword && (
-        <section class="reading-spine mb-16">
-          <p>{foreword}</p>
-        </section>
-      )
-    }
+    <section class="reading-spine mb-16">
+      <p>{description}</p>
+    </section>
 
     <nav class="mono mb-16 text-[var(--ink-faded)]" aria-label="Back to state">
       <a href={`/${state.toLowerCase()}/`}>All of {STATE_NAMES[state]}</a>

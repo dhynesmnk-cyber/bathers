@@ -119,6 +119,12 @@ SITE_URL = (_ENV.get("SITE_URL") or "https://wherewebathe.com").rstrip("/")
 NETLIFY_SITE_ID = _ENV.get("NETLIFY_SITE_ID", "e710bf24-5877-4f2e-b564-034ce83b2400")
 NETLIFY_AUTH_TOKEN = _ENV.get("NETLIFY_AUTH_TOKEN", "")
 
+# IndexNow (Gate 6, SEO/AI-citation remediation, 2026-07-31) — the key is not
+# secret by design (IndexNow verifies ownership by serving it back at
+# keyLocation, so it has to be publicly readable); committed here and mirrored
+# at site/public/<key>.txt rather than kept in .env like the real secrets above.
+INDEXNOW_KEY = "46ade4a8f66d85e6cadb3c48c44b17b7"
+
 AMENITY_KEYS = (
     "magnesium_pool",
     "infrared_sauna",

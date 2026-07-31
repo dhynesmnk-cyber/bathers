@@ -1,42 +1,132 @@
 ---
-// Programmatic state page (UX.md §2.3, TRD.md §4.2). Generated only for
-// states with >=1 published venue.
+// Programmatic index page (UX.md §2.3, TRD.md §4.2), serving two kinds off
+// the same top-level /[scope]/ slot. Astro can't register two sibling
+// dynamic routes at the same path depth (a second `/[x]/index.astro` would
+// collide with this one), so both kinds are merged here with a `kind`
+// discriminator — the same pattern [scope]/[filter].astro already uses for
+// its three filter kinds:
+//   - state pages (/vic/ etc.) — generated only for states with >=1 venue
+//   - national amenity/facility pages (/magnesium-pool/, /pregnancy-safe/
+//     etc., 2026-07-31 Gate 6 addition) — generated only for keys with >=1
+//     venue nationally.
+// National pool-type routes are deliberately NOT added here: their slugs
+// (thermal-springs, other) collide with existing /category/ slugs, and a
+// "national thermal springs" listing would just duplicate
+// /category/thermal-springs/.
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import VenueEntry from "../../components/VenueEntry.astro";
 import Icon from "../../components/Icon.astro";
-import { AMENITY_KEYS, AMENITY_NOTATION, STATE_NAMES, STATES, amenityUrlSlug } from "../../config";
+import {
+  AMENITY_KEYS,
+  AMENITY_NOTATION,
+  CROSS_CUTTING_FACILITY_FILTERS,
+  STATE_NAMES,
+  STATES,
+  amenityUrlSlug,
+} from "../../config";
 import type { IconKey } from "../../icons/paths";
 import forewords from "../../data/forewords.json";
 
+type VenueList = Awaited<ReturnType<typeof getCollection<"spas">>>;
+type Forewords = {
+  [state: string]: { meta_description?: string } | undefined;
+  national?: {
+    amenities?: Record<string, string>;
+    facilities?: Record<string, string>;
+  };
+};
+const FOREWORDS = forewords as Forewords;
+
 export async function getStaticPaths() {
   const venues = await getCollection("spas");
-  const states = STATES.filter((state) => venues.some((v) => v.data.state === state));
-  return states.map((state) => ({
-    params: { state: state.toLowerCase() },
-    props: { state, venues: venues.filter((v) => v.data.state === state) },
-  }));
+  const paths: { params: { scope: string }; props: Record<string, unknown> }[] = [];
+
+  for (const state of STATES) {
+    const stateVenues = venues.filter((v) => v.data.state === state);
+    if (stateVenues.length === 0) continue;
+    paths.push({
+      params: { scope: state.toLowerCase() },
+      props: { kind: "state", state, venues: stateVenues },
+    });
+  }
+
+  for (const amenityKey of AMENITY_KEYS) {
+    const matching = venues.filter((v) => v.data.amenities[amenityKey]);
+    if (matching.length === 0) continue;
+    paths.push({
+      params: { scope: amenityUrlSlug(amenityKey) },
+      props: { kind: "amenity-national", amenityKey, venues: matching },
+    });
+  }
+
+  for (const facilityFilter of CROSS_CUTTING_FACILITY_FILTERS) {
+    const matching = venues.filter((v) => v.data.facilities?.[facilityFilter.key]);
+    if (matching.length === 0) continue;
+    paths.push({
+      params: { scope: facilityFilter.slug },
+      props: { kind: "facility-national", facilityKey: facilityFilter.key, label: facilityFilter.label, venues: matching },
+    });
+  }
+
+  return paths;
 }
 
-const { state, venues } = Astro.props;
-const presentAmenities = AMENITY_KEYS.filter((key) => venues.some((v) => v.data.amenities[key]));
-const foreword: string = (forewords as Record<string, { state?: string }>)[state]?.state ?? "";
-const notation = presentAmenities.map((key) => AMENITY_NOTATION[key].short).join(" · ");
-const pageTitle = `Bathhouses of ${STATE_NAMES[state]}${notation ? ` — ${notation}` : ""}`;
+type Props =
+  | { kind: "state"; state: (typeof STATES)[number]; venues: VenueList }
+  | { kind: "amenity-national"; amenityKey: (typeof AMENITY_KEYS)[number]; venues: VenueList }
+  | { kind: "facility-national"; facilityKey: string; label: string; venues: VenueList };
+
+const props = Astro.props as Props;
+const { kind, venues } = props;
+const venueCount = venues.length;
+const venueNoun = venueCount === 1 ? "venue" : "venues";
+
+const state = kind === "state" ? props.state : null;
+const presentAmenities = state ? AMENITY_KEYS.filter((key) => venues.some((v) => v.data.amenities[key])) : [];
+
+let pageHeading: string;
+let pageTitle: string;
+let description: string;
+let canonicalPath: string;
+let backLink: { href: string; label: string } | null = null;
+
+if (kind === "state" && state) {
+  pageHeading = `Bathhouses of ${STATE_NAMES[state]}`;
+  pageTitle = `Bathhouses & Hot Springs in ${STATE_NAMES[state]} — ${venueCount} ${venueNoun}`;
+  description =
+    FOREWORDS[state]?.meta_description ||
+    `Find bathhouses, hot springs and saunas in ${STATE_NAMES[state]} — ${venueCount} ${venueNoun}, no sponsored listings.`;
+  canonicalPath = `/${state.toLowerCase()}/`;
+} else if (kind === "amenity-national") {
+  const full = AMENITY_NOTATION[props.amenityKey].full;
+  pageHeading = `${full} in Australia`;
+  pageTitle = `${full} — ${venueCount} ${venueNoun} across Australia`;
+  description =
+    FOREWORDS.national?.amenities?.[props.amenityKey] ||
+    `${full} at ${venueCount} bathhouses and hot springs across Australia, compared side by side.`;
+  canonicalPath = `/${amenityUrlSlug(props.amenityKey)}/`;
+  backLink = { href: `/glossary/${props.amenityKey.replace(/_/g, "-")}/`, label: "What is this?" };
+} else {
+  const { label, facilityKey } = props as { label: string; facilityKey: string };
+  const match = CROSS_CUTTING_FACILITY_FILTERS.find((f) => f.key === facilityKey);
+  pageHeading = `${label} in Australia`;
+  pageTitle = `${label} — ${venueCount} ${venueNoun} across Australia`;
+  description =
+    FOREWORDS.national?.facilities?.[facilityKey] || `${label} at ${venueCount} bathhouses and hot springs across Australia.`;
+  canonicalPath = `/${match?.slug ?? facilityKey}/`;
+  backLink = { href: `/glossary/${facilityKey.replace(/_/g, "-")}/`, label: "What is this?" };
+}
 ---
 
-<BaseLayout
-  title={`${pageTitle} — Where We Bathe`}
-  description={foreword || pageTitle}
-  canonicalPath={`/${state.toLowerCase()}/`}
->
+<BaseLayout title={`${pageTitle} — Where We Bathe`} description={description} canonicalPath={canonicalPath}>
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
     <header class="mb-16">
       <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
-        Bathhouses of {STATE_NAMES[state]}
+        {pageHeading}
       </h1>
       {
-        presentAmenities.length > 0 && (
+        state && presentAmenities.length > 0 && (
           <p class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[var(--ink-faded)]">
             {presentAmenities.map((key) => (
               <span class="inline-flex items-center gap-1">
@@ -47,18 +137,21 @@ const pageTitle = `Bathhouses of ${STATE_NAMES[state]}${notation ? ` — ${notat
           </p>
         )
       }
+      {
+        !state && (
+          <p class="mt-2 mono text-sm text-[var(--ink-faded)]">
+            {venueCount} {venueNoun}
+          </p>
+        )
+      }
     </header>
 
-    {
-      foreword && (
-        <section class="reading-spine mb-16">
-          <p>{foreword}</p>
-        </section>
-      )
-    }
+    <section class="reading-spine mb-16">
+      <p>{description}</p>
+    </section>
 
     {
-      presentAmenities.length > 0 && (
+      state && presentAmenities.length > 0 && (
         <nav class="mb-16 flex flex-wrap gap-x-4 gap-y-2 text-[var(--ink-faded)]" aria-label="Filter by feature">
           {presentAmenities.map((key) => (
             <a href={`/${state.toLowerCase()}/${amenityUrlSlug(key)}/`} class="mono inline-flex items-center gap-1">
@@ -66,6 +159,14 @@ const pageTitle = `Bathhouses of ${STATE_NAMES[state]}${notation ? ` — ${notat
               {AMENITY_NOTATION[key].full}
             </a>
           ))}
+        </nav>
+      )
+    }
+
+    {
+      backLink && (
+        <nav class="mono mb-16 text-[var(--ink-faded)]">
+          <a href={backLink.href}>{backLink.label}</a>
         </nav>
       )
     }

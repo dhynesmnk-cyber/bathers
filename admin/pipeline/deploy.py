@@ -25,7 +25,7 @@ from typing import Iterator
 
 import httpx
 
-from admin.config import NETLIFY_AUTH_TOKEN, NETLIFY_SITE_ID, ROOT, SITE_DIR
+from admin.config import INDEXNOW_KEY, NETLIFY_AUTH_TOKEN, NETLIFY_SITE_ID, ROOT, SITE_DIR, SITE_URL
 
 # Shared by the admin's manual Deploy strip (app.py) and the claim-flow
 # auto-deploy background task (TRD.md §8, 2026-07-25 exception) — one lock
@@ -159,6 +159,53 @@ NETLIFY_POLL_INTERVAL_SECONDS = 10
 NETLIFY_POLL_TIMEOUT_SECONDS = 360
 BUILD_LOG_TAIL_LINES = 15
 
+INDEXNOW_ENDPOINT = "https://api.indexnow.org/indexnow"
+
+
+def _indexnow_urls_from_files(files: list[str]) -> set[str]:
+    """Public-site URLs to notify IndexNow about, derived from the same
+    committed-file list the deploy strip already computes for the diff
+    preview — no separate 'what changed' tracking needed. Empty when this
+    deploy touched nothing IndexNow cares about (e.g. a DB/JSON-only sync)."""
+    urls: set[str] = set()
+    for path in files:
+        if path.startswith("site/src/content/spas/_published/") and path.endswith(".mdx"):
+            urls.add(f"{SITE_URL}/spa/{Path(path).stem}/")
+        elif path.startswith("site/src/content/blog/_published/") and path.endswith(".mdx"):
+            urls.add(f"{SITE_URL}/blog/{Path(path).stem}/")
+    if urls:
+        urls.add(f"{SITE_URL}/")
+    return urls
+
+
+def _ping_indexnow(urls: set[str]) -> Iterator[LogLine]:
+    """Gate 6 (SEO/AI-citation remediation, 2026-07-31) — tells IndexNow-
+    participating engines (Bing, Yandex and others) exactly which pages
+    changed instead of waiting for the next scheduled crawl. Only called
+    once Netlify has confirmed the build is actually live (see
+    _poll_netlify) so an engine can't fetch a page before the new content
+    is there."""
+    if not urls:
+        return
+    yield LogLine(_now(), "info", f"indexnow: notifying {len(urls)} url(s)")
+    try:
+        resp = httpx.post(
+            INDEXNOW_ENDPOINT,
+            json={
+                "host": SITE_URL.split("//", 1)[-1],
+                "key": INDEXNOW_KEY,
+                "keyLocation": f"{SITE_URL}/{INDEXNOW_KEY}.txt",
+                "urlList": sorted(urls),
+            },
+            timeout=15,
+        )
+        if resp.status_code in (200, 202):
+            yield LogLine(_now(), "info", "indexnow: accepted")
+        else:
+            yield LogLine(_now(), "warn", f"indexnow: {resp.status_code} {resp.text[:200]}")
+    except httpx.HTTPError as exc:
+        yield LogLine(_now(), "warn", f"indexnow: request failed — {exc}")
+
 
 def _site_build_gate() -> Iterator[LogLine]:
     """Pre-push `npm run build` — refuses the deploy (via DeployRefused)
@@ -181,12 +228,14 @@ def _site_build_gate() -> Iterator[LogLine]:
     raise DeployRefused("site build failed — fix the content above before deploying")
 
 
-def _poll_netlify(commit_sha: str) -> Iterator[LogLine]:
+def _poll_netlify(commit_sha: str, indexnow_urls: set[str]) -> Iterator[LogLine]:
     """After push, watch the resulting Netlify build until it's ready or
     errors — closing the gap where 'push ok' looked like a successful deploy
-    while the site build failed. No token configured → informational only."""
+    while the site build failed. No token configured → informational only,
+    and IndexNow is skipped too since there's no reliable live-yet signal to
+    fire it from."""
     if not NETLIFY_AUTH_TOKEN:
-        yield LogLine(_now(), "info", "pushed — Netlify builds automatically; set NETLIFY_AUTH_TOKEN in .env for build status here")
+        yield LogLine(_now(), "info", "pushed — Netlify builds automatically; set NETLIFY_AUTH_TOKEN in .env for build status here (also needed to auto-notify IndexNow once live)")
         return
     url = f"https://api.netlify.com/api/v1/sites/{NETLIFY_SITE_ID}/deploys"
     headers = {"Authorization": f"Bearer {NETLIFY_AUTH_TOKEN}"}
@@ -206,6 +255,7 @@ def _poll_netlify(commit_sha: str) -> Iterator[LogLine]:
             last_state = state
         if state == "ready":
             yield LogLine(_now(), "info", f"netlify: live — {deploy.get('ssl_url') or deploy.get('url') or ''}")
+            yield from _ping_indexnow(indexnow_urls)
             return
         if state == "error":
             message = deploy.get("error_message") or "build failed"
@@ -271,7 +321,7 @@ def run_deploy(commit_message: str) -> Iterator[LogLine]:
     yield LogLine(_now(), "info", "push ok")
 
     sha = _run_git("rev-parse", "HEAD").stdout.strip()
-    yield from _poll_netlify(sha)
+    yield from _poll_netlify(sha, _indexnow_urls_from_files(preview.files))
 
 
 def run_auto_deploy() -> None:

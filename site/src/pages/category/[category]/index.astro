@@ -18,26 +18,31 @@ export async function getStaticPaths() {
 }
 
 const { category, venues } = Astro.props;
+const venueCount = venues.length;
+const venueNoun = venueCount === 1 ? "venue" : "venues";
 const foreword: string = (forewords as Record<string, Record<string, string>>).categories?.[category] ?? "";
-const pageTitle = CATEGORY_LABELS[category];
+const description: string =
+  (forewords as Record<string, Record<string, string>>).category_meta_descriptions?.[category] ||
+  `${CATEGORY_LABELS[category]} in Australia — ${venueCount} ${venueNoun}.`;
+const pageTitle = `${CATEGORY_LABELS[category]} — ${venueCount} ${venueNoun}`;
 ---
 
 <BaseLayout
   title={`${pageTitle} — Where We Bathe`}
-  description={foreword || pageTitle}
+  description={description}
   canonicalPath={`/category/${categoryUrlSlug(category)}/`}
 >
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
     <header class="mb-16">
       <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
-        {pageTitle}
+        {CATEGORY_LABELS[category]}
       </h1>
     </header>
 
     {
-      foreword && (
+      (foreword || description) && (
         <section class="reading-spine mb-16">
-          <p>{foreword}</p>
+          <p>{foreword || description}</p>
         </section>
       )
     }
