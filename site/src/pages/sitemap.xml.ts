@@ -82,7 +82,7 @@ export const GET: APIRoute = async ({ site }) => {
   // Comparison + region roll-up pages (2026-07-31, Gate 10).
   const { resolveComparisons, comparePath } = await import("../data/comparisons");
   const { REGIONS, regionForSuburb } = await import("../data/regions");
-  entries.push({ path: "/compare/" }, { path: "/region/" });
+  entries.push({ path: "/compare/" }, { path: "/region/" }, { path: "/methodology/" });
   for (const c of resolveComparisons(venues).eligible) {
     entries.push({ path: comparePath(c.slug) });
   }

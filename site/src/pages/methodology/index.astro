@@ -1,0 +1,89 @@
+---
+// Methodology / about page (Gate 11, 2026-07-31). Describes only what the
+// project actually does today — CLAUDE.md rule 6. Operator outreach (Gate 8)
+// has not run yet, so this page does NOT claim operator verification; every
+// fact is currently "published by the venue," checked against the venue's own
+// materials, with operator confirmation named as a future step, not a present
+// one.
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { SITE_NAME } from "../../config";
+
+const breadcrumbLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: new URL("/", Astro.site).href },
+    { "@type": "ListItem", position: 2, name: "How this directory is made", item: new URL("/methodology/", Astro.site).href },
+  ],
+};
+---
+
+<BaseLayout
+  title={`How this directory is made — ${SITE_NAME}`}
+  description="How Where We Bathe documents Australian bathhouses and hot springs: sourced from each venue's own materials, checked by hand, with a per-field record of where every fact came from."
+  canonicalPath="/methodology/"
+>
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbLd)} />
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <header class="mb-12">
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">How this directory is made</h1>
+    </header>
+
+    <section class="reading-spine">
+      <p>
+        Where We Bathe is a free, ad-free directory of Australian venues built around heat, cold and water —
+        bathhouses, saunas, hot springs and mineral pools. No venue can pay for a listing, for placement, or for a
+        higher ranking. There are no sponsored entries and no advertising anywhere on the site.
+      </p>
+
+      <h2 class="font-display font-light mt-12" style="font-size: 1.75rem;">Where the facts come from</h2>
+      <p>
+        Each entry starts as the venue's own published account — its website, its own descriptions of its pools,
+        saunas, temperatures, hours and prices. That material is read, drafted into a consistent entry, and then
+        checked line by line before publication: every specific figure has to trace back to something the venue
+        itself has published. Nothing is invented to fill a gap. Where a venue doesn't state something, the entry
+        simply leaves it out rather than guessing.
+      </p>
+      <p>
+        We do not write about visits we haven't made. You won't find first-person "on arrival" impressions or
+        invented sensory detail in these entries — only what a venue documents about itself, tidied into a form
+        that's quick to read and easy to compare.
+      </p>
+
+      <h2 class="font-display font-light mt-12" style="font-size: 1.75rem;">How each fact is tracked</h2>
+      <p>
+        Every factual claim an entry makes — price, hours, temperatures, dress code, session policies — carries a
+        record of where it came from and how strongly it's verified. Today, that record is honest about its limits:
+        almost every fact is marked <em>published by the venue</em>, meaning it's drawn from the venue's own current
+        materials and checked, but not yet independently confirmed with the operator.
+      </p>
+      <p>
+        The next step, which is underway, is operator outreach: contacting venues directly to confirm the details
+        we hold and correct anything out of date. As a venue confirms its facts, those move to a stronger
+        <em>confirmed by the operator</em> mark. We'd rather tell you exactly how sure we are than imply a
+        certainty we don't have.
+      </p>
+
+      <h2 class="font-display font-light mt-12" style="font-size: 1.75rem;">Structured, comparable data</h2>
+      <p>
+        Behind each entry is a structured record — adult drop-in price, sauna and plunge temperatures where the
+        venue states them, drive time from the nearest capital, and the amenities and facilities on offer. That's
+        what makes the <a href="/compare/">side-by-side comparisons</a> and <a href="/region/">regional roundups</a>
+        possible, and it's what lets an AI assistant cite a specific, sourced figure rather than a vague summary.
+      </p>
+
+      <h2 class="font-display font-light mt-12" style="font-size: 1.75rem;">Coverage</h2>
+      <p>
+        Coverage is strongest in Victoria for now, with a growing presence in Tasmania, New South Wales,
+        Queensland and, most recently, South Australia, Western Australia, the Northern Territory and the ACT. The
+        directory is added to steadily; a thin region reflects where the work has reached, not a judgement about
+        what's worth visiting.
+      </p>
+
+      <p class="mt-12 mono text-[var(--ink-faded)]">
+        Found something out of date? <a href={`/`}>Every venue page</a> has a "claim this listing" link for
+        operators, and corrections are always welcome.
+      </p>
+    </section>
+  </main>
+</BaseLayout>

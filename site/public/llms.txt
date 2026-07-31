@@ -1,16 +1,19 @@
 # Where We Bathe
 
-> A free, ad-free directory of Australian day spas, bathhouses and thermal springs — saunas, magnesium pools, cold plunges — catalogued state by state, with no sponsored listings.
+> A free, ad-free directory of Australian bathhouses, saunas and thermal springs — magnesium pools, cold plunges, hot springs — catalogued state by state, with no sponsored listings.
 
-Where We Bathe documents Australian venues built around heat, cold and water. Each entry begins as the venue's own published account, then is checked and tightened by hand before publication. There is no advertising on the site and no venue can pay for placement or ranking.
+Where We Bathe documents Australian venues built around heat, cold and water. Each entry begins as the venue's own published account, then is checked and tightened by hand before publication; every factual figure traces back to the venue's own materials, and no venue can pay for placement or ranking. How the directory is made, and how strongly each fact is verified, is described at `/methodology/`.
 
 ## Structure
 
 - Browse by state: `/vic/`, `/nsw/`, `/qld/`, `/sa/`, `/wa/`, `/tas/`, `/nt/`, `/act/` (only states with at least one listed venue exist)
 - Browse by setting within a state: indoor pools, outdoor pools, thermal springs, or other — e.g. `/vic/outdoor/`
 - Browse by amenity within a state — e.g. `/vic/cold-plunge/`
-- Browse by venue category nationally: `/category/day-spa/`, `/category/bathhouse/`, `/category/thermal-springs/`
-- Individual venue pages: `/spa/{venue-slug}/` — name, location, amenities, hours, cost, FAQ, and source-verified detail
+- Browse by amenity nationally — e.g. `/magnesium-pool/`, `/infrared-sauna/`, `/traditional-sauna/`, `/cold-plunge/`, `/led-therapy/`
+- Browse by venue category nationally: `/category/bathhouse/`, `/category/thermal-springs/`, `/category/hotel-spa/`
+- Compare venues side by side: `/compare/` — ranked tables (e.g. cheapest, natural thermal springs, contrast therapy) built from structured, source-verified data
+- Browse by region: `/region/` — regional roundups (e.g. Mornington Peninsula, Daylesford & Hepburn)
+- Individual venue pages: `/spa/{venue-slug}/` — name, location, amenities, hours, cost, temperatures, FAQ, and source-verified detail
 - Glossary of amenity/facility terms: `/glossary/`
 
 ## Journal
@@ -20,5 +23,7 @@ Longer-form writing about the project — its mission, values, and the people be
 ## Links
 
 - Homepage: https://wherewebathe.com/
+- How this directory is made: https://wherewebathe.com/methodology/
+- Compare venues: https://wherewebathe.com/compare/
 - Journal: https://wherewebathe.com/blog/
 - Sitemap: https://wherewebathe.com/sitemap.xml

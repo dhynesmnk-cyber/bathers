@@ -23,6 +23,16 @@ export async function getStaticPaths() {
 const { region, venues } = Astro.props;
 const stateName = STATE_NAMES[region.state];
 const lead = `${venues.length} bathing venues in and around ${region.name}, ${stateName}. Everything the directory currently lists for this region, in one place.`;
+
+const breadcrumbLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: new URL("/", Astro.site).href },
+    { "@type": "ListItem", position: 2, name: "Regions", item: new URL("/region/", Astro.site).href },
+    { "@type": "ListItem", position: 3, name: region.name, item: new URL(`/region/${region.slug}/`, Astro.site).href },
+  ],
+};
 ---
 
 <BaseLayout
@@ -30,6 +40,7 @@ const lead = `${venues.length} bathing venues in and around ${region.name}, ${st
   description={`Bathhouses, saunas and hot springs in and around ${region.name}, ${stateName} — ${venues.length} venues in the directory.`}
   canonicalPath={`/region/${region.slug}/`}
 >
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbLd)} />
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
     <nav class="mono mb-8 text-[var(--ink-faded)]" aria-label="Breadcrumb">
       <a href="/region/">All regions</a>

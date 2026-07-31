@@ -181,6 +181,10 @@ const blogCollection = defineCollection({
     title: z.string(),
     dateline: z.date(),
     summary: z.string().max(160),
+    // Named byline (Gate 11, 2026-07-31, user-approved). Optional: posts
+    // without it stay attributed to the organisation (Article/BlogPosting
+    // author = Organization), never a fabricated name.
+    author: z.string().optional(),
     cover_image: z.string().optional(),
     video_url: z
       .string()

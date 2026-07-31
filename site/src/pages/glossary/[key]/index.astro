@@ -27,9 +27,30 @@ const { key: keySlug } = Astro.params;
 const key = ALL_KEYS.find((k) => k.replace(/_/g, "-") === keySlug) as string;
 const label = LABELS[key];
 const description = GLOSSARY[key as keyof typeof GLOSSARY];
+
+// DefinedTerm + BreadcrumbList (Gate 11, 2026-07-31).
+const definedTermLd = {
+  "@context": "https://schema.org",
+  "@type": "DefinedTerm",
+  name: label,
+  description,
+  url: new URL(`/glossary/${keySlug}/`, Astro.site).href,
+  inDefinedTermSet: new URL("/glossary/", Astro.site).href,
+};
+const breadcrumbLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: new URL("/", Astro.site).href },
+    { "@type": "ListItem", position: 2, name: "Glossary", item: new URL("/glossary/", Astro.site).href },
+    { "@type": "ListItem", position: 3, name: label, item: new URL(`/glossary/${keySlug}/`, Astro.site).href },
+  ],
+};
 ---
 
 <BaseLayout title={`${label} — Where We Bathe`} description={description} canonicalPath={`/glossary/${keySlug}/`}>
+  <script type="application/ld+json" set:html={JSON.stringify(definedTermLd)} />
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbLd)} />
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
     <header class="mb-12 flex items-center gap-3">
       <Icon name={key as IconKey} size={32} />

@@ -34,6 +34,19 @@ const organizationLd = {
   description: SITE_TAGLINE,
 };
 
+// WebSite schema (Gate 11, 2026-07-31) — sitewide, names the publisher so an
+// AI crawler can tie every page back to one source. No SearchAction: the
+// site's search is client-side with no crawlable results URL to point at, and
+// declaring one that doesn't resolve would be worse than omitting it.
+const websiteLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_NAME,
+  url: Astro.site?.toString(),
+  description: SITE_TAGLINE,
+  publisher: { "@type": "Organization", name: SITE_NAME, url: Astro.site?.toString() },
+};
+
 // Sitewide search index (2026-07-25, TRD.md §8 exception) — embedded once
 // here, at build time, since CornerMenu (which hosts a <SearchBox>) renders
 // from this layout on every page. Same embedded-JSON pattern the homepage's
@@ -83,6 +96,7 @@ const searchIndex = searchVenues.map((v) => ({
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={imageUrl} />
     <script type="application/ld+json" set:html={JSON.stringify(organizationLd)} />
+    <script type="application/ld+json" set:html={JSON.stringify(websiteLd)} />
     <script type="application/json" id="search-index-data" set:html={JSON.stringify(searchIndex)} />
     {/* Favicon — the seal mascot (DESIGN.md §5c, 2026-07-26), replacing the
         earlier inline thermal-ring SVG. Raster, not theme-aware (favicons

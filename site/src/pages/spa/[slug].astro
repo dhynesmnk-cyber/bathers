@@ -6,7 +6,11 @@ import Pull from "../../components/Pull.astro";
 import TippedPhoto from "../../components/TippedPhoto.astro";
 import FAQ from "../../components/FAQ.astro";
 import {
+  AMENITY_KEYS,
+  AMENITY_NOTATION,
   CATEGORY_LABELS,
+  FACILITY_KEYS,
+  FACILITY_LABELS,
   coldPlungeTemperatureLine,
   DRESS_CODE_LABELS,
   saunaTemperatureLine,
@@ -90,6 +94,34 @@ if (data.cost) {
   const range = priceRange(data.cost);
   if (range) localBusinessLd.priceRange = range;
 }
+// amenityFeature (Gate 11, 2026-07-31) — the same amenity/facility booleans
+// shown on the page (Features.astro), made machine-readable. Generic
+// LocalBusiness type retained deliberately (TRD.md §2, 2026-07-31): these
+// venues aren't day spas, so a per-category DaySpa/HealthAndBeautyBusiness
+// type would re-introduce the mislabel the 2026-07-26 category decision
+// rejected. amenityFeature carries the specificity instead.
+const featureNames = [
+  ...AMENITY_KEYS.filter((k) => data.amenities[k]).map((k) => AMENITY_NOTATION[k].full),
+  ...FACILITY_KEYS.filter((k) => data.facilities?.[k]).map((k) => FACILITY_LABELS[k]),
+];
+if (featureNames.length > 0) {
+  localBusinessLd.amenityFeature = featureNames.map((name) => ({
+    "@type": "LocationFeatureSpecification",
+    name,
+    value: true,
+  }));
+}
+
+// BreadcrumbList (Gate 11) — Home > State > Venue.
+const breadcrumbLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: new URL("/", Astro.site).href },
+    { "@type": "ListItem", position: 2, name: STATE_NAMES[data.state], item: new URL(`/${data.state.toLowerCase()}/`, Astro.site).href },
+    { "@type": "ListItem", position: 3, name: data.name, item: new URL(`/spa/${venue.id}/`, Astro.site).href },
+  ],
+};
 
 const faqLd = data.faq && data.faq.length > 0
   ? {
@@ -106,6 +138,7 @@ const faqLd = data.faq && data.faq.length > 0
 
 <BaseLayout title={`${data.name} — Where We Bathe`} description={data.summary} image={data.image ?? undefined}>
   <script type="application/ld+json" set:html={JSON.stringify(localBusinessLd)} />
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbLd)} />
   {faqLd && <script type="application/ld+json" set:html={JSON.stringify(faqLd)} />}
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
     <article>

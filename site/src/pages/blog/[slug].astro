@@ -15,14 +15,17 @@ const { post } = Astro.props;
 const { data } = post;
 const { Content } = await render(post);
 
-// BlogPosting structured data (2026-07-24 SEO/GEO pass).
+// BlogPosting structured data (2026-07-24 SEO/GEO pass). BlogPosting is a
+// subtype of Article, so this satisfies Gate 11's "Article on blog posts".
+// Author (Gate 11, 2026-07-31): a named Person when the post supplies one,
+// otherwise the organisation — never a fabricated byline.
 const blogPostingLd: Record<string, unknown> = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
   headline: data.title,
   datePublished: data.dateline.toISOString().slice(0, 10),
   description: data.summary,
-  author: { "@type": "Organization", name: SITE_NAME },
+  author: data.author ? { "@type": "Person", name: data.author } : { "@type": "Organization", name: SITE_NAME },
   publisher: { "@type": "Organization", name: SITE_NAME },
 };
 if (data.cover_image) blogPostingLd.image = new URL(data.cover_image, Astro.site).toString();

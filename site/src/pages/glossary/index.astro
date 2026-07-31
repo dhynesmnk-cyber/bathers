@@ -4,6 +4,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Icon from "../../components/Icon.astro";
 import { AMENITY_KEYS, AMENITY_NOTATION, FACILITY_KEYS, FACILITY_LABELS } from "../../config";
+import { GLOSSARY } from "../../data/glossary";
 import type { IconKey } from "../../icons/paths";
 
 const LABELS: Record<string, string> = {
@@ -12,6 +13,22 @@ const LABELS: Record<string, string> = {
 };
 const keys = [...AMENITY_KEYS, ...FACILITY_KEYS];
 const urlSlug = (k: string) => k.replace(/_/g, "-");
+
+// DefinedTermSet (Gate 11, 2026-07-31) — the glossary as a machine-readable
+// term set, so an AI answer can cite what "magnesium pool" or "cold plunge"
+// means here with a stable URL per term.
+const definedTermSetLd = {
+  "@context": "https://schema.org",
+  "@type": "DefinedTermSet",
+  name: "Where We Bathe glossary",
+  url: new URL("/glossary/", Astro.site).href,
+  hasDefinedTerm: keys.map((key) => ({
+    "@type": "DefinedTerm",
+    name: LABELS[key],
+    description: GLOSSARY[key as keyof typeof GLOSSARY],
+    url: new URL(`/glossary/${urlSlug(key)}/`, Astro.site).href,
+  })),
+};
 ---
 
 <BaseLayout
@@ -19,6 +36,7 @@ const urlSlug = (k: string) => k.replace(/_/g, "-");
   description="What the feature and facility icons on Where We Bathe mean."
   canonicalPath="/glossary/"
 >
+  <script type="application/ld+json" set:html={JSON.stringify(definedTermSetLd)} />
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
     <header class="mb-16">
       <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
