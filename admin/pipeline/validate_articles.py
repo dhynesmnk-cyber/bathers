@@ -22,7 +22,7 @@ from pathlib import Path
 
 import yaml
 
-from admin.config import ARTICLES_META_JSON_PATH, BLOG_PUBLISHED_DIR
+from admin.config import ARTICLES_META_JSON_PATH, BLOG_PUBLISHED_DIR, FACTCHECKS_DIR
 
 # MDX tags (data components like <Figure .../> and paired wrappers like <Pull>)
 # are stripped before scanning: a self-closing data component carries no literal
@@ -37,6 +37,32 @@ _LINK_TARGET_RE = re.compile(r"\]\(([^)]*)\)")
 _CURRENCY_RE = re.compile(r"\$\s?\d")
 _TEMPERATURE_RE = re.compile(r"\d\s*°")
 _BARE_NUMBER_RE = re.compile(r"(?<![\w-])\d[\d,]*(?:\.\d+)?(?![\w-])")
+
+
+# House-register violations the drafting model controls and the Gatekeeper bans
+# (PROMPTS/gatekeeper.md): em dashes and their `--` substitute, "not X but Y" /
+# "rather than" contrast constructions, and first-person visit tells. Scoped to
+# structural tells (not the spa-vocabulary word list, which risks false hits on a
+# venue's own name) so it is safe to fail the build on.
+_REGISTER_PATTERNS = [
+    (re.compile(r"—"), "em dash (—) — the house uses commas/full stops"),
+    (re.compile(r"(?<=\w)\s*--\s*(?=\w)"), "'--' used as an em dash"),
+    (re.compile(r"\brather than\b", re.I), "'rather than' contrast construction"),
+    (re.compile(r"\bnot just\b|\bisn't just\b", re.I), "'not just' contrast construction"),
+    (re.compile(r"\bwe visited\b|\bon arrival\b|\bI found\b|you'll find yourself", re.I), "first-person visit claim"),
+]
+
+
+def register_issues(body: str) -> list[str]:
+    """House-register violations in the prose (tags/link targets stripped)."""
+    prose = _LINK_TARGET_RE.sub("]( )", _TAG_RE.sub(" ", body))
+    issues: list[str] = []
+    for line in prose.splitlines():
+        line = line.strip()
+        for pattern, label in _REGISTER_PATTERNS:
+            if pattern.search(line):
+                issues.append(f"{label}: {line[:90]}")
+    return issues
 
 
 def find_hardcoded_numbers(body: str) -> list[str]:
@@ -77,11 +103,23 @@ def check_articles(blog_dir: Path = BLOG_PUBLISHED_DIR, meta_path: Path = ARTICL
             continue  # an essay, not a comparison article
         for hit in find_hardcoded_numbers(body):
             errors.append(f"{path.name}: hardcoded figure in prose (use a data component): {hit!r}")
+        for issue in register_issues(body):
+            errors.append(f"{path.name}: register — {issue}")
         if query_key not in meta:
             errors.append(
                 f"{path.name}: query_key '{query_key}' is not in articles-meta.json — "
                 f"unknown comparison or below the >=5-venue threshold (run article_store --rebuild)"
             )
+        # Every published comparison article must carry a stored fact-check
+        # report, and it must be clean (no unsupported claims): the article's
+        # claims must have been checked against the data (Editorial Gate E2).
+        report_path = FACTCHECKS_DIR / f"{path.stem}.json"
+        if not report_path.exists():
+            errors.append(f"{path.name}: no fact-check report (data/factchecks/{path.stem}.json) — run the pipeline or factcheck_existing")
+        else:
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            if report.get("status") == "blocked" or report.get("unsupported_count", 0) > 0:
+                errors.append(f"{path.name}: fact-check report has {report.get('unsupported_count', 0)} unsupported claim(s) — must be resolved")
     return errors
 
 

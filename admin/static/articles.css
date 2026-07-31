@@ -1,0 +1,90 @@
+/* Comparison-article review screen (Editorial Gate E2). Reuses admin.css tokens
+   and shared classes (pane, queue-list, btn, field, text-input, mono). */
+
+.articles-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(0, 1.4fr);
+  gap: 1.5rem;
+  padding: 1.5rem;
+  align-items: start;
+}
+
+.art-new-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.art-log {
+  background: var(--paper-raised);
+  border: 1px solid color-mix(in srgb, var(--ink-faded) 30%, transparent);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  max-height: 12rem;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  margin: 0 0 1rem;
+}
+
+/* Status chips on the queue rows + review header. */
+.chip-ok { color: var(--thermal); }
+.chip-blocked { color: var(--oxide); }
+.report-status.chip-ok::before { content: "CLEAR — "; }
+.report-status.chip-blocked::before { content: "BLOCKED — "; }
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin: 0.5rem 0 1.25rem;
+}
+.report-table th,
+.report-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.4rem 0.6rem 0.4rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink-faded) 18%, transparent);
+}
+.report-table thead th {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faded);
+}
+.verdict-supported { color: var(--thermal); }
+.verdict-unsupported { color: var(--oxide); font-weight: 600; }
+.verdict-unverifiable { color: var(--ink-faded); }
+
+.art-body {
+  width: 100%;
+  min-height: 18rem;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.art-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.art-redirect {
+  margin-top: 1rem;
+}
+.art-redirect pre {
+  background: var(--paper-raised);
+  border: 1px solid color-mix(in srgb, var(--ink-faded) 30%, transparent);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.75rem;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 900px) {
+  .articles-grid { grid-template-columns: 1fr; }
+}

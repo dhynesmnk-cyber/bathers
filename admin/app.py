@@ -50,7 +50,9 @@ from admin.mdx_preview import (
     temperature_line,
     verification_summary,
 )
-from admin.pipeline import blog, claims, claims_store, deploy, discovery, goatcounter, images, notify, orchestrator, places, staging, stripe_client
+from admin.pipeline import article_pipeline, article_store, articles, blog, claims, claims_store, deploy, discovery, goatcounter, images, notify, orchestrator, places, staging, stripe_client
+from admin.pipeline.articles import PublishBlocked
+from admin.pipeline.articles import ValidationFailed as ArticleValidationFailed
 from admin.pipeline.blog import ValidationFailed as BlogValidationFailed
 from admin.pipeline.staging import UndoExpired, ValidationFailed
 
@@ -189,6 +191,11 @@ def blog_page(request: Request):
 @app.get("/claims", response_class=HTMLResponse)
 def claims_page(request: Request):
     return templates.TemplateResponse(request, "claims.html", {})
+
+
+@app.get("/articles", response_class=HTMLResponse)
+def articles_page(request: Request):
+    return templates.TemplateResponse(request, "articles.html", {})
 
 
 @app.get("/preview/{slug}", response_class=HTMLResponse)
@@ -516,6 +523,137 @@ def api_publish_blog_post(slug: str):
         raise HTTPException(404, f"no draft '{slug}'")
     except BlogValidationFailed as exc:
         raise HTTPException(422, detail={"errors": exc.errors})
+    return {"ok": True}
+
+
+# ---- Comparison articles (Editorial Gate E2) — draft -> fact-check -> review ----
+# The staged draft/review flow for hybrid comparison articles. Mirrors the harvest
+# SSE + blog staging patterns; approval is gated on a clean fact-check report.
+
+_article_lock = threading.Lock()
+
+
+def _article_summary(entry: articles.ArticleEntry) -> dict[str, Any]:
+    report = entry.report or {}
+    return {
+        "slug": entry.slug,
+        "title": entry.frontmatter.get("title"),
+        "query_key": entry.frontmatter.get("query_key"),
+        "status": report.get("status", "no-report"),
+        "unsupported": report.get("unsupported_count", 0),
+        "saved_at": entry.saved_at,
+    }
+
+
+def _article_detail(entry: articles.ArticleEntry) -> dict[str, Any]:
+    return {**_article_summary(entry), "frontmatter": entry.frontmatter, "body": entry.body, "report": entry.report}
+
+
+@app.get("/api/articles")
+def api_list_articles():
+    return [_article_summary(e) for e in articles.list_staging()]
+
+
+@app.get("/api/articles/opportunities")
+def api_article_opportunities():
+    """Eligible comparisons (>=5 venues) that have no article yet — a light
+    Stage-1 opportunity list feeding the generate form. (Full auto-derivation +
+    dedupe-on-intent + Search Console gaps land in a later gate.)"""
+    meta = article_store.read_meta()
+    taken = articles.existing_query_keys()
+    return sorted(
+        (
+            {"query_key": key, "title": e.get("title"), "venue_count": e.get("venue_count")}
+            for key, e in meta.items()
+            if key not in taken
+        ),
+        key=lambda o: o["query_key"],
+    )
+
+
+@app.get("/api/articles/{slug}")
+def api_get_article(slug: str):
+    try:
+        return _article_detail(articles.get_staging(slug))
+    except FileNotFoundError:
+        raise HTTPException(404, f"no staged article '{slug}'")
+
+
+class GenerateArticleBody(BaseModel):
+    query_key: str
+    slug: str
+    author: str | None = None
+
+
+@app.post("/api/articles/generate")
+def api_generate_article(body: GenerateArticleBody):
+    if not _article_lock.acquire(blocking=False):
+        raise HTTPException(409, "an article job is already running")
+
+    def stream():
+        try:
+            for line in article_pipeline.run(body.query_key, body.slug, body.author):
+                yield _sse_line({"time": line.time, "level": line.level, "text": line.text})
+        finally:
+            _article_lock.release()
+        yield "event: done\ndata: {}\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@app.post("/api/articles/{slug}/factcheck")
+def api_refactcheck_article(slug: str):
+    """Re-run the fact-check on an already-published article (Stage 8
+    re-verification) and rewrite its stored report."""
+    if not _article_lock.acquire(blocking=False):
+        raise HTTPException(409, "an article job is already running")
+
+    def stream():
+        try:
+            for line in article_pipeline.factcheck_existing(slug):
+                yield _sse_line({"time": line.time, "level": line.level, "text": line.text})
+        finally:
+            _article_lock.release()
+        yield "event: done\ndata: {}\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+class ArticlePatchBody(BaseModel):
+    patch: dict[str, Any]
+
+
+@app.patch("/api/articles/{slug}")
+def api_update_article(slug: str, body: ArticlePatchBody):
+    try:
+        return _article_detail(articles.update_staging(slug, body.patch))
+    except FileNotFoundError:
+        raise HTTPException(404, f"no staged article '{slug}'")
+
+
+@app.post("/api/articles/{slug}/approve")
+def api_approve_article(slug: str):
+    try:
+        redirect = articles.approve(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"no staged article '{slug}'")
+    except PublishBlocked as exc:
+        raise HTTPException(409, detail={"blocked": str(exc)})
+    except ArticleValidationFailed as exc:
+        raise HTTPException(422, detail={"errors": exc.errors})
+    return {"ok": True, "redirect": redirect}
+
+
+class RejectArticleBody(BaseModel):
+    reason: str
+
+
+@app.post("/api/articles/{slug}/reject")
+def api_reject_article(slug: str, body: RejectArticleBody):
+    try:
+        articles.reject(slug, body.reason)
+    except FileNotFoundError:
+        raise HTTPException(404, f"no staged article '{slug}'")
     return {"ok": True}
 
 

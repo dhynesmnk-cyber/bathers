@@ -22,3 +22,13 @@
   from = "/compare/cheapest/"
   to = "/blog/cheapest-bathhouses-in-australia/"
   status = 301
+
+[[redirects]]
+  from = "/compare/contrast-therapy/"
+  to = "/blog/contrast-therapy-in-australia/"
+  status = 301
+
+[[redirects]]
+  from = "/compare/natural-thermal-springs/"
+  to = "/blog/natural-thermal-springs-in-australia/"
+  status = 301

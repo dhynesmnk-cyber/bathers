@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Where We Bathe — Articles</title>
+    <link rel="stylesheet" href="/static/admin.css" />
+    <link rel="stylesheet" href="/static/articles.css" />
+  </head>
+  <body>
+    <header class="hub-header">
+      <span class="mono eyebrow">WHERE WE BATHE — COMPARISON ARTICLES</span>
+      <p id="action-status" class="mono save-status" aria-live="polite"></p>
+      <a href="/blog" class="btn btn-plain">Blog</a>
+      <a href="/claims" class="btn btn-plain">Claims</a>
+      <a href="/" class="btn btn-plain">Back to hub</a>
+    </header>
+
+    <main class="articles-grid">
+      <!-- Left: generate + staging queue -->
+      <section class="pane" aria-labelledby="art-list-heading">
+        <h2 id="art-list-heading" class="mono pane-heading">GENERATE</h2>
+        <form id="generate-form" class="art-new-form">
+          <label class="field">
+            <span class="mono field-label">Comparison (intent)</span>
+            <select id="gen-query-key" class="text-input mono" required></select>
+          </label>
+          <label class="field">
+            <span class="mono field-label">Slug</span>
+            <input id="gen-slug" class="text-input mono" type="text" placeholder="cheapest-bathhouses-in-australia" required />
+          </label>
+          <label class="field">
+            <span class="mono field-label">Author (optional)</span>
+            <input id="gen-author" class="text-input" type="text" placeholder="leave blank for the organisation" />
+          </label>
+          <button type="submit" id="gen-btn" class="btn btn-thermal">Draft &amp; fact-check</button>
+        </form>
+        <pre id="gen-log" class="art-log mono" aria-live="polite" hidden></pre>
+
+        <h2 class="mono pane-heading" style="margin-top: 1.5rem;">IN REVIEW</h2>
+        <ul id="art-list" class="queue-list" role="listbox" aria-label="Staged articles"></ul>
+        <p id="art-list-empty" class="mono empty-state" hidden>No articles staged. Generate one above.</p>
+      </section>
+
+      <!-- Right: review -->
+      <section class="pane" aria-labelledby="art-review-heading">
+        <h2 id="art-review-heading" class="mono pane-heading">REVIEW</h2>
+        <div id="review-empty" class="mono empty-state">Select a staged article to review.</div>
+        <div id="review-content" hidden>
+          <label class="field">
+            <span class="mono field-label">Title</span>
+            <input id="field-title" class="text-input" type="text" data-field="title" />
+          </label>
+          <label class="field">
+            <span class="mono field-label">Summary <span id="summary-count" class="mono"></span></span>
+            <input id="field-summary" class="text-input" type="text" data-field="summary" />
+          </label>
+          <p class="mono field-label">
+            Query: <span id="field-query"></span> · resolves live at build. Figures below are component tokens.
+          </p>
+
+          <h3 class="mono pane-heading">FACT-CHECK</h3>
+          <p id="report-status" class="mono report-status"></p>
+          <table id="report-table" class="report-table">
+            <thead>
+              <tr><th scope="col">Claim</th><th scope="col">Verdict</th><th scope="col">Note</th></tr>
+            </thead>
+            <tbody id="report-rows"></tbody>
+          </table>
+
+          <h3 class="mono pane-heading">BODY (MDX source)</h3>
+          <textarea id="field-body" class="text-input art-body" data-field="body" spellcheck="false"></textarea>
+          <p class="mono field-label">Edit to resolve a flagged claim, then re-fact-check. Every figure must be a data component, never a literal.</p>
+
+          <div class="art-actions">
+            <button id="refactcheck-btn" class="btn btn-plain">Re-fact-check</button>
+            <button id="approve-btn" class="btn btn-thermal">Approve &amp; publish</button>
+            <button id="reject-btn" class="btn btn-oxide">Reject</button>
+          </div>
+          <div id="redirect-box" class="art-redirect" hidden>
+            <p class="mono field-label">Published. Add this 301 to <code>netlify.toml</code>:</p>
+            <pre id="redirect-text" class="mono"></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/articles.js"></script>
+  </body>
+</html>
