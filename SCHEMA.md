@@ -60,7 +60,11 @@ Practical/logistics info, distinct from the bathing-experience amenities above �
 | `session_gender_note` | string | – | *(2026-07-26)* Freeform detail the enum can't carry, e.g. `"Women-only Wednesdays 10am–2pm"`. Not stored in SQLite. |
 | `silence_policy` | string | – | *(2026-07-26)* Freeform, e.g. `"Quiet before midday"`. Not stored in SQLite. |
 | `phone_policy` | string | – | *(2026-07-26)* Freeform, e.g. `"No phones in the bathing area"`. Not stored in SQLite. |
-| `minimum_age` | number | – | *(2026-07-26)* Positive integer. Not stored in SQLite. |
+| `minimum_age` | number | – | *(2026-07-26)* Positive integer. *(2026-07-31: now promoted into SQLite, §2a/§3.)* |
+| `price` | object | – | *(2026-07-31, §2a)* Structured numeric pricing alongside the freeform `cost` string: `adult_drop_in_aud`/`standard_session_aud` (non-negative number, each optional/nullable). Omitted entirely on package- or treatment-led venues with no general-admission bathing price — never invented. Cross-validated against `cost` (§2a). |
+| `drive_time` | object | – | *(2026-07-31, §2a)* OSRM-computed drive from the nearest capital: `from` (string, capital name), `minutes` (non-negative int), `km` (non-negative number). Present only where the venue has coordinates; cleanly absent otherwise. Not a venue claim — no verification entry. |
+| `verification` | object | – | *(2026-07-31, §2a)* Per-field `{source, tier, date}` provenance, keyed by field name (subset of the verifiable set, §2a). Rendered/metadata only; not stored in SQLite. |
+| `change_log` | array | – | *(2026-07-31, §2a)* Computed diff entries `{field, from, to, date, trigger}` appended on re-harvest/outreach update. Absent at first draft. Rendered/metadata only; not stored in SQLite. |
 | `status` | enum | ✓ | `unclaimed` \| `claimed`. Default `unclaimed`. |
 | `summary` | string | ✓ | ≤160 chars. Index one-liner + meta description. Written by the Architect, in register. |
 | `drafted` | date (YYYY-MM-DD) | ✓ | Date the draft was generated. |
@@ -72,6 +76,20 @@ Practical/logistics info, distinct from the bathing-experience amenities above �
 | `faq` | array of `{question, answer}` | – | Optional, 3–6 pairs recommended, hard cap 8. Drafted by the Architect strictly from the Harvester's `facts` object (§4); never fabricated. Reviewer-editable in the admin pane. Absent or empty array → no FAQ section renders (zero-FAQ pages must look complete, same posture as the zero-image default). |
 
 Slug = filename (`peninsula-hot-springs.mdx`), kebab-case, unique across `_staging` + `_published`. Slug is **not** a frontmatter field — it is derived from the filename everywhere.
+
+### 2a. Verification, structured price & drive-time (2026-07-31)
+
+Added for the SEO/AI-citation engagement (Gate 7): the fact model a comparison page or an AI answer can cite needs provenance, structured numbers, and drive-time. Constants live once in `admin/config.py` / `site/src/config.ts` (`CONFIDENCE_TIERS`, `VERIFIABLE_FIELDS`, `CAPITAL_CITIES`) and are mirrored, same posture as the amenity/facility keys.
+
+**Confidence tiers** (weakest → strongest): `unverified`, `published_by_venue`, `observed_on_visit`, `operator_confirmed`. The pipeline only ever sets `published_by_venue` (drafted from the venue's own published materials). `observed_on_visit` exists for completeness but is never pipeline-set — this project makes no first-hand visits (CLAUDE.md rule 6); only a reviewer who genuinely visited may set it. `operator_confirmed` is reached via Gate 8 outreach. A re-harvest **upgrades, never silently downgrades** a field's tier (`CONFIDENCE_TIER_RANK`).
+
+**Verifiable fields** (what `verification` may key on): `price`, `hours`, `temperatures`, `dress_code`, `session_gender`, `silence_policy`, `phone_policy`, `minimum_age`. Deliberately *not* name/state/address (self-evident) or amenity/facility booleans (covered by the venue-level `verified` date) or `drive_time` (OSRM-computed, own provenance). Every currently-populated verifiable field carries a `{source, tier, date}` record; a field the venue doesn't state carries none. Built by `admin/pipeline/verification.py::build_verification`.
+
+**Change-log** is *computed*, not hand-maintained (`compute_change_log`): on a re-harvest or outreach update, one `{field, from, to, date, trigger}` entry per verifiable field whose value moved. Matches the "frontmatter is truth, DB is disposable" architecture — nobody edits a log by hand.
+
+**Structured price** (`price`) sits alongside the freeform `cost` string, never replacing it. `/validate` cross-checks: every populated `price` number must fall within the range of dollar amounts `priceRange()` finds in `cost` (a structured price the cost string can't corroborate is a fail). Populating it from `cost` is a human judgement call (extracting "the" adult drop-in from a multi-tier string), not a regex pass.
+
+**Drive-time** (`drive_time`) is computed once per venue from its coordinates to the nearest capital via OSRM's public routing demo (`admin/pipeline/drivetime.py`; TRD.md §2 exception, no new package), cached, recomputed only when coordinates change. Sanity-checked by `/validate`.
 
 ## 3. SQLite (`data/directory.db`)
 
@@ -89,7 +107,17 @@ CREATE TABLE venues (
   has_image INTEGER NOT NULL DEFAULT 0,
   hours TEXT,
   cost TEXT,
-  access TEXT
+  access TEXT,
+  -- 2026-07-31 (§2a): promoted from rendered-only into SQLite so the
+  -- comparison pages (Gate 10) can query/sort on them. Temperatures, price
+  -- and drive-time are flattened here; the nested objects are reconstructed
+  -- for venues.json.
+  dress_code TEXT, session_gender TEXT, session_gender_note TEXT,
+  silence_policy TEXT, phone_policy TEXT, minimum_age INTEGER,
+  sauna_min_c REAL, sauna_max_c REAL, sauna_display TEXT,
+  cold_plunge_min_c REAL, cold_plunge_max_c REAL, cold_plunge_display TEXT,
+  price_adult_drop_in_aud REAL, price_standard_session_aud REAL,
+  drive_time_from TEXT, drive_time_minutes INTEGER, drive_time_km REAL
 );
 CREATE TABLE amenities (
   slug TEXT PRIMARY KEY REFERENCES venues(slug) ON DELETE CASCADE,
@@ -120,7 +148,7 @@ The DB is derived and disposable (TRD §5): rebuildable in full from `_published
 
 **Note on FAQ:** not stored in SQLite — like the MDX body, it is rendered content, not a query/filter dimension.
 
-**Note on `temperatures`/`dress_code`/`session_gender`/`session_gender_note`/`silence_policy`/`phone_policy`/`minimum_age` (2026-07-26):** none of these are stored in SQLite, same posture as `verified` — rendered content only, not a query/filter dimension today. If a future feature needs to filter or sort on these (e.g. "cold plunge under 10°C"), add real columns then; don't retrofit silently.
+**Note on `temperatures`/`dress_code`/`session_gender`/`session_gender_note`/`silence_policy`/`phone_policy`/`minimum_age` (2026-07-26; promoted 2026-07-31):** originally rendered-only, these were **promoted into SQLite on 2026-07-31** (Gate 7, §2a) — exactly the "add real columns when a feature needs to sort/filter on them" path this note anticipated, now triggered by Gate 10's comparison pages. `temperatures` is flattened into `sauna_*`/`cold_plunge_*` columns; structured `price` and `drive_time` likewise. **Still rendered-only, not in SQLite:** `verified`, `verification`, `change_log`, `faq` — provenance/metadata, not query dimensions.
 
 ## 4. Harvester JSON output
 

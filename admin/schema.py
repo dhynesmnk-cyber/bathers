@@ -15,7 +15,16 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
-from admin.config import AMENITY_KEYS, CATEGORY_KEYS, DRESS_CODE_KEYS, FACILITY_KEYS, SESSION_GENDER_KEYS, STATES
+from admin.config import (
+    AMENITY_KEYS,
+    CATEGORY_KEYS,
+    CONFIDENCE_TIERS,
+    DRESS_CODE_KEYS,
+    FACILITY_KEYS,
+    SESSION_GENDER_KEYS,
+    STATES,
+    VERIFIABLE_FIELDS,
+)
 
 AU_LATITUDE_BOUNDS = (-44.0, -9.0)
 AU_LONGITUDE_BOUNDS = (112.0, 154.0)
@@ -34,6 +43,19 @@ _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 REQUIRED_STRING_FIELDS = ("name", "suburb", "address")
 URL_FIELDS = ("website", "source_url")
+
+# The complete set of allowed frontmatter fields (SCHEMA.md §2/§2a). Exposed
+# module-level so the six-surface schema diff (admin/pipeline/schema_surfaces)
+# can compare it against the zod schema and the SCHEMA.md table — the concrete
+# guard against a field drifting between the validation layers.
+KNOWN_FIELDS = {
+    "name", "state", "category", "suburb", "address", "latitude", "longitude", "website",
+    "amenities", "facilities", "hours", "cost", "access", "status", "summary", "drafted", "verified", "source_url",
+    "image", "image_source", "image_caption", "faq",
+    "temperatures", "dress_code", "session_gender", "session_gender_note",
+    "silence_policy", "phone_policy", "minimum_age",
+    "price", "drive_time", "verification", "change_log",
+}
 
 
 @dataclass
@@ -165,6 +187,63 @@ def validate_frontmatter(data: dict[str, Any]) -> list[FieldError]:
     if minimum_age is not None and (not isinstance(minimum_age, int) or isinstance(minimum_age, bool) or minimum_age <= 0):
         errors.append(FieldError("minimum_age", "minimum_age must be a positive integer"))
 
+    # Gate 7 (2026-07-31, SCHEMA.md §2a) — structured price, drive-time,
+    # per-field verification. All optional; validated for shape/bounds when
+    # present, never required (absence is normal on thin venues).
+    price = data.get("price")
+    if price is not None:
+        if not isinstance(price, dict):
+            errors.append(FieldError("price", "price must be an object"))
+        else:
+            extra = [k for k in price if k not in ("adult_drop_in_aud", "standard_session_aud")]
+            if extra:
+                errors.append(FieldError("price", f"price has unexpected keys: {', '.join(extra)}"))
+            for key in ("adult_drop_in_aud", "standard_session_aud"):
+                value = price.get(key)
+                if value is not None and (not _is_number(value) or value < 0):
+                    errors.append(FieldError("price", f"price.{key} must be a non-negative number"))
+
+    drive_time = data.get("drive_time")
+    if drive_time is not None:
+        if not isinstance(drive_time, dict):
+            errors.append(FieldError("drive_time", "drive_time must be an object"))
+        else:
+            if not isinstance(drive_time.get("from"), str) or not drive_time.get("from", "").strip():
+                errors.append(FieldError("drive_time", "drive_time.from is required"))
+            minutes = drive_time.get("minutes")
+            if not isinstance(minutes, int) or isinstance(minutes, bool) or minutes < 0:
+                errors.append(FieldError("drive_time", "drive_time.minutes must be a non-negative integer"))
+            km = drive_time.get("km")
+            if not _is_number(km) or km < 0:
+                errors.append(FieldError("drive_time", "drive_time.km must be a non-negative number"))
+
+    verification = data.get("verification")
+    if verification is not None:
+        if not isinstance(verification, dict):
+            errors.append(FieldError("verification", "verification must be an object keyed by field name"))
+        else:
+            extra = [k for k in verification if k not in VERIFIABLE_FIELDS]
+            if extra:
+                errors.append(FieldError("verification", f"verification has non-verifiable keys: {', '.join(extra)}"))
+            for field_name, record in verification.items():
+                if field_name not in VERIFIABLE_FIELDS:
+                    continue
+                if not isinstance(record, dict):
+                    errors.append(FieldError("verification", f"verification.{field_name} must be an object"))
+                    continue
+                if not isinstance(record.get("source"), str) or not record.get("source", "").strip():
+                    errors.append(FieldError("verification", f"verification.{field_name}.source is required"))
+                if record.get("tier") not in CONFIDENCE_TIERS:
+                    errors.append(FieldError("verification", f"verification.{field_name}.tier must be one of {', '.join(CONFIDENCE_TIERS)}"))
+                rec_date = record.get("date")
+                rec_date_str = rec_date.isoformat() if isinstance(rec_date, date) else rec_date
+                if not isinstance(rec_date_str, str) or not _DATE_RE.match(rec_date_str):
+                    errors.append(FieldError("verification", f"verification.{field_name}.date must be a date (YYYY-MM-DD)"))
+
+    change_log = data.get("change_log")
+    if change_log is not None and not isinstance(change_log, list):
+        errors.append(FieldError("change_log", "change_log must be a list"))
+
     status = data.get("status", "unclaimed")
     if status not in ("unclaimed", "claimed"):
         errors.append(FieldError("status", "status must be 'unclaimed' or 'claimed'"))
@@ -210,14 +289,7 @@ def validate_frontmatter(data: dict[str, Any]) -> list[FieldError]:
                 if not isinstance(answer, str) or not answer.strip():
                     errors.append(FieldError("faq", f"faq[{i}].answer is required"))
 
-    known_fields = {
-        "name", "state", "category", "suburb", "address", "latitude", "longitude", "website",
-        "amenities", "facilities", "hours", "cost", "access", "status", "summary", "drafted", "verified", "source_url",
-        "image", "image_source", "image_caption", "faq",
-        "temperatures", "dress_code", "session_gender", "session_gender_note",
-        "silence_policy", "phone_policy", "minimum_age",
-    }
-    extra_fields = [key for key in data if key not in known_fields]
+    extra_fields = [key for key in data if key not in KNOWN_FIELDS]
     if extra_fields:
         errors.append(FieldError("_root", f"unexpected field(s): {', '.join(extra_fields)}"))
 

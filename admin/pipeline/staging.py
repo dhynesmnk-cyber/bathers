@@ -26,8 +26,14 @@ FRONTMATTER_FIELD_ORDER = (
     "name", "state", "category", "suburb", "address", "latitude", "longitude", "website",
     "amenities", "facilities", "hours", "cost", "access",
     "temperatures", "dress_code", "session_gender", "session_gender_note", "silence_policy", "phone_policy", "minimum_age",
+    # Gate 7 (2026-07-31) — must be listed here or render_frontmatter drops
+    # them on any admin re-save (autosave, status change, image publish).
+    "price", "drive_time",
     "status", "summary", "drafted", "verified", "source_url",
     "image", "image_source", "image_caption", "faq",
+    # Provenance/metadata, kept last — verification mirrors the field order
+    # above; change_log is append-only.
+    "verification", "change_log",
 )
 AMENITY_FIELD_ORDER = (
     "magnesium_pool", "infrared_sauna", "traditional_sauna", "cold_plunge", "led_therapy",

@@ -43,9 +43,12 @@ from admin.config import (
 from admin.mdx_preview import (
     AMENITY_LABELS,
     ICON_PATHS,
+    drive_time_line,
+    price_line,
     render_body_html,
     session_gender_line,
     temperature_line,
+    verification_summary,
 )
 from admin.pipeline import blog, claims, claims_store, deploy, discovery, goatcounter, images, notify, orchestrator, places, staging, stripe_client
 from admin.pipeline.blog import ValidationFailed as BlogValidationFailed
@@ -213,6 +216,9 @@ def preview(request: Request, slug: str):
             "icon_paths": ICON_PATHS,
             "temperature_line": temperature_line(data.get("temperatures")),
             "session_gender_line": session_gender_line(data),
+            "price_line": price_line(data),
+            "drive_time_line": drive_time_line(data),
+            "verification_rows": verification_summary(data),
         },
     )
 

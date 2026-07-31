@@ -29,6 +29,58 @@ from admin.config import (
 
 REQUIRED_FIELDS = ("name", "state", "category", "suburb", "summary", "amenities")
 
+# Scalar columns on the venues table, in order (excluding the slug PK). Built
+# once so the INSERT/UPDATE SQL and the params dict can't drift apart.
+VENUE_SCALAR_COLUMNS = (
+    "name", "state", "category", "suburb", "latitude", "longitude", "status", "summary", "has_image",
+    "hours", "cost", "access",
+    "dress_code", "session_gender", "session_gender_note", "silence_policy", "phone_policy", "minimum_age",
+    "sauna_min_c", "sauna_max_c", "sauna_display",
+    "cold_plunge_min_c", "cold_plunge_max_c", "cold_plunge_display",
+    "price_adult_drop_in_aud", "price_standard_session_aud",
+    "drive_time_from", "drive_time_minutes", "drive_time_km",
+)
+
+
+def _venue_params(slug: str, data: dict[str, Any]) -> dict[str, Any]:
+    """Flatten frontmatter (including the nested temperatures/price/drive_time
+    objects) into one row-params dict keyed by VENUE_SCALAR_COLUMNS + slug."""
+    temps = data.get("temperatures") or {}
+    price = data.get("price") or {}
+    dt = data.get("drive_time") or {}
+    return {
+        "slug": slug,
+        "name": data["name"],
+        "state": data["state"],
+        "category": data["category"],
+        "suburb": data["suburb"],
+        "latitude": data.get("latitude"),
+        "longitude": data.get("longitude"),
+        "status": data.get("status", "unclaimed"),
+        "summary": data["summary"],
+        "has_image": 1 if data.get("image") else 0,
+        "hours": data.get("hours"),
+        "cost": data.get("cost"),
+        "access": data.get("access"),
+        "dress_code": data.get("dress_code"),
+        "session_gender": data.get("session_gender"),
+        "session_gender_note": data.get("session_gender_note"),
+        "silence_policy": data.get("silence_policy"),
+        "phone_policy": data.get("phone_policy"),
+        "minimum_age": data.get("minimum_age"),
+        "sauna_min_c": temps.get("sauna_min_c"),
+        "sauna_max_c": temps.get("sauna_max_c"),
+        "sauna_display": temps.get("sauna_display"),
+        "cold_plunge_min_c": temps.get("cold_plunge_min_c"),
+        "cold_plunge_max_c": temps.get("cold_plunge_max_c"),
+        "cold_plunge_display": temps.get("cold_plunge_display"),
+        "price_adult_drop_in_aud": price.get("adult_drop_in_aud"),
+        "price_standard_session_aud": price.get("standard_session_aud"),
+        "drive_time_from": dt.get("from"),
+        "drive_time_minutes": dt.get("minutes"),
+        "drive_time_km": dt.get("km"),
+    }
+
 SCHEMA_SQL = """
 CREATE TABLE venues (
   slug TEXT PRIMARY KEY,
@@ -43,7 +95,28 @@ CREATE TABLE venues (
   has_image INTEGER NOT NULL DEFAULT 0,
   hours TEXT,
   cost TEXT,
-  access TEXT
+  access TEXT,
+  -- Gate 7 (2026-07-31): promoted from rendered-only into SQLite so they're
+  -- queryable by the comparison pages (SCHEMA.md §3). Temperatures/price/
+  -- drive-time are flattened here (the nested objects are reconstructed for
+  -- venues.json in fetch_all_venues).
+  dress_code TEXT,
+  session_gender TEXT,
+  session_gender_note TEXT,
+  silence_policy TEXT,
+  phone_policy TEXT,
+  minimum_age INTEGER,
+  sauna_min_c REAL,
+  sauna_max_c REAL,
+  sauna_display TEXT,
+  cold_plunge_min_c REAL,
+  cold_plunge_max_c REAL,
+  cold_plunge_display TEXT,
+  price_adult_drop_in_aud REAL,
+  price_standard_session_aud REAL,
+  drive_time_from TEXT,
+  drive_time_minutes INTEGER,
+  drive_time_km REAL
 );
 CREATE TABLE amenities (
   slug TEXT PRIMARY KEY REFERENCES venues(slug) ON DELETE CASCADE,
@@ -104,31 +177,13 @@ def create_schema(conn: sqlite3.Connection) -> None:
 
 
 def upsert_venue(conn: sqlite3.Connection, slug: str, data: dict[str, Any]) -> None:
+    cols = ("slug", *VENUE_SCALAR_COLUMNS)
+    placeholders = ", ".join(f":{c}" for c in cols)
+    updates = ", ".join(f"{c} = excluded.{c}" for c in VENUE_SCALAR_COLUMNS)
     conn.execute(
-        """
-        INSERT INTO venues (slug, name, state, category, suburb, latitude, longitude, status, summary, has_image, hours, cost, access)
-        VALUES (:slug, :name, :state, :category, :suburb, :latitude, :longitude, :status, :summary, :has_image, :hours, :cost, :access)
-        ON CONFLICT(slug) DO UPDATE SET
-          name = excluded.name, state = excluded.state, category = excluded.category, suburb = excluded.suburb,
-          latitude = excluded.latitude, longitude = excluded.longitude,
-          status = excluded.status, summary = excluded.summary, has_image = excluded.has_image,
-          hours = excluded.hours, cost = excluded.cost, access = excluded.access
-        """,
-        {
-            "slug": slug,
-            "name": data["name"],
-            "state": data["state"],
-            "category": data["category"],
-            "suburb": data["suburb"],
-            "latitude": data.get("latitude"),
-            "longitude": data.get("longitude"),
-            "status": data.get("status", "unclaimed"),
-            "summary": data["summary"],
-            "has_image": 1 if data.get("image") else 0,
-            "hours": data.get("hours"),
-            "cost": data.get("cost"),
-            "access": data.get("access"),
-        },
+        f"INSERT INTO venues ({', '.join(cols)}) VALUES ({placeholders}) "
+        f"ON CONFLICT(slug) DO UPDATE SET {updates}",
+        _venue_params(slug, data),
     )
     amenities = data["amenities"]
     conn.execute(
@@ -165,11 +220,19 @@ def upsert_venue(conn: sqlite3.Connection, slug: str, data: dict[str, Any]) -> N
     )
 
 
+def _nonempty(obj: dict[str, Any]) -> dict[str, Any] | None:
+    """Drop all-null nested objects so venues.json omits `temperatures: {}`
+    etc. rather than carrying empty shells — same 'omit if thin' posture as
+    the frontmatter (SCHEMA.md)."""
+    kept = {k: v for k, v in obj.items() if v is not None}
+    return kept or None
+
+
 def fetch_all_venues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    conn.row_factory = sqlite3.Row
     rows = conn.execute(
         """
-        SELECT v.slug, v.name, v.state, v.category, v.suburb, v.latitude, v.longitude,
-               v.status, v.summary, v.has_image, v.hours, v.cost, v.access,
+        SELECT v.*,
                a.magnesium_pool, a.infrared_sauna, a.traditional_sauna, a.cold_plunge, a.led_therapy,
                f.parking, f.towels_provided, f.changerooms, f.bookings_required, f.wheelchair_access,
                f.outdoor_pool, f.indoor_pool, f.natural_spring, f.pregnancy_safe,
@@ -181,51 +244,48 @@ def fetch_all_venues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         """
     ).fetchall()
     venues = []
-    for (
-        slug, name, state, category, suburb, latitude, longitude, status, summary, has_image, hours, cost, access,
-        mg, ir, sa, cp, led,
-        parking, towels, changerooms, bookings, wheelchair,
-        outdoor_pool, indoor_pool, natural_spring, pregnancy_safe,
-        step_free_entry, hoist_available, accessible_changerooms,
-    ) in rows:
-        venues.append(
-            {
-                "slug": slug,
-                "name": name,
-                "state": state,
-                "category": category,
-                "suburb": suburb,
-                "latitude": latitude,
-                "longitude": longitude,
-                "status": status,
-                "summary": summary,
-                "has_image": bool(has_image),
-                "hours": hours,
-                "cost": cost,
-                "access": access,
-                "amenities": {
-                    "magnesium_pool": bool(mg),
-                    "infrared_sauna": bool(ir),
-                    "traditional_sauna": bool(sa),
-                    "cold_plunge": bool(cp),
-                    "led_therapy": bool(led),
-                },
-                "facilities": {
-                    "parking": bool(parking),
-                    "towels_provided": bool(towels),
-                    "changerooms": bool(changerooms),
-                    "bookings_required": bool(bookings),
-                    "wheelchair_access": bool(wheelchair),
-                    "outdoor_pool": bool(outdoor_pool),
-                    "indoor_pool": bool(indoor_pool),
-                    "natural_spring": bool(natural_spring),
-                    "pregnancy_safe": bool(pregnancy_safe),
-                    "step_free_entry": bool(step_free_entry),
-                    "hoist_available": bool(hoist_available),
-                    "accessible_changerooms": bool(accessible_changerooms),
-                },
+    for r in rows:
+        venue: dict[str, Any] = {
+            "slug": r["slug"],
+            "name": r["name"],
+            "state": r["state"],
+            "category": r["category"],
+            "suburb": r["suburb"],
+            "latitude": r["latitude"],
+            "longitude": r["longitude"],
+            "status": r["status"],
+            "summary": r["summary"],
+            "has_image": bool(r["has_image"]),
+            "hours": r["hours"],
+            "cost": r["cost"],
+            "access": r["access"],
+            "dress_code": r["dress_code"],
+            "session_gender": r["session_gender"],
+            "session_gender_note": r["session_gender_note"],
+            "silence_policy": r["silence_policy"],
+            "phone_policy": r["phone_policy"],
+            "minimum_age": r["minimum_age"],
+            "amenities": {key: bool(r[key]) for key in AMENITY_KEYS},
+            "facilities": {key: bool(r[key]) for key in FACILITY_KEYS},
+        }
+        temperatures = _nonempty({
+            "sauna_min_c": r["sauna_min_c"], "sauna_max_c": r["sauna_max_c"], "sauna_display": r["sauna_display"],
+            "cold_plunge_min_c": r["cold_plunge_min_c"], "cold_plunge_max_c": r["cold_plunge_max_c"],
+            "cold_plunge_display": r["cold_plunge_display"],
+        })
+        if temperatures:
+            venue["temperatures"] = temperatures
+        price = _nonempty({
+            "adult_drop_in_aud": r["price_adult_drop_in_aud"],
+            "standard_session_aud": r["price_standard_session_aud"],
+        })
+        if price:
+            venue["price"] = price
+        if r["drive_time_from"] is not None:
+            venue["drive_time"] = {
+                "from": r["drive_time_from"], "minutes": r["drive_time_minutes"], "km": r["drive_time_km"],
             }
-        )
+        venues.append(venue)
     return venues
 
 

@@ -5,10 +5,12 @@ import {
   AU_LATITUDE_BOUNDS,
   AU_LONGITUDE_BOUNDS,
   CATEGORIES,
+  CONFIDENCE_TIERS,
   DRESS_CODE_KEYS,
   FACILITY_KEYS,
   SESSION_GENDER_KEYS,
   STATES,
+  VERIFIABLE_FIELDS,
 } from "../config";
 
 // Mirrors SCHEMA.md §2 exactly. Any change to this file must be propagated
@@ -50,6 +52,65 @@ const temperaturesSchema = z
   .strict()
   .optional();
 
+// Structured pricing (Gate 7, SCHEMA.md §2a) — the numeric adult drop-in /
+// standard session alongside the freeform `cost` string, for comparison
+// pages. Both optional/nullable; absent on package- or treatment-led venues
+// with no general-admission bathing price. Cross-validated against the cost
+// string by /validate, not zod (zod can't see `cost` from here cheaply).
+const priceSchema = z
+  .object({
+    adult_drop_in_aud: z.number().nonnegative().nullable().optional(),
+    standard_session_aud: z.number().nonnegative().nullable().optional(),
+  })
+  .strict()
+  .optional();
+
+// Drive-time from the nearest capital (Gate 7, OSRM — TRD.md §2). Present only
+// where the venue has coordinates; cleanly absent otherwise.
+const driveTimeSchema = z
+  .object({
+    from: z.string(),
+    minutes: z.number().int().nonnegative(),
+    km: z.number().nonnegative(),
+  })
+  .strict()
+  .optional();
+
+// Per-field verification (Gate 7, SCHEMA.md §2a) — a {source, tier, date}
+// record per populated verifiable field. Keys are a subset of
+// VERIFIABLE_FIELDS; each entry optional so a venue only carries records for
+// the facts it actually states.
+const verificationEntrySchema = z.object({
+  source: z.string(),
+  tier: z.enum(CONFIDENCE_TIERS),
+  date: z.date(),
+});
+
+const verificationSchema = z
+  .object(
+    Object.fromEntries(VERIFIABLE_FIELDS.map((key) => [key, verificationEntrySchema.optional()])) as Record<
+      (typeof VERIFIABLE_FIELDS)[number],
+      z.ZodOptional<typeof verificationEntrySchema>
+    >,
+  )
+  .strict()
+  .optional();
+
+// Computed change-log (Gate 7, SCHEMA.md §2a) — one entry per verifiable field
+// whose value changed on a re-harvest/outreach update. Empty/absent at first
+// draft. `from`/`to` are untyped (any prior value shape); not rendered.
+const changeLogSchema = z
+  .array(
+    z.object({
+      field: z.string(),
+      from: z.any(),
+      to: z.any(),
+      date: z.date(),
+      trigger: z.string(),
+    }),
+  )
+  .optional();
+
 const spasCollection = defineCollection({
   // Astro globs directly into _published — content-staging/_staging and
   // _rejected live outside site/src/content entirely (TRD.md §3), so this
@@ -78,6 +139,10 @@ const spasCollection = defineCollection({
       silence_policy: z.string().nullable().optional(),
       phone_policy: z.string().nullable().optional(),
       minimum_age: z.number().int().positive().nullable().optional(),
+      price: priceSchema,
+      drive_time: driveTimeSchema,
+      verification: verificationSchema,
+      change_log: changeLogSchema,
       status: z.enum(["unclaimed", "claimed"]).default("unclaimed"),
       summary: z.string().max(160),
       drafted: z.date(),

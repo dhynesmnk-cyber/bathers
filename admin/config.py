@@ -60,6 +60,7 @@ PLACES_DIR = TEMP_DATA_DIR / "places"
 GOATCOUNTER_CACHE_DIR = TEMP_DATA_DIR / "goatcounter"
 BLOG_IMAGES_TEMP_DIR = TEMP_DATA_DIR / "blog_images"
 GEOCODE_CACHE_PATH = TEMP_DATA_DIR / "geocode_cache.json"  # 2026-07-22 — see geocode.py
+DRIVETIME_CACHE_PATH = TEMP_DATA_DIR / "drivetime_cache.json"  # Gate 7 — see drivetime.py
 CLAIMS_TEMP_DIR = TEMP_DATA_DIR / "claims"  # uploaded claim photos, pending publish
 
 PROMPTS_DIR = ROOT / "PROMPTS"
@@ -217,4 +218,74 @@ SESSION_GENDER_LABELS = {
     "mixed": "Mixed",
     "single_sex": "Single-sex",
     "varies": "Varies (see note)",
+}
+
+# ---------------------------------------------------------------------------
+# Gate 7 (verification metadata / structured facts, 2026-07-31). Mirrors
+# site/src/config.ts's CONFIDENCE_TIERS / VERIFIABLE_FIELDS / CAPITAL_CITIES
+# exactly (SCHEMA.md "one contract" rule — same two-mirrors posture as the
+# amenity/facility/dress-code constants above).
+# ---------------------------------------------------------------------------
+
+# Per-field verification confidence, weakest → strongest. `observed_on_visit`
+# exists for completeness but is never set by the pipeline: this project does
+# not make first-hand visits (CLAUDE.md rule 6), so a field only ever reaches
+# it by a manual reviewer who genuinely visited. `operator_confirmed` is the
+# target state, reached via Gate 8 outreach.
+CONFIDENCE_TIERS = ("unverified", "published_by_venue", "observed_on_visit", "operator_confirmed")
+
+CONFIDENCE_TIER_LABELS = {
+    "unverified": "Unverified",
+    "published_by_venue": "Published by the venue",
+    "observed_on_visit": "Observed on a visit",
+    "operator_confirmed": "Confirmed by the operator",
+}
+
+# Rank for the Gate 8 "upgrade, never silently downgrade" logic.
+CONFIDENCE_TIER_RANK = {tier: i for i, tier in enumerate(CONFIDENCE_TIERS)}
+
+# The venue-sourced factual claims a `verification:` block can key on
+# (SCHEMA.md §2a). Deliberately not every frontmatter field — name/state/
+# address are self-evident; amenity/facility booleans are covered by the
+# venue-level `verified` date; `drive_time` is OSRM-computed, not a venue
+# claim, so it carries its own implicit provenance rather than a tier. These
+# are the citation-bearing facts a comparison page or an AI answer leans on,
+# so each carries its own source/tier/date.
+VERIFIABLE_FIELDS = (
+    "price",
+    "hours",
+    "temperatures",
+    "dress_code",
+    "session_gender",
+    "silence_policy",
+    "phone_policy",
+    "minimum_age",
+)
+
+# State capital CBDs — drive-time reference origins (Gate 7, user sign-off
+# 2026-07-31: "from nearest capital"). Also usable as a display anchor.
+CAPITAL_CITIES = {
+    "VIC": {"name": "Melbourne", "latitude": -37.8136, "longitude": 144.9631},
+    "NSW": {"name": "Sydney", "latitude": -33.8688, "longitude": 151.2093},
+    "QLD": {"name": "Brisbane", "latitude": -27.4698, "longitude": 153.0251},
+    "SA": {"name": "Adelaide", "latitude": -34.9285, "longitude": 138.6007},
+    "WA": {"name": "Perth", "latitude": -31.9523, "longitude": 115.8613},
+    "TAS": {"name": "Hobart", "latitude": -42.8826, "longitude": 147.3257},
+    "NT": {"name": "Darwin", "latitude": -12.4637, "longitude": 130.8444},
+    "ACT": {"name": "Canberra", "latitude": -35.2809, "longitude": 149.1300},
+}
+
+# Rough per-state bounding boxes (lat_min, lat_max, lng_min, lng_max) — the
+# quality guard on auto-geocoded coordinates (Gate 7 validator). Deliberately
+# generous: catches a geocode that landed in the wrong state or ocean, not the
+# odd near-border venue.
+STATE_BBOX = {
+    "VIC": (-39.3, -33.9, 140.8, 150.1),
+    "NSW": (-37.6, -28.1, 140.9, 153.7),
+    "QLD": (-29.3, -9.0, 137.9, 153.6),
+    "SA": (-38.2, -25.9, 128.9, 141.1),
+    "WA": (-35.2, -13.5, 112.8, 129.1),
+    "TAS": (-43.8, -39.4, 143.7, 148.6),
+    "NT": (-26.1, -10.9, 128.9, 138.1),
+    "ACT": (-36.0, -35.1, 148.7, 149.5),
 }

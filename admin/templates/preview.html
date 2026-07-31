@@ -93,6 +93,8 @@
           <p>{{ data.get("address") or "(address)" }}</p>
           {% if data.get("access") %}<p class="mt-4">{{ data.get("access") }}</p>{% endif %}
           {% if data.get("cost") %}<p class="mt-4 text-[var(--ink-faded)]">{{ data.get("cost") }}</p>{% endif %}
+          {% if price_line %}<p class="mt-4 text-[var(--ink-faded)]">Structured price: {{ price_line }}</p>{% endif %}
+          {% if drive_time_line %}<p class="mt-4 text-[var(--ink-faded)]">{{ drive_time_line }}</p>{% endif %}
           {% if temperature_line %}<p class="mt-4 text-[var(--ink-faded)]">{{ temperature_line }}</p>{% endif %}
           {% if data.get("dress_code") %}<p class="mt-4">Dress code: {{ dress_code_labels.get(data.get("dress_code"), data.get("dress_code")) }}</p>{% endif %}
           {% if session_gender_line %}<p class="mt-4">{{ session_gender_line }}</p>{% endif %}
@@ -107,6 +109,20 @@
           <p class="mt-4 text-[var(--ink-faded)]">[Claim this listing — link becomes active once approved]</p>
           {% if data.get("verified") %}
           <p class="mt-4 text-[var(--ink-faded)]">Information verified {{ data.get("verified") }}</p>
+          {% endif %}
+          {% if verification_rows %}
+          <div class="mt-6 pt-4" style="border-top: 1px dashed color-mix(in srgb, var(--ink-faded) 25%, transparent);">
+            <p class="text-[var(--ink-faded)]" style="text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.72rem;">Verification (Gate 7)</p>
+            <table class="mt-2" style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+              {% for row in verification_rows %}
+              <tr style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 15%, transparent);">
+                <td style="padding: 0.3rem 0.6rem 0.3rem 0; text-transform: capitalize;">{{ row.field }}</td>
+                <td style="padding: 0.3rem 0.6rem;">{{ row.tier }}</td>
+                <td style="padding: 0.3rem 0; color: var(--ink-faded);">{{ row.date }}</td>
+              </tr>
+              {% endfor %}
+            </table>
+          </div>
           {% endif %}
         </div>
       </article>

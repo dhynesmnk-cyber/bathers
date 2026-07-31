@@ -93,6 +93,59 @@ def temperature_line(temperatures: dict[str, Any] | None) -> str | None:
     return ". ".join(parts) or None
 
 
+def _fmt_aud(value: Any) -> str:
+    return f"${int(value)}" if float(value).is_integer() else f"${value:.2f}"
+
+
+def price_line(data: dict[str, Any]) -> str | None:
+    """Structured-price display for the review preview (Gate 7). Mirrors the
+    intent of site/src/config.ts's priceRange but reads the numeric `price`
+    object rather than the freeform `cost` string."""
+    price = data.get("price") or {}
+    drop_in = price.get("adult_drop_in_aud")
+    standard = price.get("standard_session_aud")
+    if drop_in is None and standard is None:
+        return None
+    parts = []
+    if drop_in is not None:
+        parts.append(f"from {_fmt_aud(drop_in)} drop-in")
+    if standard is not None:
+        parts.append(f"{_fmt_aud(standard)} standard session")
+    return ", ".join(parts)
+
+
+def drive_time_line(data: dict[str, Any]) -> str | None:
+    """Mirrors site/src/config.ts's formatDriveTime (Gate 7)."""
+    dt = data.get("drive_time")
+    if not dt:
+        return None
+    minutes = dt.get("minutes", 0)
+    h, m = divmod(minutes, 60)
+    time = f"{h} hr {m} min" if h and m else (f"{h} hr" if h else f"{m} min")
+    return f"{time} from {dt.get('from')}"
+
+
+def verification_summary(data: dict[str, Any]) -> list[dict[str, str]]:
+    """Per-field provenance rows for the review pane (Gate 7). Lets a reviewer
+    see, at a glance, which facts are only 'published_by_venue' and which have
+    been operator-confirmed — the surface Gate 8 outreach updates feed."""
+    from admin.config import CONFIDENCE_TIER_LABELS
+
+    block = data.get("verification") or {}
+    rows: list[dict[str, str]] = []
+    for field, record in block.items():
+        if not isinstance(record, dict):
+            continue
+        d = record.get("date")
+        rows.append({
+            "field": field.replace("_", " "),
+            "tier": CONFIDENCE_TIER_LABELS.get(record.get("tier"), str(record.get("tier"))),
+            "source": str(record.get("source") or ""),
+            "date": d.isoformat() if hasattr(d, "isoformat") else str(d or ""),
+        })
+    return rows
+
+
 def session_gender_line(data: dict[str, Any]) -> str | None:
     from admin.config import SESSION_GENDER_LABELS
 

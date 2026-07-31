@@ -13,7 +13,7 @@ from dataclasses import asdict, dataclass
 from typing import Iterator
 
 from admin.config import AMENITY_KEYS, FAILED_DIR, MODEL_ARCHITECT, MODEL_GATEKEEPER, MODEL_HARVESTER, PUBLISHED_DIR, ROOT, STAGING_DIR
-from admin.pipeline import agents, geocode, harvest, images, places, staging
+from admin.pipeline import agents, drivetime, geocode, harvest, images, places, staging, verification
 from admin.pipeline.staging import render_mdx, split_frontmatter
 
 HARVESTER_REQUIRED_KEYS = (
@@ -105,6 +105,19 @@ def _finalize_frontmatter(gate_fm: dict, harvester_data: dict, coords: tuple[flo
         final["latitude"] = coords[0]
     if coords and not final.get("longitude"):
         final["longitude"] = coords[1]
+    # Gate 7 (2026-07-31): drive-time + per-field verification are stamped by
+    # the pipeline, not the agents — same posture as `verified` above. Drive-
+    # time is OSRM-computed from the just-resolved coordinates; verification
+    # marks every populated verifiable field `published_by_venue` from this
+    # harvest's source URL (Gate 8 outreach upgrades individual fields later).
+    dt = drivetime.drive_time(final.get("latitude"), final.get("longitude"))
+    if dt:
+        final["drive_time"] = dt
+    block = verification.build_verification(
+        final, source=url, tier="published_by_venue", date=final["verified"]
+    )
+    if block:
+        final["verification"] = block
     return final
 
 

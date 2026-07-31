@@ -73,6 +73,76 @@ export const SESSION_GENDER_LABELS: Record<(typeof SESSION_GENDER_KEYS)[number],
   varies: "Varies (see note)",
 };
 
+// ---------------------------------------------------------------------------
+// Gate 7 (verification metadata / structured facts, 2026-07-31). Mirrors
+// admin/config.py's CONFIDENCE_TIERS / VERIFIABLE_FIELDS / CAPITAL_CITIES
+// exactly (SCHEMA.md "one contract" rule).
+// ---------------------------------------------------------------------------
+
+// Per-field verification confidence, weakest → strongest (SCHEMA.md §2a).
+export const CONFIDENCE_TIERS = [
+  "unverified",
+  "published_by_venue",
+  "observed_on_visit",
+  "operator_confirmed",
+] as const;
+
+export const CONFIDENCE_TIER_LABELS: Record<(typeof CONFIDENCE_TIERS)[number], string> = {
+  unverified: "Unverified",
+  published_by_venue: "Published by the venue",
+  observed_on_visit: "Observed on a visit",
+  operator_confirmed: "Confirmed by the operator",
+};
+
+// The venue-sourced factual claims a `verification:` block keys on. Not every
+// field — drive_time is OSRM-computed (own provenance), amenity/facility
+// booleans ride the venue-level `verified` date.
+export const VERIFIABLE_FIELDS = [
+  "price",
+  "hours",
+  "temperatures",
+  "dress_code",
+  "session_gender",
+  "silence_policy",
+  "phone_policy",
+  "minimum_age",
+] as const;
+
+export interface Verification {
+  source: string;
+  tier: (typeof CONFIDENCE_TIERS)[number];
+  date: Date | string;
+}
+
+// State capital CBDs — drive-time reference origins (user sign-off 2026-07-31,
+// "from nearest capital").
+export const CAPITAL_CITIES: Record<(typeof STATES)[number], { name: string; latitude: number; longitude: number }> = {
+  VIC: { name: "Melbourne", latitude: -37.8136, longitude: 144.9631 },
+  NSW: { name: "Sydney", latitude: -33.8688, longitude: 151.2093 },
+  QLD: { name: "Brisbane", latitude: -27.4698, longitude: 153.0251 },
+  SA: { name: "Adelaide", latitude: -34.9285, longitude: 138.6007 },
+  WA: { name: "Perth", latitude: -31.9523, longitude: 115.8613 },
+  TAS: { name: "Hobart", latitude: -42.8826, longitude: 147.3257 },
+  NT: { name: "Darwin", latitude: -12.4637, longitude: 130.8444 },
+  ACT: { name: "Canberra", latitude: -35.2809, longitude: 149.13 },
+};
+
+export interface DriveTime {
+  from: string;
+  minutes: number;
+  km: number;
+}
+
+// "1 hr 40 min from Melbourne" / "25 min from Hobart" — the display form of a
+// drive_time object. Whole hours/minutes only; drive-time is not a precise
+// figure and shouldn't read like one.
+export function formatDriveTime(dt: DriveTime): string {
+  const h = Math.floor(dt.minutes / 60);
+  const m = dt.minutes % 60;
+  const time = h > 0 ? (m > 0 ? `${h} hr ${m} min` : `${h} hr`) : `${m} min`;
+  return `${time} from ${dt.from}`;
+}
+
 // Cross-cutting facility filters (2026-07-26 addition) — single-facility
 // booleans that get their own /[state]/[filter]/ listing route, the same way
 // POOL_TYPES does, but without belonging to the pool-type grouping itself.
