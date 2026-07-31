@@ -1,0 +1,106 @@
+{
+  "slug": "contrast-therapy-in-australia",
+  "query_key": "contrast-therapy",
+  "checked_at": "2026-08-01",
+  "model": "claude-sonnet-4-6",
+  "status": "ok",
+  "unsupported_count": 0,
+  "claims": [
+    {
+      "claim": "Contrast therapy is simple in principle: heat your body thoroughly in a sauna, then immerse in cold water, and repeat.",
+      "verdict": "unverifiable",
+      "note": "General description of contrast therapy; no venue record needed.",
+      "source": "llm"
+    },
+    {
+      "claim": "The physiological loop, blood vessels dilating, then constricting, then dilating again, is what most people are chasing.",
+      "verdict": "unverifiable",
+      "note": "Physiological commentary; not a checkable venue claim.",
+      "source": "llm"
+    },
+    {
+      "claim": "Some of the places in this table are purpose-built bathhouses where contrast bathing is the whole point.",
+      "verdict": "supported",
+      "note": "Multiple venues have category 'bathhouse' in the records.",
+      "source": "llm"
+    },
+    {
+      "claim": "Others are hotel spas or gym facilities where a sauna and cold plunge sit alongside a broader offering.",
+      "verdict": "supported",
+      "note": "Waldheim Alpine Spa and Mineral Springs Hotel are category 'hotel_spa'; Hale Gym & Day Spa is category 'other'.",
+      "source": "llm"
+    },
+    {
+      "claim": "A dedicated bathhouse tends to build its pricing and session lengths around repeated cycles; a hotel spa might treat the circuit as a warm-up to a treatment.",
+      "verdict": "unverifiable",
+      "note": "Generalised editorial observation, not a specific checkable claim.",
+      "source": "llm"
+    },
+    {
+      "claim": "A handful of venues here run both a traditional (Finnish-style) sauna and an infrared sauna.",
+      "verdict": "supported",
+      "note": "Onsen, Soak Bathhouse, Merse Wellness, My Recovery Lounge, Pond Bathhouse all have both infrared_sauna and traditional_sauna true.",
+      "source": "llm"
+    },
+    {
+      "claim": "Traditional saunas run hotter and work faster; infrared runs at lower temperatures and suits people who find the conventional heat hard to tolerate.",
+      "verdict": "unverifiable",
+      "note": "General factual claim about sauna types, not tied to specific venue data.",
+      "source": "llm"
+    },
+    {
+      "claim": "My Recovery Lounge, for instance, offers a graduated option for beginners alongside a much more aggressive setting for experienced bathers.",
+      "verdict": "supported",
+      "note": "cold_plunge_display for My Recovery Lounge reads '2-3°C for experienced bathers, 7-9°C for beginners'.",
+      "source": "llm"
+    },
+    {
+      "claim": "Nova Holistic Spa and Waldheim Alpine Spa both require bookings in advance.",
+      "verdict": "supported",
+      "note": "Both venues have bookings_required: true in the records.",
+      "source": "llm"
+    },
+    {
+      "claim": "the others in this set don't [require bookings]",
+      "verdict": "supported",
+      "note": "All other venues have bookings_required: false.",
+      "source": "llm"
+    },
+    {
+      "claim": "Soak Bathhouse in South Yarra has a tiered structure where time of day and day of week affect the rate.",
+      "verdict": "supported",
+      "note": "Cost field shows Early Bird vs standard rates and weekday vs Fri–Sun pricing differences.",
+      "source": "llm"
+    },
+    {
+      "claim": "an early weekday visit costs noticeably less than a weekend evening.",
+      "verdict": "supported",
+      "note": "Early Bird weekday from $39 vs standard Fri–Sun from $69 confirms the differential.",
+      "source": "llm"
+    },
+    {
+      "claim": "The directory currently skews towards Victoria.",
+      "verdict": "supported",
+      "note": "Counting records: VIC has 8 venues vs SA 1, ACT 1, WA 1, TAS 2.",
+      "source": "llm"
+    },
+    {
+      "claim": "Venues in SA, WA, ACT and Tasmania are represented.",
+      "verdict": "supported",
+      "note": "Onsen (SA), Merse Wellness (WA), Hale Gym (ACT), Nova Holistic Spa and Waldheim Alpine Spa (TAS) all present.",
+      "source": "llm"
+    },
+    {
+      "claim": "the Victorian options are more numerous for now.",
+      "verdict": "supported",
+      "note": "8 Victorian venues vs all other states combined.",
+      "source": "llm"
+    },
+    {
+      "claim": "A few venues set a published minimum age, so check the table if you're planning to bring a teenager.",
+      "verdict": "supported",
+      "note": "About Time Bathhouse (16), Aurora Spa (14), Mineral Springs Hotel (16), Merse Wellness (18) all have minimum_age set.",
+      "source": "llm"
+    }
+  ]
+}

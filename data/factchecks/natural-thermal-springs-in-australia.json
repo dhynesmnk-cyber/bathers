@@ -1,0 +1,124 @@
+{
+  "slug": "natural-thermal-springs-in-australia",
+  "query_key": "natural-thermal-springs",
+  "checked_at": "2026-08-01",
+  "model": "claude-sonnet-4-6",
+  "status": "ok",
+  "unsupported_count": 0,
+  "claims": [
+    {
+      "claim": "Natural springs are a different proposition from venues that heat and mineralise their water artificially.",
+      "verdict": "unverifiable",
+      "note": "General contextual statement, not a checkable fact.",
+      "source": "llm"
+    },
+    {
+      "claim": "The source does the work: geothermal energy or mineral-rich aquifer water rises to the surface, and the venue builds around it.",
+      "verdict": "unverifiable",
+      "note": "General explanatory statement about how natural springs work.",
+      "source": "llm"
+    },
+    {
+      "claim": "What you get in the water is genuinely the product of geology instead of a recipe.",
+      "verdict": "unverifiable",
+      "note": "Editorial/atmospheric claim, not checkable from venue records.",
+      "source": "llm"
+    },
+    {
+      "claim": "The Great Artesian Basin feeds bore baths scattered across outback Queensland and New South Wales",
+      "verdict": "unverifiable",
+      "note": "General geographic/geological context not verifiable from venue records alone, though Eulo (QLD) and Pilliga (NSW) are consistent with this.",
+      "source": "llm"
+    },
+    {
+      "claim": "Places like the Artesian Mud Baths in Eulo or the Pilliga Artesian Bore Bath are working-class infrastructure in the oldest sense: communities built around free or very cheap access to water",
+      "verdict": "unverifiable",
+      "note": "Characterisation/atmosphere; cost field for Artesian Mud Baths is null, Pilliga has a camping fee only, so 'free or very cheap' is partially supported but partly unverifiable.",
+      "source": "llm"
+    },
+    {
+      "claim": "The Pilliga bath runs around the clock, every day",
+      "verdict": "supported",
+      "note": "hours field: 'Open 24 hours, every day'.",
+      "source": "llm"
+    },
+    {
+      "claim": "with a campsite attached instead of a day-pass counter",
+      "verdict": "supported",
+      "note": "cost field references a camping fee, implying campsite; no day-pass pricing listed.",
+      "source": "llm"
+    },
+    {
+      "claim": "Peninsula Hot Springs and Alba Thermal Springs have both scaled into large multi-pool complexes",
+      "verdict": "unverifiable",
+      "note": "No field in the records describes scale or number of pools; cannot be verified or contradicted.",
+      "source": "llm"
+    },
+    {
+      "claim": "Mineral Springs Hotel in Hepburn Springs adds a sauna and cold plunge to its spring-fed indoor pool",
+      "verdict": "supported",
+      "note": "amenities show traditional_sauna: true, cold_plunge: true; facilities show indoor_pool: true, natural_spring: true.",
+      "source": "llm"
+    },
+    {
+      "claim": "which sets it apart from the purely thermal venues in this table",
+      "verdict": "unverifiable",
+      "note": "Comparative editorial judgement.",
+      "source": "llm"
+    },
+    {
+      "claim": "Deep Blue in Warrnambool runs structured sessions instead of open entry",
+      "verdict": "supported",
+      "note": "hours field lists named sessions (9:30am, 12pm, 2:30pm, twilight 7:30–9:30pm).",
+      "source": "llm"
+    },
+    {
+      "claim": "so it's worth checking timing before you turn up",
+      "verdict": "unverifiable",
+      "note": "Editorial advice, not a checkable fact.",
+      "source": "llm"
+    },
+    {
+      "claim": "Woodlands Rainforest Retreat in Narbethong packages its springs access with massage and dining instead of selling entry alone",
+      "verdict": "supported",
+      "note": "cost field describes a package including bathing, couples massage and Japanese Charcoal BBQ.",
+      "source": "llm"
+    },
+    {
+      "claim": "its pricing reflects that",
+      "verdict": "unverifiable",
+      "note": "Subjective/editorial claim about relative pricing.",
+      "source": "llm"
+    },
+    {
+      "claim": "The swimwear-optional dress code is also worth knowing ahead of time.",
+      "verdict": "supported",
+      "note": "dress_code field: 'swimwear_optional'.",
+      "source": "llm"
+    },
+    {
+      "claim": "A few venues haven't published drop-in prices here, so the table will show that plainly instead of us guessing.",
+      "verdict": "unverifiable",
+      "note": "Meta-statement about table behaviour resolved by components; not a prose factual claim.",
+      "source": "llm"
+    },
+    {
+      "claim": "Hours vary considerably across the set",
+      "verdict": "supported",
+      "note": "Hours fields across venues range from 24-hour open to narrow session windows, confirming variation.",
+      "source": "llm"
+    },
+    {
+      "claim": "a handful of venues operate without bookings, which is rarer than it used to be",
+      "verdict": "unverifiable",
+      "note": "The 'rarer than it used to be' part is a historical claim unverifiable from records; the 'without bookings' part is consistent with bookings_required: false across all listed venues.",
+      "source": "llm"
+    },
+    {
+      "claim": "Victoria's springs country, centred on the Mornington Peninsula and the Daylesford-Hepburn region",
+      "verdict": "unverifiable",
+      "note": "General geographic characterisation; venue records confirm VIC venues in those areas but 'centred on' is editorial.",
+      "source": "llm"
+    }
+  ]
+}

@@ -1,5 +1,8 @@
 {
   "bathhouse-compared": {
+    "title": "Bathhouse venues in Australia, compared",
+    "caption": "Australian bathhouse venues, ranked by price",
+    "kind": "constraint",
     "venue_count": 14,
     "stale": false,
     "data_updated_at": "2026-07-31",
@@ -77,6 +80,9 @@
     }
   },
   "cheapest": {
+    "title": "Cheapest bathhouses & hot springs in Australia",
+    "caption": "Australian bathing venues ranked by adult drop-in price, cheapest first",
+    "kind": "superlative",
     "venue_count": 7,
     "stale": false,
     "data_updated_at": "2026-07-31",
@@ -126,6 +132,9 @@
     }
   },
   "cold-plunge-compared": {
+    "title": "Cold plunge venues in Australia, compared",
+    "caption": "Australian venues offering cold plunge, ranked by price",
+    "kind": "superlative",
     "venue_count": 14,
     "stale": false,
     "data_updated_at": "2026-07-31",
@@ -203,6 +212,9 @@
     }
   },
   "contrast-therapy": {
+    "title": "Best venues for contrast therapy (sauna + cold plunge)",
+    "caption": "Australian venues offering both a sauna and a cold plunge for contrast bathing",
+    "kind": "occasion",
     "venue_count": 14,
     "stale": false,
     "data_updated_at": "2026-07-31",
@@ -280,6 +292,9 @@
     }
   },
   "hotel-spa-compared": {
+    "title": "Hotel spa venues in Australia, compared",
+    "caption": "Australian hotel spa venues, ranked by price",
+    "kind": "constraint",
     "venue_count": 6,
     "stale": false,
     "data_updated_at": "2026-07-31",
@@ -325,6 +340,9 @@
     }
   },
   "indoor-pools": {
+    "title": "Australian bathing venues with an indoor pool, compared",
+    "caption": "Australian venues with an indoor pool, ranked by price",
+    "kind": "constraint",
     "venue_count": 13,
     "stale": false,
     "data_updated_at": "2026-07-31",
@@ -398,6 +416,9 @@
     }
   },
   "infrared-sauna-compared": {
+    "title": "Infrared sauna venues in Australia, compared",
+    "caption": "Australian venues offering infrared sauna, ranked by price",
+    "kind": "superlative",
     "venue_count": 7,
     "stale": false,
     "data_updated_at": "2026-07-31",
@@ -447,6 +468,9 @@
     }
   },
   "magnesium-pool-compared": {
+    "title": "Magnesium pool venues in Australia, compared",
+    "caption": "Australian venues offering magnesium pool, ranked by price",
+    "kind": "superlative",
     "venue_count": 9,
     "stale": false,
     "data_updated_at": "2026-07-31",
@@ -504,6 +528,9 @@
     }
   },
   "natural-thermal-springs": {
+    "title": "Natural thermal & mineral springs in Australia",
+    "caption": "Australian venues fed by a natural thermal or mineral spring",
+    "kind": "constraint",
     "venue_count": 8,
     "stale": false,
     "data_updated_at": "2026-07-31",
@@ -557,6 +584,9 @@
     }
   },
   "outdoor-pools": {
+    "title": "Australian bathing venues with an outdoor pool, compared",
+    "caption": "Australian venues with an outdoor pool, ranked by price",
+    "kind": "constraint",
     "venue_count": 10,
     "stale": false,
     "data_updated_at": "2026-07-31",
@@ -618,6 +648,9 @@
     }
   },
   "thermal-springs-compared": {
+    "title": "Thermal springs venues in Australia, compared",
+    "caption": "Australian thermal springs venues, ranked by price",
+    "kind": "constraint",
     "venue_count": 8,
     "stale": false,
     "data_updated_at": "2026-07-31",
@@ -671,6 +704,9 @@
     }
   },
   "traditional-sauna-compared": {
+    "title": "Traditional sauna venues in Australia, compared",
+    "caption": "Australian venues offering traditional sauna, ranked by price",
+    "kind": "superlative",
     "venue_count": 15,
     "stale": false,
     "data_updated_at": "2026-07-31",

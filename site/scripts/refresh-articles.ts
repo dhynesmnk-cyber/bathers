@@ -20,6 +20,12 @@ const VENUES = new URL("../src/data/venues.json", import.meta.url);
 const META = new URL("../src/data/articles-meta.json", import.meta.url);
 
 interface MetaEntry {
+  // Comparison metadata (from comparisons.ts) so the Python editorial pipeline
+  // can brief the drafting agent from the committed file, without a second node
+  // call to re-read the registry.
+  title: string;
+  caption: string;
+  kind: string;
   venue_count: number;
   stale: boolean;
   data_updated_at: string;
@@ -85,6 +91,9 @@ function main(): void {
     }
 
     next[c.slug] = {
+      title: c.title,
+      caption: c.caption,
+      kind: c.kind,
       venue_count: c.venues.length,
       stale: headlineChanged(current, reviewed),
       data_updated_at: dataUpdatedAt,

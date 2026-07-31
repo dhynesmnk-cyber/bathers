@@ -42,6 +42,18 @@ BLOG_PUBLISHED_DIR = ROOT / "site" / "src" / "content" / "blog" / "_published"
 BLOG_STAGING_DIR = ROOT / "content-staging" / "_blog_staging"
 SITE_BLOG_IMAGES_DIR = ROOT / "site" / "public" / "blog-images"
 
+# Editorial pipeline (Gate E2, 2026-08-01) — comparison articles are published
+# into the blog collection but staged and fact-checked separately from
+# hand-authored essays. Drafts + their fact-check reports live in
+# content-staging (guarded, never committed) until approve moves the MDX to
+# BLOG_PUBLISHED_DIR and the report to FACTCHECKS_DIR.
+ARTICLE_STAGING_DIR = ROOT / "content-staging" / "_article_staging"
+ARTICLE_REJECTED_DIR = ROOT / "content-staging" / "_article_rejected"
+# Committed editorial record of each published article's claim-by-claim audit
+# (data/, alongside directory.db) so /validate can prove every article's claims
+# were checked. Not shipped to the public site (outside site/).
+FACTCHECKS_DIR = ROOT / "data" / "factchecks"
+
 DB_PATH = ROOT / "data" / "directory.db"
 VENUES_JSON_PATH = ROOT / "site" / "src" / "data" / "venues.json"
 VENUES_GEOJSON_PATH = ROOT / "site" / "public" / "venues.geojson"
@@ -92,6 +104,15 @@ ANTHROPIC_API_KEY = _ENV.get("ANTHROPIC_API_KEY", "")
 MODEL_HARVESTER = _ENV.get("MODEL_HARVESTER", "claude-haiku-4-5")
 MODEL_ARCHITECT = _ENV.get("MODEL_ARCHITECT", "claude-sonnet-4-6")
 MODEL_GATEKEEPER = _ENV.get("MODEL_GATEKEEPER", "claude-haiku-4-5")
+# Editorial pipeline (Gate E2, 2026-08-01). MODEL_ARTICLE drafts comparison-
+# article prose in the house voice; MODEL_FACTCHECK is a *separate* role that
+# audits that draft against the venue data — deliberately not the drafting model
+# reviewing itself (drafting models are poor judges of their own confabulation).
+# Default both to whatever MODEL_ARCHITECT resolves to (the site's working prose
+# model) so a real .env that overrides only MODEL_ARCHITECT still gets a valid id
+# here; override independently in .env when a different model is wanted.
+MODEL_ARTICLE = _ENV.get("MODEL_ARTICLE", MODEL_ARCHITECT)
+MODEL_FACTCHECK = _ENV.get("MODEL_FACTCHECK", MODEL_ARCHITECT)
 ADMIN_PORT = int(_ENV.get("ADMIN_PORT", "8787"))
 ADMIN_USERNAME = _ENV.get("ADMIN_USERNAME", "")
 ADMIN_PASSWORD = _ENV.get("ADMIN_PASSWORD", "")
