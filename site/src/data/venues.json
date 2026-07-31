@@ -13,6 +13,12 @@
     "hours": "Mon & Wed 7am–7pm, Tue 9am–7pm, Thu–Sat 7am–8pm, Sun 8am–7pm",
     "cost": "From $49 for 45 min, from $69 for 90 min; multi-pass packs available; weekend and public holiday rates apply",
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": 16,
     "amenities": {
       "magnesium_pool": true,
       "infrared_sauna": false,
@@ -33,6 +39,15 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
+    },
+    "temperatures": {
+      "sauna_display": "Rock sauna 99°C, wood fire sauna 85°C, steam room 45°C",
+      "cold_plunge_min_c": 8.0,
+      "cold_plunge_max_c": 11.0
+    },
+    "price": {
+      "adult_drop_in_aud": 49.0,
+      "standard_session_aud": 69.0
     }
   },
   {
@@ -49,6 +64,12 @@
     "hours": "Daily, 7:00am–10:00pm (closed Christmas Day)",
     "cost": null,
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -85,6 +106,12 @@
     "hours": "Daily, 6:30 AM – 8:30 PM",
     "cost": null,
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -121,6 +148,12 @@
     "hours": null,
     "cost": null,
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -157,6 +190,12 @@
     "hours": "Mon–Thu 9am–7pm, Fri 9am–8pm, Sat 8am–8pm, Sun 8am–6pm",
     "cost": "5-session pack $440, 10-session pack $825 (valid 1 year). Treatments from $190.",
     "access": null,
+    "dress_code": "swimwear",
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": 14,
     "amenities": {
       "magnesium_pool": true,
       "infrared_sauna": false,
@@ -193,6 +232,12 @@
     "hours": "Mon–Fri 7am–9pm (treatments 10am–6pm); Sat 8am–9pm (treatments 9:30am–6pm); Sun 8am–9pm (treatments 10am–5pm); public holidays 8am–9pm (treatments 10am–5:30pm)",
     "cost": "Weekend treatments carry a $20 surcharge; Brilliant Weekday Retreat from $175 per 60-minute treatment (Mon–Fri, Langham members)",
     "access": "Facilities are complimentary for guests who book a treatment. Hotel guests may also access the pool and facilities directly, contact the spa via (03) 8696 8111 to arrange.",
+    "dress_code": null,
+    "session_gender": "single_sex",
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -229,6 +274,12 @@
     "hours": "Daily, 10am – 8pm",
     "cost": null,
     "access": "Located within Crown Towers. Guests of the hotel have access; day spa visitors can book a treatment to access the facilities.",
+    "dress_code": null,
+    "session_gender": "single_sex",
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -265,6 +316,12 @@
     "hours": "Sessions at 9:30am, 12pm, 2:30pm daily; twilight session 7:30–9:30pm (16+ only)",
     "cost": "Day sessions from $55pp (Breakfast & Bathe); overnight packages from $449",
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -285,6 +342,9 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
+    },
+    "price": {
+      "adult_drop_in_aud": 55.0
     }
   },
   {
@@ -301,6 +361,12 @@
     "hours": null,
     "cost": null,
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -337,6 +403,12 @@
     "hours": null,
     "cost": "Winter Cocoon Package from $1,000 per person twin share; $200 spa credit per room included in packages",
     "access": "Hotel guests; spa services can be booked as part of a stay package.",
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -373,6 +445,12 @@
     "hours": "Daily 9am–6pm, open every day of the year including public holidays",
     "cost": "Towel hire $6, robe hire $15, locker hire $10. 10% surcharge on public holidays.",
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -409,6 +487,12 @@
     "hours": null,
     "cost": null,
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": 16,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -445,6 +529,12 @@
     "hours": "Mon–Thu 7:00 AM – 11:00 PM; Fri 7:00 AM – 2:00 AM; Sat 5:00 AM – 2:00 AM; Sun 5:00 AM – 11:00 PM",
     "cost": null,
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -481,6 +571,12 @@
     "hours": "Tue–Wed 10am–4pm, Thu–Sat 9am–5pm, Sun 10am–3pm, Mon closed",
     "cost": null,
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": true,
       "infrared_sauna": true,
@@ -517,6 +613,12 @@
     "hours": "Mon, Wed, Thu: 12:00pm–10:30pm; Tue, Fri, Sat: 12:00pm–6:30pm; Sun: 12:00pm–8:00pm",
     "cost": "From $25 (Xposed Nude Sunday)",
     "access": null,
+    "dress_code": "nude",
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -537,6 +639,9 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
+    },
+    "price": {
+      "adult_drop_in_aud": 25.0
     }
   },
   {
@@ -553,6 +658,12 @@
     "hours": "Open 24 hours, every day",
     "cost": "$7.50 per night camping fee; maximum stay 4 nights",
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -589,6 +700,12 @@
     "hours": "Mon 9am–9pm, Tue 8am–8pm, Wed 7:30am–8pm, Thu 10am–9pm, Fri 8:30am–9pm, Sat 7:30am–6pm, Sun 9am–6pm",
     "cost": "Treatments from $175 (60-min massage); Total Reset Package from $195 (120 mins: bathhouse + massage)",
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": true,
       "infrared_sauna": true,
@@ -625,6 +742,12 @@
     "hours": "Daily, 8:00 AM – 5:00 PM",
     "cost": "From $615 per person for the 80-minute bathing, 80-minute couples massage & Japanese Charcoal BBQ package",
     "access": null,
+    "dress_code": "swimwear_optional",
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -645,6 +768,11 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
+    },
+    "drive_time": {
+      "from": "Melbourne",
+      "minutes": 97,
+      "km": 94.7
     }
   },
   {
@@ -661,6 +789,12 @@
     "hours": "Tue–Fri 9:00am–1:30pm & 3:00–8:00pm; Sat–Sun 9:30am–6:00pm; Mon closed",
     "cost": null,
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": "Zen Zone sessions (Tue mornings, Thu afternoons, Sun afternoons) run silent, no talking allowed.",
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": true,
       "infrared_sauna": true,
@@ -681,6 +815,10 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
+    },
+    "temperatures": {
+      "sauna_min_c": 60.0,
+      "sauna_max_c": 70.0
     }
   },
   {
@@ -697,6 +835,12 @@
     "hours": "Mon–Fri 9am–8pm, Sat 9am–6pm, Sun 10am–5pm",
     "cost": "$40 per person (drop-in, no booking required for bathhouse)",
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": true,
       "infrared_sauna": false,
@@ -717,6 +861,13 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
+    },
+    "temperatures": {
+      "sauna_min_c": 80.0,
+      "sauna_max_c": 80.0
+    },
+    "price": {
+      "adult_drop_in_aud": 40.0
     }
   },
   {
@@ -733,6 +884,12 @@
     "hours": "Mon 10am–10:45pm; Tue–Sun 6:30am–10:45pm",
     "cost": "Vouchers available for bathing, treatments and products",
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": "Phone-free in the bathing areas.",
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": true,
       "infrared_sauna": false,
@@ -769,6 +926,12 @@
     "hours": "Mon–Thu 6:30am–10pm; Fri–Sun 6:30am–midnight",
     "cost": "Early Bird from $39 (weekday) / $49 (Fri–Sun); standard Soak from $59 (weekday) / $69 (Fri–Sun); Soak Essentials (90 min) from $89 (weekday) / $99 (Fri–Sun)",
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": true,
       "infrared_sauna": true,
@@ -789,6 +952,15 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
+    },
+    "price": {
+      "adult_drop_in_aud": 39.0,
+      "standard_session_aud": 59.0
+    },
+    "drive_time": {
+      "from": "Melbourne",
+      "minutes": 10,
+      "km": 5.8
     }
   },
   {
@@ -805,6 +977,12 @@
     "hours": "Mon–Thu 10am–5pm, Fri 10am–7pm, Sat 9am–8pm, Sun 9am–7pm",
     "cost": "90-minute Retreat Pass available; spa treatment packages from 90 minutes",
     "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": 16,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -841,6 +1019,12 @@
     "hours": "Daily, 9:00am–5:00pm",
     "cost": null,
     "access": "Part of Cradle Mountain Lodge, day spa visitors can book treatments or the Sanctuary session without being a lodge guest.",
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": false,
       "infrared_sauna": false,
@@ -877,6 +1061,12 @@
     "hours": "Mon & Fri 10am–8pm; Tue–Thu 12pm–8pm; Sat 9am–5pm; Sun 9am–6pm",
     "cost": "Members save 15% across all services; unlimited sauna/ice bath/infrared/compression boots memberships available at multiple price points",
     "access": null,
+    "dress_code": "swimwear",
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
     "amenities": {
       "magnesium_pool": true,
       "infrared_sauna": true,
@@ -897,6 +1087,11 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
+    },
+    "temperatures": {
+      "sauna_min_c": 85.0,
+      "sauna_max_c": 90.0,
+      "cold_plunge_display": "2-3°C for experienced bathers, 7-9°C for beginners"
     }
   }
 ]
