@@ -1,0 +1,102 @@
+---
+// Live comparison table (Editorial Gate E1, 2026-08-01). Resolves a named
+// comparison query against the current venues at build time and renders the
+// semantic table + ItemList schema. The single source of the ranked-table
+// markup — compare/[slug].astro's ranked branch renders through this too, so an
+// article's table and a generated /compare/ table are byte-for-byte the same.
+// Throws below the >=5-venue threshold (resolveArticleComparison), so an article
+// whose data has thinned fails the build rather than shipping a hollow table.
+import { getCollection } from "astro:content";
+import { resolveArticleComparison } from "../../data/comparisons";
+
+interface Props {
+  queryKey: string;
+  // Emit ItemList JSON-LD (default on). Off when a parent already emits it for
+  // the same set, to avoid two ItemLists on one page.
+  schema?: boolean;
+}
+const { queryKey, schema = true } = Astro.props;
+const venues = await getCollection("spas");
+const c = resolveArticleComparison(queryKey, venues);
+const site = Astro.site;
+
+const itemList = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: c.title,
+  numberOfItems: c.venues.length,
+  itemListElement: c.venues.map((v, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    url: new URL(`/spa/${v.id}/`, site).href,
+    name: v.data.name,
+  })),
+};
+---
+
+<div class="compare-scroll" role="region" aria-label={c.caption} tabindex="0">
+  <table class="compare-table">
+    <caption class="mono">{c.caption}</caption>
+    <thead>
+      <tr>
+        <th scope="col">Venue</th>
+        {c.columns.map((col) => <th scope="col">{col.header}</th>)}
+      </tr>
+    </thead>
+    <tbody>
+      {
+        c.venues.map((v) => (
+          <tr>
+            <th scope="row">
+              <a href={`/spa/${v.id}/`}>{v.data.name}</a>
+            </th>
+            {c.columns.map((col) => <td>{col.cell(v) ?? "—"}</td>)}
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+{schema && <script type="application/ld+json" set:html={JSON.stringify(itemList)} is:inline />}
+
+<style>
+  .compare-scroll {
+    overflow-x: auto;
+    margin: 2rem 0;
+  }
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+  .compare-table caption {
+    text-align: left;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faded);
+    padding-bottom: 0.75rem;
+  }
+  .compare-table th,
+  .compare-table td {
+    text-align: left;
+    padding: 0.7rem 1rem 0.7rem 0;
+    vertical-align: top;
+  }
+  .compare-table thead th {
+    font-family: var(--font-mono, monospace);
+    font-weight: 400;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faded);
+    border-bottom: 1px solid color-mix(in srgb, var(--ink-faded) 35%, transparent);
+  }
+  .compare-table tbody tr {
+    border-bottom: 1px solid color-mix(in srgb, var(--ink-faded) 18%, transparent);
+  }
+  .compare-table tbody th[scope="row"] {
+    font-weight: 400;
+    padding-right: 1.5rem;
+  }
+</style>

@@ -193,6 +193,49 @@ export function resolveComparisons(venues: Venue[]): {
   return { eligible, skipped };
 }
 
+export function getComparison(key: string): Comparison | undefined {
+  return COMPARISONS.find((c) => c.slug === key);
+}
+
+// A hybrid article stores a `query_key` (a Comparison.slug) rather than a list
+// (Editorial Gate E1). This resolves the query against the live venues the same
+// way a generated page does, so an article's table/answer/figures are never
+// frozen. Throws below the >=5-venue threshold so an article whose data has
+// thinned fails the build rather than publishing a hollow comparison.
+export function resolveArticleComparison(key: string, venues: Venue[]): EligibleComparison {
+  const c = getComparison(key);
+  if (!c) throw new Error(`Unknown comparison query_key '${key}' (see comparisons.ts)`);
+  const selected = c.select(venues);
+  if (selected.length < COMPARISON_MIN_VENUES) {
+    throw new Error(
+      `Comparison '${key}' resolves ${selected.length} venue(s), below the ${COMPARISON_MIN_VENUES}-venue threshold — the article cannot build`,
+    );
+  }
+  return { ...c, venues: selected };
+}
+
+// The headline-affecting projection of a resolved comparison: who wins, the
+// figure shown against them, the full order, and a per-row signature of the
+// lead column (so a reprice of any listed venue is detectable). Computed one
+// way only — the staleness runner (scripts/refresh-articles.ts) reuses this so
+// "who wins" is never derived twice.
+export interface Fingerprint {
+  winner: string | null;
+  headline: string | null;
+  order: string[];
+  signature: string[];
+}
+
+export function comparisonFingerprint(columns: Column[], venues: Venue[]): Fingerprint {
+  const lead = (v: Venue) => (columns[0] ? columns[0].cell(v) : null);
+  return {
+    winner: venues[0]?.id ?? null,
+    headline: venues[0] ? lead(venues[0]) : null,
+    order: venues.map((v) => v.id),
+    signature: venues.map((v) => `${v.id}=${lead(v) ?? ""}`),
+  };
+}
+
 // Superlative/constraint/occasion pages are grouped under the /compare/ hub;
 // this is the canonical path builder so the hub, pages, breadcrumbs and the
 // venue-side "featured in" links all agree.

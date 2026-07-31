@@ -10,16 +10,30 @@
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { resolveComparisons, comparePath } from "../../data/comparisons";
+import { claimedKeys } from "../../data/articles";
 import { HEAD_TO_HEAD, H2H_ROWS, h2hLead, h2hTitle } from "../../data/headtohead";
+import ComparisonTable from "../../components/article/ComparisonTable.astro";
 
 export async function getStaticPaths() {
   const venues = await getCollection("spas");
   const bySlug = new Map(venues.map((v) => [v.id, v]));
+  const claimed = claimedKeys(await getCollection("blog"));
   const { eligible, skipped } = resolveComparisons(venues);
   for (const s of skipped) {
     console.info(`[compare] skipped '${s.slug}' — ${s.count} venue(s), below the 5-venue threshold`);
   }
-  const ranked = eligible.map((c) => ({ params: { slug: c.slug }, props: { kind: "ranked" as const, comparison: c } }));
+  // A comparison voiced as an article is canonical at /blog/ and 301s from here
+  // (netlify.toml), so it is not generated as a standalone page — one intent,
+  // one URL (Editorial Gate E1).
+  const ranked = eligible
+    .filter((c) => {
+      if (claimed.has(c.slug)) {
+        console.info(`[compare] '${c.slug}' superseded by an article — 301 to /blog/`);
+        return false;
+      }
+      return true;
+    })
+    .map((c) => ({ params: { slug: c.slug }, props: { kind: "ranked" as const, comparison: c } }));
   const h2h = HEAD_TO_HEAD.filter((p) => bySlug.has(p.a) && bySlug.has(p.b)).map((p) => ({
     params: { slug: p.slug },
     props: { kind: "h2h" as const, slug: p.slug, a: bySlug.get(p.a)!, b: bySlug.get(p.b)! },
@@ -89,25 +103,7 @@ const itemList = {
 
     {
       props.kind === "ranked" ? (
-        <div class="compare-scroll" role="region" aria-label={props.comparison.caption} tabindex="0">
-          <table class="compare-table">
-            <caption class="mono">{props.comparison.caption}</caption>
-            <thead>
-              <tr>
-                <th scope="col">Venue</th>
-                {props.comparison.columns.map((c) => <th scope="col">{c.header}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {props.comparison.venues.map((v) => (
-                <tr>
-                  <th scope="row"><a href={`/spa/${v.id}/`}>{v.data.name}</a></th>
-                  {props.comparison.columns.map((c) => <td>{c.cell(v) ?? "—"}</td>)}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ComparisonTable queryKey={props.comparison.slug} />
       ) : (
         <div class="compare-scroll" role="region" aria-label={`${props.a.data.name} versus ${props.b.data.name}`} tabindex="0">
           <table class="compare-table">
@@ -135,7 +131,8 @@ const itemList = {
   </main>
 
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbLd)} is:inline />
-  <script type="application/ld+json" set:html={JSON.stringify(itemList)} is:inline />
+  {/* Ranked pages get their ItemList from <ComparisonTable>; h2h emits its own. */}
+  {props.kind === "h2h" && <script type="application/ld+json" set:html={JSON.stringify(itemList)} is:inline />}
 
   <style>
     .compare-scroll { overflow-x: auto; }

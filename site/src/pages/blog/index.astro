@@ -8,10 +8,10 @@ const posts = (await getCollection("blog")).sort(
 );
 ---
 
-<BaseLayout title={`Journal — ${SITE_NAME}`} description="Notes and dispatches from the field.">
+<BaseLayout title={`Blog — ${SITE_NAME}`} description="Notes and dispatches from the field.">
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
     <header class="mb-16">
-      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">Journal</h1>
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">Blog</h1>
       <p class="mono mt-2 text-[var(--ink-faded)]">Notes and dispatches from the field.</p>
       <p class="mono mt-4"><a href="/">{SITE_NAME}</a></p>
     </header>

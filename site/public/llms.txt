@@ -16,7 +16,7 @@ Where We Bathe documents Australian venues built around heat, cold and water. Ea
 - Individual venue pages: `/spa/{venue-slug}/` — name, location, amenities, hours, cost, temperatures, FAQ, and source-verified detail
 - Glossary of amenity/facility terms: `/glossary/`
 
-## Journal
+## Blog
 
 Longer-form writing about the project — its mission, values, and the people behind it: `/blog/`
 
@@ -25,5 +25,5 @@ Longer-form writing about the project — its mission, values, and the people be
 - Homepage: https://wherewebathe.com/
 - How this directory is made: https://wherewebathe.com/methodology/
 - Compare venues: https://wherewebathe.com/compare/
-- Journal: https://wherewebathe.com/blog/
+- Blog: https://wherewebathe.com/blog/
 - Sitemap: https://wherewebathe.com/sitemap.xml

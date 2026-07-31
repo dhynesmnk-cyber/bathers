@@ -2,6 +2,13 @@
 import { getCollection, render } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { SITE_NAME, videoEmbedUrl } from "../../config";
+import Pull from "../../components/Pull.astro";
+import TippedPhoto from "../../components/TippedPhoto.astro";
+import ComparisonTable from "../../components/article/ComparisonTable.astro";
+import ExtractiveAnswer from "../../components/article/ExtractiveAnswer.astro";
+import Figure from "../../components/article/Figure.astro";
+import Superlative from "../../components/article/Superlative.astro";
+import ARTICLES_META from "../../data/articles-meta.json";
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
@@ -14,21 +21,71 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { data } = post;
 const { Content } = await render(post);
+const site = Astro.site;
+
+// A post with a query_key is a hybrid comparison article: its table/answer/
+// figures resolve live from the venue data (Editorial Gate E1). Essays render
+// exactly as before. The data components are handed to <Content /> so the MDX
+// can inject figures rather than typing them (blog MDX previously received no
+// component map at all).
+const isComparison = !!data.query_key;
+const meta: { data_updated_at?: string } | undefined = data.query_key
+  ? (ARTICLES_META as Record<string, { data_updated_at?: string }>)[data.query_key]
+  : undefined;
+
+const auDate = (d: Date) =>
+  d.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+const auDateIso = (s: string) => {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+};
+
+// reviewed_at = the prose's last human review; data_updated_at = when the
+// figures last changed. Different facts, both shown. Falls back to the publish
+// dateline when a review date isn't set yet.
+const reviewedAt = data.reviewed_at ?? data.dateline;
+const dataUpdatedAt = meta?.data_updated_at ?? null;
 
 // BlogPosting structured data (2026-07-24 SEO/GEO pass). BlogPosting is a
 // subtype of Article, so this satisfies Gate 11's "Article on blog posts".
 // Author (Gate 11, 2026-07-31): a named Person when the post supplies one,
-// otherwise the organisation — never a fabricated byline.
+// otherwise the organisation — never a fabricated byline. dateModified
+// (Editorial Gate E1): the later of the prose review and the figures' refresh,
+// so an assistant sees an accurate freshness signal for a hybrid article.
+const modifiedIso = [
+  reviewedAt.toISOString().slice(0, 10),
+  ...(dataUpdatedAt ? [dataUpdatedAt] : []),
+].sort().at(-1)!;
 const blogPostingLd: Record<string, unknown> = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
   headline: data.title,
   datePublished: data.dateline.toISOString().slice(0, 10),
+  dateModified: modifiedIso,
   description: data.summary,
   author: data.author ? { "@type": "Person", name: data.author } : { "@type": "Organization", name: SITE_NAME },
   publisher: { "@type": "Organization", name: SITE_NAME },
 };
 if (data.cover_image) blogPostingLd.image = new URL(data.cover_image, Astro.site).toString();
+
+// Comparison articles live under /blog/ but are reachable from the /compare/
+// hub, so they carry a Compare breadcrumb (essays do not).
+const breadcrumbLd = isComparison
+  ? {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: new URL("/", site).href },
+        { "@type": "ListItem", position: 2, name: "Compare", item: new URL("/compare/", site).href },
+        { "@type": "ListItem", position: 3, name: data.title, item: new URL(`/blog/${post.id}/`, site).href },
+      ],
+    }
+  : null;
 ---
 
 <BaseLayout
@@ -38,14 +95,22 @@ if (data.cover_image) blogPostingLd.image = new URL(data.cover_image, Astro.site
   type="article"
 >
   <script type="application/ld+json" set:html={JSON.stringify(blogPostingLd)} />
+  {breadcrumbLd && <script type="application/ld+json" set:html={JSON.stringify(breadcrumbLd)} />}
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
     <article>
       <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
         {data.title}
       </h1>
-      <div class="mt-2 mb-12 mono text-[var(--ink-faded)]">
-        {data.dateline.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
-      </div>
+      {
+        isComparison ? (
+          <div class="mt-2 mb-12 mono text-[var(--ink-faded)]">
+            Reviewed {auDate(reviewedAt)}
+            {dataUpdatedAt && <Fragment> · Figures updated {auDateIso(dataUpdatedAt)}</Fragment>}
+          </div>
+        ) : (
+          <div class="mt-2 mb-12 mono text-[var(--ink-faded)]">{auDate(data.dateline)}</div>
+        )
+      }
 
       {
         data.cover_image && (
@@ -59,7 +124,7 @@ if (data.cover_image) blogPostingLd.image = new URL(data.cover_image, Astro.site
       }
 
       <div class="reading-spine">
-        <Content />
+        <Content components={{ Pull, TippedPhoto, ComparisonTable, ExtractiveAnswer, Figure, Superlative }} />
       </div>
 
       {
@@ -78,7 +143,7 @@ if (data.cover_image) blogPostingLd.image = new URL(data.cover_image, Astro.site
       }
 
       <div class="mono mt-16 pt-6" style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);">
-        <a href="/blog/">More from the Journal</a>
+        {isComparison ? <a href="/compare/">All comparisons</a> : <a href="/blog/">More from the Blog</a>}
       </div>
     </article>
   </main>

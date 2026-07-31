@@ -1,0 +1,35 @@
+---
+// Inline data token (Editorial Gate E1, 2026-08-01). Resolves a single field
+// from a single venue at build time, so a figure named in prose is never typed
+// as a literal. An unpublished field renders a plain "Not published" (honest and
+// citable, per the editorial brief) rather than a hedge. An unknown venue slug
+// is an authoring error, so it fails the build.
+import { getCollection } from "astro:content";
+
+interface Props {
+  venue: string; // venue slug
+  field: string; // dotted path into the venue's data, e.g. "price.adult_drop_in_aud"
+}
+const { venue, field } = Astro.props;
+const venues = await getCollection("spas");
+const v = venues.find((x) => x.id === venue);
+if (!v) {
+  throw new Error(`<Figure> references unknown venue '${venue}' — check the slug against _published`);
+}
+
+function get(obj: unknown, path: string): unknown {
+  return path.split(".").reduce<unknown>((o, k) => (o == null ? o : (o as Record<string, unknown>)[k]), obj);
+}
+
+const raw = get(v.data, field);
+let text = "Not published";
+if (raw != null && raw !== "") {
+  if (field.startsWith("price.") && typeof raw === "number") {
+    text = `$${raw % 1 === 0 ? raw : raw.toFixed(2)}`;
+  } else {
+    text = String(raw);
+  }
+}
+---
+
+<span class="data-figure">{text}</span>

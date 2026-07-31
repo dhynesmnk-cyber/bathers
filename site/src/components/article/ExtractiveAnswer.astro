@@ -1,0 +1,58 @@
+---
+// Extractive answer (Editorial Gate E1, 2026-08-01). The two-to-three-sentence
+// direct answer at the top of a comparison article, naming the winner and the
+// figure, templated so it regenerates from data on every build. This is the
+// unit most likely to be lifted and attributed by an assistant, so every word
+// of it resolves from the venue set, never from prose. Renders nothing typeable
+// by hand: no figure here is a literal.
+import { getCollection } from "astro:content";
+import { resolveArticleComparison } from "../../data/comparisons";
+import { STATE_NAMES } from "../../config";
+
+interface Props {
+  queryKey: string;
+}
+const { queryKey } = Astro.props;
+const venues = await getCollection("spas");
+const c = resolveArticleComparison(queryKey, venues);
+const lead = c.columns[0];
+const cell = (v: (typeof c.venues)[number]) => (lead ? lead.cell(v) : null);
+const first = c.venues[0];
+const second = c.venues[1];
+const n = c.venues.length;
+const isPrice = lead?.header === "Adult drop-in";
+---
+
+<p class="extractive-answer">
+  {
+    isPrice ? (
+      <Fragment>
+        Of the {n} venues compared here, {first.data.name} in {first.data.suburb},{" "}
+        {STATE_NAMES[first.data.state]} publishes the lowest adult drop-in price, at {cell(first)}.
+        {second && (
+          <Fragment>
+            {" "}
+            {second.data.name} is next at {cell(second)}.
+          </Fragment>
+        )}
+      </Fragment>
+    ) : (
+      <Fragment>
+        {first.data.name} in {first.data.suburb}, {STATE_NAMES[first.data.state]} leads the {n} venues
+        compared here{lead && cell(first) ? <Fragment> at {cell(first)}</Fragment> : null}.
+      </Fragment>
+    )
+  }
+</p>
+
+<style>
+  /* The lede/answer: set apart by size and a house hairline rule below it
+     (DESIGN.md §4 — hairline rules, not borders; no coloured boxes). */
+  .extractive-answer {
+    font-size: 1.2rem;
+    line-height: 1.6;
+    margin: 0 0 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);
+  }
+</style>

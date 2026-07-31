@@ -1,0 +1,754 @@
+{
+  "bathhouse-compared": {
+    "venue_count": 14,
+    "stale": false,
+    "data_updated_at": "2026-07-31",
+    "reviewed": {
+      "winner": "peninsula-sauna",
+      "headline": "$25",
+      "order": [
+        "peninsula-sauna",
+        "onsen",
+        "soak-bathhouse",
+        "savoy-day-spa",
+        "about-time-bathhouse",
+        "aun-bathhouse",
+        "aurora-spa-bathhouse",
+        "hepburn-bathhouse-spa",
+        "merse-wellness-osborne-park",
+        "wellness-recovery-centre",
+        "nova-holistic-spa",
+        "pond-bathhouse",
+        "sense-of-self",
+        "s-ma-bathhouse"
+      ],
+      "signature": [
+        "peninsula-sauna=$25",
+        "onsen=$27",
+        "soak-bathhouse=$39",
+        "savoy-day-spa=$40",
+        "about-time-bathhouse=$49",
+        "aun-bathhouse=",
+        "aurora-spa-bathhouse=$190–$825",
+        "hepburn-bathhouse-spa=",
+        "merse-wellness-osborne-park=",
+        "wellness-recovery-centre=",
+        "nova-holistic-spa=",
+        "pond-bathhouse=$175–$195",
+        "sense-of-self=",
+        "s-ma-bathhouse="
+      ]
+    },
+    "current": {
+      "winner": "peninsula-sauna",
+      "headline": "$25",
+      "order": [
+        "peninsula-sauna",
+        "onsen",
+        "soak-bathhouse",
+        "savoy-day-spa",
+        "about-time-bathhouse",
+        "aun-bathhouse",
+        "aurora-spa-bathhouse",
+        "hepburn-bathhouse-spa",
+        "merse-wellness-osborne-park",
+        "wellness-recovery-centre",
+        "nova-holistic-spa",
+        "pond-bathhouse",
+        "sense-of-self",
+        "s-ma-bathhouse"
+      ],
+      "signature": [
+        "peninsula-sauna=$25",
+        "onsen=$27",
+        "soak-bathhouse=$39",
+        "savoy-day-spa=$40",
+        "about-time-bathhouse=$49",
+        "aun-bathhouse=",
+        "aurora-spa-bathhouse=$190–$825",
+        "hepburn-bathhouse-spa=",
+        "merse-wellness-osborne-park=",
+        "wellness-recovery-centre=",
+        "nova-holistic-spa=",
+        "pond-bathhouse=$175–$195",
+        "sense-of-self=",
+        "s-ma-bathhouse="
+      ]
+    }
+  },
+  "cheapest": {
+    "venue_count": 7,
+    "stale": false,
+    "data_updated_at": "2026-07-31",
+    "reviewed": {
+      "winner": "bitter-springs",
+      "headline": "$10",
+      "order": [
+        "bitter-springs",
+        "peninsula-sauna",
+        "onsen",
+        "soak-bathhouse",
+        "savoy-day-spa",
+        "about-time-bathhouse",
+        "deep-blue-hot-springs"
+      ],
+      "signature": [
+        "bitter-springs=$10",
+        "peninsula-sauna=$25",
+        "onsen=$27",
+        "soak-bathhouse=$39",
+        "savoy-day-spa=$40",
+        "about-time-bathhouse=$49",
+        "deep-blue-hot-springs=$55"
+      ]
+    },
+    "current": {
+      "winner": "bitter-springs",
+      "headline": "$10",
+      "order": [
+        "bitter-springs",
+        "peninsula-sauna",
+        "onsen",
+        "soak-bathhouse",
+        "savoy-day-spa",
+        "about-time-bathhouse",
+        "deep-blue-hot-springs"
+      ],
+      "signature": [
+        "bitter-springs=$10",
+        "peninsula-sauna=$25",
+        "onsen=$27",
+        "soak-bathhouse=$39",
+        "savoy-day-spa=$40",
+        "about-time-bathhouse=$49",
+        "deep-blue-hot-springs=$55"
+      ]
+    }
+  },
+  "cold-plunge-compared": {
+    "venue_count": 14,
+    "stale": false,
+    "data_updated_at": "2026-07-31",
+    "reviewed": {
+      "winner": "onsen",
+      "headline": "$27",
+      "order": [
+        "onsen",
+        "soak-bathhouse",
+        "about-time-bathhouse",
+        "aurora-spa-bathhouse",
+        "hale-gym-spa",
+        "hepburn-bathhouse-spa",
+        "merse-wellness-osborne-park",
+        "mineral-springs-hotel",
+        "wellness-recovery-centre",
+        "nova-holistic-spa",
+        "pond-bathhouse",
+        "sense-of-self",
+        "s-ma-bathhouse",
+        "waldheim-alpine-spa"
+      ],
+      "signature": [
+        "onsen=$27",
+        "soak-bathhouse=$39",
+        "about-time-bathhouse=$49",
+        "aurora-spa-bathhouse=$190–$825",
+        "hale-gym-spa=",
+        "hepburn-bathhouse-spa=",
+        "merse-wellness-osborne-park=",
+        "mineral-springs-hotel=",
+        "wellness-recovery-centre=",
+        "nova-holistic-spa=",
+        "pond-bathhouse=$175–$195",
+        "sense-of-self=",
+        "s-ma-bathhouse=",
+        "waldheim-alpine-spa="
+      ]
+    },
+    "current": {
+      "winner": "onsen",
+      "headline": "$27",
+      "order": [
+        "onsen",
+        "soak-bathhouse",
+        "about-time-bathhouse",
+        "aurora-spa-bathhouse",
+        "hale-gym-spa",
+        "hepburn-bathhouse-spa",
+        "merse-wellness-osborne-park",
+        "mineral-springs-hotel",
+        "wellness-recovery-centre",
+        "nova-holistic-spa",
+        "pond-bathhouse",
+        "sense-of-self",
+        "s-ma-bathhouse",
+        "waldheim-alpine-spa"
+      ],
+      "signature": [
+        "onsen=$27",
+        "soak-bathhouse=$39",
+        "about-time-bathhouse=$49",
+        "aurora-spa-bathhouse=$190–$825",
+        "hale-gym-spa=",
+        "hepburn-bathhouse-spa=",
+        "merse-wellness-osborne-park=",
+        "mineral-springs-hotel=",
+        "wellness-recovery-centre=",
+        "nova-holistic-spa=",
+        "pond-bathhouse=$175–$195",
+        "sense-of-self=",
+        "s-ma-bathhouse=",
+        "waldheim-alpine-spa="
+      ]
+    }
+  },
+  "contrast-therapy": {
+    "venue_count": 14,
+    "stale": false,
+    "data_updated_at": "2026-07-31",
+    "reviewed": {
+      "winner": "onsen",
+      "headline": "$27",
+      "order": [
+        "onsen",
+        "soak-bathhouse",
+        "about-time-bathhouse",
+        "aurora-spa-bathhouse",
+        "hale-gym-spa",
+        "hepburn-bathhouse-spa",
+        "merse-wellness-osborne-park",
+        "mineral-springs-hotel",
+        "wellness-recovery-centre",
+        "nova-holistic-spa",
+        "pond-bathhouse",
+        "sense-of-self",
+        "s-ma-bathhouse",
+        "waldheim-alpine-spa"
+      ],
+      "signature": [
+        "onsen=$27",
+        "soak-bathhouse=$39",
+        "about-time-bathhouse=$49",
+        "aurora-spa-bathhouse=$190–$825",
+        "hale-gym-spa=",
+        "hepburn-bathhouse-spa=",
+        "merse-wellness-osborne-park=",
+        "mineral-springs-hotel=",
+        "wellness-recovery-centre=",
+        "nova-holistic-spa=",
+        "pond-bathhouse=$175–$195",
+        "sense-of-self=",
+        "s-ma-bathhouse=",
+        "waldheim-alpine-spa="
+      ]
+    },
+    "current": {
+      "winner": "onsen",
+      "headline": "$27",
+      "order": [
+        "onsen",
+        "soak-bathhouse",
+        "about-time-bathhouse",
+        "aurora-spa-bathhouse",
+        "hale-gym-spa",
+        "hepburn-bathhouse-spa",
+        "merse-wellness-osborne-park",
+        "mineral-springs-hotel",
+        "wellness-recovery-centre",
+        "nova-holistic-spa",
+        "pond-bathhouse",
+        "sense-of-self",
+        "s-ma-bathhouse",
+        "waldheim-alpine-spa"
+      ],
+      "signature": [
+        "onsen=$27",
+        "soak-bathhouse=$39",
+        "about-time-bathhouse=$49",
+        "aurora-spa-bathhouse=$190–$825",
+        "hale-gym-spa=",
+        "hepburn-bathhouse-spa=",
+        "merse-wellness-osborne-park=",
+        "mineral-springs-hotel=",
+        "wellness-recovery-centre=",
+        "nova-holistic-spa=",
+        "pond-bathhouse=$175–$195",
+        "sense-of-self=",
+        "s-ma-bathhouse=",
+        "waldheim-alpine-spa="
+      ]
+    }
+  },
+  "hotel-spa-compared": {
+    "venue_count": 6,
+    "stale": false,
+    "data_updated_at": "2026-07-31",
+    "reviewed": {
+      "winner": "chuan-spa",
+      "headline": "$20–$175",
+      "order": [
+        "chuan-spa",
+        "crown-spa-melbourne",
+        "lake-house-daylesford",
+        "mineral-springs-hotel",
+        "the-mineral-spa",
+        "waldheim-alpine-spa"
+      ],
+      "signature": [
+        "chuan-spa=$20–$175",
+        "crown-spa-melbourne=",
+        "lake-house-daylesford=$200–$1,000",
+        "mineral-springs-hotel=",
+        "the-mineral-spa=",
+        "waldheim-alpine-spa="
+      ]
+    },
+    "current": {
+      "winner": "chuan-spa",
+      "headline": "$20–$175",
+      "order": [
+        "chuan-spa",
+        "crown-spa-melbourne",
+        "lake-house-daylesford",
+        "mineral-springs-hotel",
+        "the-mineral-spa",
+        "waldheim-alpine-spa"
+      ],
+      "signature": [
+        "chuan-spa=$20–$175",
+        "crown-spa-melbourne=",
+        "lake-house-daylesford=$200–$1,000",
+        "mineral-springs-hotel=",
+        "the-mineral-spa=",
+        "waldheim-alpine-spa="
+      ]
+    }
+  },
+  "indoor-pools": {
+    "venue_count": 13,
+    "stale": false,
+    "data_updated_at": "2026-07-31",
+    "reviewed": {
+      "winner": "soak-bathhouse",
+      "headline": "$39",
+      "order": [
+        "soak-bathhouse",
+        "about-time-bathhouse",
+        "deep-blue-hot-springs",
+        "alba-thermal-springs-spa",
+        "chuan-spa",
+        "crown-spa-melbourne",
+        "hale-gym-spa",
+        "lake-house-daylesford",
+        "mineral-springs-hotel",
+        "sense-of-self",
+        "s-ma-bathhouse",
+        "the-mineral-spa",
+        "romantic-getaways-melbourne"
+      ],
+      "signature": [
+        "soak-bathhouse=$39",
+        "about-time-bathhouse=$49",
+        "deep-blue-hot-springs=$55",
+        "alba-thermal-springs-spa=",
+        "chuan-spa=$20–$175",
+        "crown-spa-melbourne=",
+        "hale-gym-spa=",
+        "lake-house-daylesford=$200–$1,000",
+        "mineral-springs-hotel=",
+        "sense-of-self=",
+        "s-ma-bathhouse=",
+        "the-mineral-spa=",
+        "romantic-getaways-melbourne=from $615"
+      ]
+    },
+    "current": {
+      "winner": "soak-bathhouse",
+      "headline": "$39",
+      "order": [
+        "soak-bathhouse",
+        "about-time-bathhouse",
+        "deep-blue-hot-springs",
+        "alba-thermal-springs-spa",
+        "chuan-spa",
+        "crown-spa-melbourne",
+        "hale-gym-spa",
+        "lake-house-daylesford",
+        "mineral-springs-hotel",
+        "sense-of-self",
+        "s-ma-bathhouse",
+        "the-mineral-spa",
+        "romantic-getaways-melbourne"
+      ],
+      "signature": [
+        "soak-bathhouse=$39",
+        "about-time-bathhouse=$49",
+        "deep-blue-hot-springs=$55",
+        "alba-thermal-springs-spa=",
+        "chuan-spa=$20–$175",
+        "crown-spa-melbourne=",
+        "hale-gym-spa=",
+        "lake-house-daylesford=$200–$1,000",
+        "mineral-springs-hotel=",
+        "sense-of-self=",
+        "s-ma-bathhouse=",
+        "the-mineral-spa=",
+        "romantic-getaways-melbourne=from $615"
+      ]
+    }
+  },
+  "infrared-sauna-compared": {
+    "venue_count": 7,
+    "stale": false,
+    "data_updated_at": "2026-07-31",
+    "reviewed": {
+      "winner": "onsen",
+      "headline": "$27",
+      "order": [
+        "onsen",
+        "soak-bathhouse",
+        "merse-wellness-osborne-park",
+        "wellness-recovery-centre",
+        "nova-holistic-spa",
+        "pond-bathhouse",
+        "s-ma-bathhouse"
+      ],
+      "signature": [
+        "onsen=$27",
+        "soak-bathhouse=$39",
+        "merse-wellness-osborne-park=",
+        "wellness-recovery-centre=",
+        "nova-holistic-spa=",
+        "pond-bathhouse=$175–$195",
+        "s-ma-bathhouse="
+      ]
+    },
+    "current": {
+      "winner": "onsen",
+      "headline": "$27",
+      "order": [
+        "onsen",
+        "soak-bathhouse",
+        "merse-wellness-osborne-park",
+        "wellness-recovery-centre",
+        "nova-holistic-spa",
+        "pond-bathhouse",
+        "s-ma-bathhouse"
+      ],
+      "signature": [
+        "onsen=$27",
+        "soak-bathhouse=$39",
+        "merse-wellness-osborne-park=",
+        "wellness-recovery-centre=",
+        "nova-holistic-spa=",
+        "pond-bathhouse=$175–$195",
+        "s-ma-bathhouse="
+      ]
+    }
+  },
+  "magnesium-pool-compared": {
+    "venue_count": 9,
+    "stale": false,
+    "data_updated_at": "2026-07-31",
+    "reviewed": {
+      "winner": "soak-bathhouse",
+      "headline": "$39",
+      "order": [
+        "soak-bathhouse",
+        "savoy-day-spa",
+        "about-time-bathhouse",
+        "aurora-spa-bathhouse",
+        "wellness-recovery-centre",
+        "nova-holistic-spa",
+        "pond-bathhouse",
+        "sense-of-self",
+        "s-ma-bathhouse"
+      ],
+      "signature": [
+        "soak-bathhouse=$39",
+        "savoy-day-spa=$40",
+        "about-time-bathhouse=$49",
+        "aurora-spa-bathhouse=$190–$825",
+        "wellness-recovery-centre=",
+        "nova-holistic-spa=",
+        "pond-bathhouse=$175–$195",
+        "sense-of-self=",
+        "s-ma-bathhouse="
+      ]
+    },
+    "current": {
+      "winner": "soak-bathhouse",
+      "headline": "$39",
+      "order": [
+        "soak-bathhouse",
+        "savoy-day-spa",
+        "about-time-bathhouse",
+        "aurora-spa-bathhouse",
+        "wellness-recovery-centre",
+        "nova-holistic-spa",
+        "pond-bathhouse",
+        "sense-of-self",
+        "s-ma-bathhouse"
+      ],
+      "signature": [
+        "soak-bathhouse=$39",
+        "savoy-day-spa=$40",
+        "about-time-bathhouse=$49",
+        "aurora-spa-bathhouse=$190–$825",
+        "wellness-recovery-centre=",
+        "nova-holistic-spa=",
+        "pond-bathhouse=$175–$195",
+        "sense-of-self=",
+        "s-ma-bathhouse="
+      ]
+    }
+  },
+  "natural-thermal-springs": {
+    "venue_count": 8,
+    "stale": false,
+    "data_updated_at": "2026-07-31",
+    "reviewed": {
+      "winner": "deep-blue-hot-springs",
+      "headline": "$55",
+      "order": [
+        "deep-blue-hot-springs",
+        "alba-thermal-springs-spa",
+        "artesian-mud-baths",
+        "metung-hot-springs",
+        "mineral-springs-hotel",
+        "mornington-peninsula-hot-springs",
+        "pilliga-artesian-bore-bath",
+        "romantic-getaways-melbourne"
+      ],
+      "signature": [
+        "deep-blue-hot-springs=$55",
+        "alba-thermal-springs-spa=",
+        "artesian-mud-baths=",
+        "metung-hot-springs=$6–$15",
+        "mineral-springs-hotel=",
+        "mornington-peninsula-hot-springs=",
+        "pilliga-artesian-bore-bath=$7.50",
+        "romantic-getaways-melbourne=from $615"
+      ]
+    },
+    "current": {
+      "winner": "deep-blue-hot-springs",
+      "headline": "$55",
+      "order": [
+        "deep-blue-hot-springs",
+        "alba-thermal-springs-spa",
+        "artesian-mud-baths",
+        "metung-hot-springs",
+        "mineral-springs-hotel",
+        "mornington-peninsula-hot-springs",
+        "pilliga-artesian-bore-bath",
+        "romantic-getaways-melbourne"
+      ],
+      "signature": [
+        "deep-blue-hot-springs=$55",
+        "alba-thermal-springs-spa=",
+        "artesian-mud-baths=",
+        "metung-hot-springs=$6–$15",
+        "mineral-springs-hotel=",
+        "mornington-peninsula-hot-springs=",
+        "pilliga-artesian-bore-bath=$7.50",
+        "romantic-getaways-melbourne=from $615"
+      ]
+    }
+  },
+  "outdoor-pools": {
+    "venue_count": 10,
+    "stale": false,
+    "data_updated_at": "2026-07-31",
+    "reviewed": {
+      "winner": "bitter-springs",
+      "headline": "$10",
+      "order": [
+        "bitter-springs",
+        "soak-bathhouse",
+        "about-time-bathhouse",
+        "deep-blue-hot-springs",
+        "alba-thermal-springs-spa",
+        "artesian-mud-baths",
+        "metung-hot-springs",
+        "mornington-peninsula-hot-springs",
+        "pilliga-artesian-bore-bath",
+        "romantic-getaways-melbourne"
+      ],
+      "signature": [
+        "bitter-springs=$10",
+        "soak-bathhouse=$39",
+        "about-time-bathhouse=$49",
+        "deep-blue-hot-springs=$55",
+        "alba-thermal-springs-spa=",
+        "artesian-mud-baths=",
+        "metung-hot-springs=$6–$15",
+        "mornington-peninsula-hot-springs=",
+        "pilliga-artesian-bore-bath=$7.50",
+        "romantic-getaways-melbourne=from $615"
+      ]
+    },
+    "current": {
+      "winner": "bitter-springs",
+      "headline": "$10",
+      "order": [
+        "bitter-springs",
+        "soak-bathhouse",
+        "about-time-bathhouse",
+        "deep-blue-hot-springs",
+        "alba-thermal-springs-spa",
+        "artesian-mud-baths",
+        "metung-hot-springs",
+        "mornington-peninsula-hot-springs",
+        "pilliga-artesian-bore-bath",
+        "romantic-getaways-melbourne"
+      ],
+      "signature": [
+        "bitter-springs=$10",
+        "soak-bathhouse=$39",
+        "about-time-bathhouse=$49",
+        "deep-blue-hot-springs=$55",
+        "alba-thermal-springs-spa=",
+        "artesian-mud-baths=",
+        "metung-hot-springs=$6–$15",
+        "mornington-peninsula-hot-springs=",
+        "pilliga-artesian-bore-bath=$7.50",
+        "romantic-getaways-melbourne=from $615"
+      ]
+    }
+  },
+  "thermal-springs-compared": {
+    "venue_count": 8,
+    "stale": false,
+    "data_updated_at": "2026-07-31",
+    "reviewed": {
+      "winner": "bitter-springs",
+      "headline": "$10",
+      "order": [
+        "bitter-springs",
+        "deep-blue-hot-springs",
+        "alba-thermal-springs-spa",
+        "artesian-mud-baths",
+        "metung-hot-springs",
+        "mornington-peninsula-hot-springs",
+        "pilliga-artesian-bore-bath",
+        "romantic-getaways-melbourne"
+      ],
+      "signature": [
+        "bitter-springs=$10",
+        "deep-blue-hot-springs=$55",
+        "alba-thermal-springs-spa=",
+        "artesian-mud-baths=",
+        "metung-hot-springs=$6–$15",
+        "mornington-peninsula-hot-springs=",
+        "pilliga-artesian-bore-bath=$7.50",
+        "romantic-getaways-melbourne=from $615"
+      ]
+    },
+    "current": {
+      "winner": "bitter-springs",
+      "headline": "$10",
+      "order": [
+        "bitter-springs",
+        "deep-blue-hot-springs",
+        "alba-thermal-springs-spa",
+        "artesian-mud-baths",
+        "metung-hot-springs",
+        "mornington-peninsula-hot-springs",
+        "pilliga-artesian-bore-bath",
+        "romantic-getaways-melbourne"
+      ],
+      "signature": [
+        "bitter-springs=$10",
+        "deep-blue-hot-springs=$55",
+        "alba-thermal-springs-spa=",
+        "artesian-mud-baths=",
+        "metung-hot-springs=$6–$15",
+        "mornington-peninsula-hot-springs=",
+        "pilliga-artesian-bore-bath=$7.50",
+        "romantic-getaways-melbourne=from $615"
+      ]
+    }
+  },
+  "traditional-sauna-compared": {
+    "venue_count": 15,
+    "stale": false,
+    "data_updated_at": "2026-07-31",
+    "reviewed": {
+      "winner": "peninsula-sauna",
+      "headline": "$25",
+      "order": [
+        "peninsula-sauna",
+        "onsen",
+        "soak-bathhouse",
+        "savoy-day-spa",
+        "about-time-bathhouse",
+        "aurora-spa-bathhouse",
+        "chuan-spa",
+        "hale-gym-spa",
+        "hepburn-bathhouse-spa",
+        "merse-wellness-osborne-park",
+        "mineral-springs-hotel",
+        "wellness-recovery-centre",
+        "pond-bathhouse",
+        "sense-of-self",
+        "waldheim-alpine-spa"
+      ],
+      "signature": [
+        "peninsula-sauna=$25",
+        "onsen=$27",
+        "soak-bathhouse=$39",
+        "savoy-day-spa=$40",
+        "about-time-bathhouse=$49",
+        "aurora-spa-bathhouse=$190–$825",
+        "chuan-spa=$20–$175",
+        "hale-gym-spa=",
+        "hepburn-bathhouse-spa=",
+        "merse-wellness-osborne-park=",
+        "mineral-springs-hotel=",
+        "wellness-recovery-centre=",
+        "pond-bathhouse=$175–$195",
+        "sense-of-self=",
+        "waldheim-alpine-spa="
+      ]
+    },
+    "current": {
+      "winner": "peninsula-sauna",
+      "headline": "$25",
+      "order": [
+        "peninsula-sauna",
+        "onsen",
+        "soak-bathhouse",
+        "savoy-day-spa",
+        "about-time-bathhouse",
+        "aurora-spa-bathhouse",
+        "chuan-spa",
+        "hale-gym-spa",
+        "hepburn-bathhouse-spa",
+        "merse-wellness-osborne-park",
+        "mineral-springs-hotel",
+        "wellness-recovery-centre",
+        "pond-bathhouse",
+        "sense-of-self",
+        "waldheim-alpine-spa"
+      ],
+      "signature": [
+        "peninsula-sauna=$25",
+        "onsen=$27",
+        "soak-bathhouse=$39",
+        "savoy-day-spa=$40",
+        "about-time-bathhouse=$49",
+        "aurora-spa-bathhouse=$190–$825",
+        "chuan-spa=$20–$175",
+        "hale-gym-spa=",
+        "hepburn-bathhouse-spa=",
+        "merse-wellness-osborne-park=",
+        "mineral-springs-hotel=",
+        "wellness-recovery-centre=",
+        "pond-bathhouse=$175–$195",
+        "sense-of-self=",
+        "waldheim-alpine-spa="
+      ]
+    }
+  }
+}

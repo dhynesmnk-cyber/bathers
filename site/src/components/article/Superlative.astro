@@ -1,0 +1,29 @@
+---
+// Computed superlative (Editorial Gate E1, 2026-08-01). Renders the venue (and
+// its lead figure) at a given rank position in a comparison, so a superlative
+// claim in prose ("the cheapest is ...") is only ever asserted when the build's
+// own ranking supports it. Renders nothing if the position doesn't exist, so
+// the surrounding sentence must read correctly with or without it.
+import { getCollection } from "astro:content";
+import { resolveArticleComparison } from "../../data/comparisons";
+
+interface Props {
+  queryKey: string;
+  position?: number; // 1-based rank; defaults to the winner
+  figure?: boolean; // append the lead-column figure in parentheses (default on)
+}
+const { queryKey, position = 1, figure = true } = Astro.props;
+const venues = await getCollection("spas");
+const c = resolveArticleComparison(queryKey, venues);
+const v = c.venues[position - 1];
+const cell = v && c.columns[0] ? c.columns[0].cell(v) : null;
+---
+
+{
+  v && (
+    <span class="data-superlative">
+      {v.data.name}
+      {figure && cell ? <Fragment> ({cell})</Fragment> : null}
+    </span>
+  )
+}

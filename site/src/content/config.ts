@@ -185,6 +185,15 @@ const blogCollection = defineCollection({
     // without it stay attributed to the organisation (Article/BlogPosting
     // author = Organization), never a fabricated name.
     author: z.string().optional(),
+    // Hybrid comparison article (Editorial Gate E1, 2026-08-01). A post with a
+    // `query_key` is a comparison article, not an essay: its table/answer/
+    // figures resolve live from the venue data via the named comparison in
+    // src/data/comparisons.ts (the query, never a frozen list). `reviewed_at`
+    // is the prose's last human review; the figures' own freshness
+    // (data_updated_at) and staleness live in the derived articles-meta.json,
+    // computed from the venue data, not typed here.
+    query_key: z.string().optional(),
+    reviewed_at: z.date().optional(),
     cover_image: z.string().optional(),
     video_url: z
       .string()

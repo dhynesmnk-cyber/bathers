@@ -4,15 +4,42 @@
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { resolveComparisons, comparePath } from "../../data/comparisons";
+import { comparisonArticles, claimedKeys, articlePath } from "../../data/articles";
 import { HEAD_TO_HEAD } from "../../data/headtohead";
 
 const venues = await getCollection("spas");
+const posts = await getCollection("blog");
 const bySlug = new Map(venues.map((v) => [v.id, v]));
 const { eligible } = resolveComparisons(venues);
+const eligBySlug = new Map(eligible.map((c) => [c.slug, c]));
+const claimed = claimedKeys(posts);
 const headToHead = HEAD_TO_HEAD.filter((p) => bySlug.has(p.a) && bySlug.has(p.b)).map((p) => ({
   slug: p.slug,
   title: `${bySlug.get(p.a)!.data.name} vs ${bySlug.get(p.b)!.data.name}`,
 }));
+
+// The hub indexes both the voiced comparison articles (canonical at /blog/) and
+// the still-generated tables (at /compare/). A claimed intent shows only as its
+// article, never twice (Editorial Gate E1).
+interface HubItem {
+  title: string;
+  href: string;
+  count: number;
+  voiced: boolean;
+  kind: string;
+}
+const items: HubItem[] = [];
+for (const a of comparisonArticles(posts)) {
+  const c = eligBySlug.get(a.queryKey);
+  if (!c) continue; // below threshold — the article won't have built either
+  items.push({ title: a.title, href: articlePath(a.slug), count: c.venues.length, voiced: true, kind: c.kind });
+}
+for (const c of eligible) {
+  if (claimed.has(c.slug)) continue;
+  items.push({ title: c.title, href: comparePath(c.slug), count: c.venues.length, voiced: false, kind: c.kind });
+}
+// Voiced articles first within each group, then alphabetically.
+items.sort((a, b) => Number(b.voiced) - Number(a.voiced) || a.title.localeCompare(b.title));
 
 const KIND_LABELS: Record<string, string> = {
   superlative: "By the numbers",
@@ -22,7 +49,7 @@ const KIND_LABELS: Record<string, string> = {
 const groups = ["superlative", "occasion", "constraint"].map((kind) => ({
   kind,
   label: KIND_LABELS[kind],
-  items: eligible.filter((c) => c.kind === kind),
+  items: items.filter((c) => c.kind === kind),
 })).filter((g) => g.items.length > 0);
 ---
 
@@ -52,8 +79,9 @@ const groups = ["superlative", "occasion", "constraint"].map((kind) => ({
           <ul class="reading-spine">
             {group.items.map((c) => (
               <li class="mb-3">
-                <a href={comparePath(c.slug)}>{c.title}</a>
-                <span class="mono text-sm text-[var(--ink-faded)]"> · {c.venues.length}</span>
+                <a href={c.href}>{c.title}</a>
+                {c.voiced && <span class="mono text-sm text-[var(--thermal)]"> · in depth</span>}
+                <span class="mono text-sm text-[var(--ink-faded)]"> · {c.count}</span>
               </li>
             ))}
           </ul>
