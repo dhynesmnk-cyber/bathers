@@ -174,6 +174,36 @@ a:focus-visible {
   animation-delay: 0.3s;
 }
 
+/* Homepage masthead hero wordmark (DESIGN.md §5c/§9, 2026-07-31 exception).
+   Unlike rise-in/draw-line above (whose unanimated resting state IS their
+   visible end state), this one's resting state is invisible — opacity:0
+   lives directly on SiteLogo.astro's .site-logo-large .site-logo-text rule,
+   not just inside these keyframes. That's what makes prefers-reduced-motion
+   correct here: killing the animation (global kill-switch below) falls back
+   to that plain opacity:0 rule — wordmark already gone, no flash — rather
+   than reverting to visible. Timing reuses the family's own durations
+   rather than inventing new ones: 0.7s (rise-in) to appear, 0.9s
+   (draw-line) to hold, 0.7s to fade out — 2.3s total. The seal icon itself
+   never animates; only the wordmark beneath it does. */
+@keyframes masthead-wordmark-flash {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+}
+
 /* Sitewide "Notebook Depth" motion (DESIGN.md §9 / UX.md §3, 2026-07-30
    exception) — shared tokens so the new GSAP-driven motion (parallax,
    hairline draw-on-view, line-by-line reveal — site/src/scripts/motion.ts)

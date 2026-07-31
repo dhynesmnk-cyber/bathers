@@ -56,15 +56,31 @@ const { large = false } = Astro.props;
     line-height: 1;
   }
 
-  /* 2026-07-26 exception (DESIGN.md §5c) — bumped one size tier up from
-     4rem/clamp(2.5rem,6vw,4.5rem); homepage-only, default logo unchanged. */
+  /* 2026-07-31 exception (DESIGN.md §5c/§9) — the homepage masthead becomes
+     a hero fixture: a centred, block-level column (icon above, wordmark
+     below) rather than the default inline-flex row, with real top clearance.
+     Homepage-only; the default (non-large) logo above is completely
+     unchanged. */
+  .site-logo-large {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.75rem, 2vh, 1.5rem);
+    margin-top: clamp(1.5rem, 6vh, 4rem);
+  }
+
   .site-logo-large .site-logo-icon {
-    width: 4.5rem;
-    height: 4.5rem;
+    width: clamp(7rem, 30vh, 13rem);
+    height: clamp(7rem, 30vh, 13rem);
   }
 
   .site-logo-large .site-logo-text {
     font-size: clamp(2.75rem, 6vw, 5rem);
+    /* Resting state is invisible — the keyframe animation temporarily
+       reveals it, not the reverse. See masthead-wordmark-flash in
+       global.css for why this matters for prefers-reduced-motion. */
+    opacity: 0;
+    animation: masthead-wordmark-flash 2.3s ease-out both;
   }
 
   :root[data-theme="dark"] .site-logo-icon {
