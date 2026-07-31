@@ -1,0 +1,52 @@
+---
+// Region hub (Gate 10, 2026-07-31) — the hub every generated region roll-up
+// is reachable from (the /validate link-graph check enforces this). Lists only
+// regions that actually have >=2 published venues, grouped by state.
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { STATE_NAMES, STATES } from "../../config";
+import { REGIONS, regionForSuburb } from "../../data/regions";
+
+const venues = await getCollection("spas");
+const counts = new Map<string, number>();
+for (const v of venues) {
+  const r = regionForSuburb(v.data.state, v.data.suburb);
+  if (r) counts.set(r.slug, (counts.get(r.slug) ?? 0) + 1);
+}
+const byState = STATES.map((state) => ({
+  state,
+  regions: REGIONS.filter((r) => r.state === state && (counts.get(r.slug) ?? 0) >= 2),
+})).filter((g) => g.regions.length > 0);
+---
+
+<BaseLayout
+  title="Australian bathing regions — Where We Bathe"
+  description="Bathhouses, saunas and hot springs by region across Australia — from the Mornington Peninsula to Daylesford and beyond."
+  canonicalPath="/region/"
+>
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <header class="mb-10">
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">Regions</h1>
+    </header>
+    <section class="reading-spine mb-16">
+      <p>Bathing venues gathered by region. Only regions with more than one venue appear here for now; the rest grow in as the directory does.</p>
+    </section>
+    {
+      byState.map((group) => (
+        <section class="mb-10">
+          <h2 class="mono mb-3 text-[var(--ink-faded)]" style="text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.8rem;">
+            {STATE_NAMES[group.state]}
+          </h2>
+          <ul class="reading-spine">
+            {group.regions.map((r) => (
+              <li class="mb-2">
+                <a href={`/region/${r.slug}/`}>{r.name}</a>
+                <span class="mono text-sm text-[var(--ink-faded)]"> · {counts.get(r.slug)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </main>
+</BaseLayout>

@@ -79,6 +79,22 @@ export const GET: APIRoute = async ({ site }) => {
     entries.push({ path: `/glossary/${key.replace(/_/g, "-")}/` });
   }
 
+  // Comparison + region roll-up pages (2026-07-31, Gate 10).
+  const { resolveComparisons, comparePath } = await import("../data/comparisons");
+  const { REGIONS, regionForSuburb } = await import("../data/regions");
+  entries.push({ path: "/compare/" }, { path: "/region/" });
+  for (const c of resolveComparisons(venues).eligible) {
+    entries.push({ path: comparePath(c.slug) });
+  }
+  const regionCounts = new Map<string, number>();
+  for (const v of venues) {
+    const r = regionForSuburb(v.data.state, v.data.suburb);
+    if (r) regionCounts.set(r.slug, (regionCounts.get(r.slug) ?? 0) + 1);
+  }
+  for (const r of REGIONS) {
+    if ((regionCounts.get(r.slug) ?? 0) >= 2) entries.push({ path: `/region/${r.slug}/` });
+  }
+
   const urls = entries
     .map((entry) => {
       const loc = new URL(entry.path, site).toString();

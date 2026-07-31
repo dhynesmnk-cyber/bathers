@@ -1,0 +1,61 @@
+---
+// Geographic roll-up: region pages (Gate 10, 2026-07-31). Region taxonomy
+// route generation, deferred from Gate 6 (site/src/data/regions.ts). Generated
+// for any region with >=2 published venues — a single-venue region would just
+// duplicate that venue's page, so those venues are reached via their state and
+// comparison pages instead (the /validate link graph accounts for this).
+import { getCollection } from "astro:content";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import VenueEntry from "../../../components/VenueEntry.astro";
+import { STATE_NAMES } from "../../../config";
+import { REGIONS, regionForSuburb } from "../../../data/regions";
+
+export async function getStaticPaths() {
+  const venues = await getCollection("spas");
+  return REGIONS.map((region) => {
+    const inRegion = venues.filter((v) => regionForSuburb(v.data.state, v.data.suburb)?.slug === region.slug);
+    return { region, inRegion };
+  })
+    .filter(({ inRegion }) => inRegion.length >= 2)
+    .map(({ region, inRegion }) => ({ params: { slug: region.slug }, props: { region, venues: inRegion } }));
+}
+
+const { region, venues } = Astro.props;
+const stateName = STATE_NAMES[region.state];
+const lead = `${venues.length} bathing venues in and around ${region.name}, ${stateName}. Everything the directory currently lists for this region, in one place.`;
+---
+
+<BaseLayout
+  title={`Bathhouses & hot springs in ${region.name}, ${stateName} — Where We Bathe`}
+  description={`Bathhouses, saunas and hot springs in and around ${region.name}, ${stateName} — ${venues.length} venues in the directory.`}
+  canonicalPath={`/region/${region.slug}/`}
+>
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <nav class="mono mb-8 text-[var(--ink-faded)]" aria-label="Breadcrumb">
+      <a href="/region/">All regions</a>
+      <span> · </span>
+      <a href={`/${region.state.toLowerCase()}/`}>{stateName}</a>
+    </nav>
+    <header class="mb-10">
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">{region.name}</h1>
+      <p class="mt-2 mono text-sm text-[var(--ink-faded)]">{stateName}</p>
+    </header>
+    <section class="reading-spine mb-16"><p>{lead}</p></section>
+    <section aria-label={`Venues in ${region.name}`}>
+      {
+        venues.map((venue) => (
+          <VenueEntry
+            name={venue.data.name}
+            slug={venue.id}
+            suburb={venue.data.suburb}
+            state={venue.data.state}
+            summary={venue.data.summary}
+            amenities={venue.data.amenities}
+            facilities={venue.data.facilities}
+            image={venue.data.image}
+          />
+        ))
+      }
+    </section>
+  </main>
+</BaseLayout>

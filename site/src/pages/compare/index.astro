@@ -1,0 +1,58 @@
+---
+// Comparison hub (Gate 10, 2026-07-31) — the single hub every comparison
+// page is reachable from (the /validate link-graph check enforces this).
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { resolveComparisons, comparePath } from "../../data/comparisons";
+
+const venues = await getCollection("spas");
+const { eligible } = resolveComparisons(venues);
+
+const KIND_LABELS: Record<string, string> = {
+  superlative: "By the numbers",
+  constraint: "By feature",
+  occasion: "By occasion",
+};
+const groups = ["superlative", "occasion", "constraint"].map((kind) => ({
+  kind,
+  label: KIND_LABELS[kind],
+  items: eligible.filter((c) => c.kind === kind),
+})).filter((g) => g.items.length > 0);
+---
+
+<BaseLayout
+  title="Compare Australian bathhouses & hot springs — Where We Bathe"
+  description="Side-by-side comparisons of Australian bathhouses, saunas and hot springs — cheapest, by feature, and by occasion, built from verified venue data."
+  canonicalPath="/compare/"
+>
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <header class="mb-10">
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">Compare</h1>
+    </header>
+    <section class="reading-spine mb-16">
+      <p>
+        Side-by-side tables built from the directory's verified venue data — ranked by price, grouped by
+        feature, or gathered for a particular kind of visit. Coverage is strongest in Victoria for now and
+        grows as the directory does.
+      </p>
+    </section>
+
+    {
+      groups.map((group) => (
+        <section class="mb-14">
+          <h2 class="mono mb-4 text-[var(--ink-faded)]" style="text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.8rem;">
+            {group.label}
+          </h2>
+          <ul class="reading-spine">
+            {group.items.map((c) => (
+              <li class="mb-3">
+                <a href={comparePath(c.slug)}>{c.title}</a>
+                <span class="mono text-sm text-[var(--ink-faded)]"> · {c.venues.length}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </main>
+</BaseLayout>
