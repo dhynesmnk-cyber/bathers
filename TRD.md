@@ -134,4 +134,6 @@ Nothing else in this list is affected: accounts, user reviews, hosted databases 
 
 ## 9. Execution
 
-Build proceeds through the five gates defined in CLAUDE.md, in order, stopping at each gate for verification. Do not begin a gate before the previous gate's done-condition passes. Read CLAUDE.md, DESIGN.md, UX.md, and SCHEMA.md before writing any code.
+Build proceeds through the gates defined in CLAUDE.md, in order, stopping at each gate for verification. Do not begin a gate before the previous gate's done-condition passes. Read CLAUDE.md, DESIGN.md, UX.md, and SCHEMA.md before writing any code.
+
+**2026-07-31:** Gates 1–5 (the original build) are complete; the site is live at wherewebathe.com. Gates 6–11, covering the SEO/AI-citation remediation engagement, are appended in CLAUDE.md. The approved roadmap with full context and rationale for that engagement is `~/.claude/plans/where-we-bathe-bubbly-sunrise.md`.
