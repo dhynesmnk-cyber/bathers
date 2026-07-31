@@ -83,7 +83,10 @@ const driveTimeSchema = z
 const verificationEntrySchema = z.object({
   source: z.string(),
   tier: z.enum(CONFIDENCE_TIERS),
-  date: z.date(),
+  // Coerced, not strict z.date(): the backfill writes an unquoted YAML date
+  // (parsed as a Date) while the pipeline's yaml.safe_dump writes a quoted
+  // "YYYY-MM-DD" string. Both are valid provenance dates — coerce to a Date.
+  date: z.coerce.date(),
 });
 
 const verificationSchema = z
@@ -105,7 +108,7 @@ const changeLogSchema = z
       field: z.string(),
       from: z.any(),
       to: z.any(),
-      date: z.date(),
+      date: z.coerce.date(),
       trigger: z.string(),
     }),
   )

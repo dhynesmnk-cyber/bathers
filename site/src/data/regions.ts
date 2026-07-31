@@ -62,12 +62,12 @@ export const REGIONS: Region[] = [
 
   // SA — no venues yet. Adelaide and the Far North (Dalhousie Springs) are
   // named coverage-gap targets.
-  { slug: "adelaide", name: "Adelaide", state: "SA", suburbs: [] },
+  { slug: "adelaide", name: "Adelaide", state: "SA", suburbs: ["Adelaide", "Torrensville", "Glenelg", "Goodwood"] },
   { slug: "far-north-sa", name: "Far North SA", state: "SA", suburbs: ["Dalhousie Springs"] },
 
   // WA — no venues yet. Perth and the Kimberley (Zebedee Springs) are named
   // coverage-gap targets.
-  { slug: "perth", name: "Perth", state: "WA", suburbs: [] },
+  { slug: "perth", name: "Perth", state: "WA", suburbs: ["Perth", "Osborne Park", "Claremont", "Fremantle"] },
   { slug: "the-kimberley", name: "The Kimberley", state: "WA", suburbs: ["El Questro", "Zebedee Springs"] },
 
   // NT — no venues yet. Darwin (capital-anchored) and Katherine/Mataranka
@@ -76,7 +76,7 @@ export const REGIONS: Region[] = [
   { slug: "katherine-mataranka", name: "Katherine & Mataranka", state: "NT", suburbs: ["Mataranka", "Katherine"] },
 
   // ACT — no venues yet. The territory is small enough for one region.
-  { slug: "canberra", name: "Canberra", state: "ACT", suburbs: [] },
+  { slug: "canberra", name: "Canberra", state: "ACT", suburbs: ["Canberra", "Barton", "Braddon", "City"] },
 ];
 
 export function regionForSuburb(state: (typeof STATES)[number], suburb: string): Region | undefined {
