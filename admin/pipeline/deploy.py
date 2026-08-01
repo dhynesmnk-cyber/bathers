@@ -45,6 +45,7 @@ ALLOWED_PREFIXES = (
     "data/factchecks/",
     "site/src/content/blog/_published/",
     "site/public/blog-images/",
+    "site/public/og/",  # generated OG share cards (Gate E4b)
 )
 
 GUARD_PATHSPECS = ("temp_data", "content-staging", ".env", ".env.*")
@@ -270,6 +271,22 @@ def _poll_netlify(commit_sha: str, indexnow_urls: set[str]) -> Iterator[LogLine]
     yield LogLine(_now(), "warn", "netlify: build still running after 6 min — check app.netlify.com")
 
 
+def _regenerate_og_cards() -> Iterator[LogLine]:
+    """Refresh generated OG share cards from current content *before* the preview
+    is computed, so a venue that gained/lost a photo, or a newly published
+    article, ships a current card (Gate E4b). Any change lands under
+    site/public/og/ (an allowed prefix) and rides the normal add/commit/push.
+    Best-effort: a missing browser must never block a content deploy — the
+    already-committed cards still ship."""
+    try:
+        from admin.pipeline import og_cards
+
+        written = og_cards.generate_all()
+        yield LogLine(_now(), "info", f"OG cards refreshed ({len(written)} card(s))")
+    except Exception as exc:  # noqa: BLE001 — never block a deploy on card render
+        yield LogLine(_now(), "warn", f"OG card refresh skipped — {exc}")
+
+
 def run_deploy(commit_message: str) -> Iterator[LogLine]:
     # Sync first — the Fly checkout (or a local one) may be behind origin,
     # which would reject the push at the end.
@@ -279,6 +296,7 @@ def run_deploy(commit_message: str) -> Iterator[LogLine]:
         yield LogLine(_now(), "error", f"git pull failed — {(pull.stderr or pull.stdout).strip()}")
         return
 
+    yield from _regenerate_og_cards()
     preview = build_preview()
 
     if preview.guard_violations:
