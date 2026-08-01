@@ -21,7 +21,9 @@ import logging
 import subprocess
 from typing import Any
 
-from admin.config import ARTICLES_META_JSON_PATH, SITE_DIR
+import yaml
+
+from admin.config import ARTICLES_META_JSON_PATH, BLOG_PUBLISHED_DIR, FACTCHECKS_DIR, SITE_DIR
 
 _logger = logging.getLogger("admin.article_store")
 
@@ -67,6 +69,62 @@ def accept(key: str) -> dict[str, Any]:
     """Record a human re-review of one article: re-baseline it to the current
     figures, clearing its stale flag."""
     return rebuild("--accept", key)
+
+
+def _published_comparisons() -> dict[str, dict[str, Any]]:
+    """query_key -> {slug, reviewed_at} for every published comparison article."""
+    out: dict[str, dict[str, Any]] = {}
+    for p in sorted(BLOG_PUBLISHED_DIR.glob("*.mdx")):
+        text = p.read_text(encoding="utf-8")
+        if not text.startswith("---"):
+            continue
+        end = text.find("\n---", 3)
+        fm = yaml.safe_load(text[3:end]) if end != -1 else {}
+        if isinstance(fm, dict) and fm.get("query_key"):
+            ra = fm.get("reviewed_at") or fm.get("dateline")
+            out[fm["query_key"]] = {"slug": p.stem, "reviewed_at": str(ra) if ra else None}
+    return out
+
+
+def _factcheck_status(slug: str) -> str | None:
+    path = FACTCHECKS_DIR / f"{slug}.json"
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8")).get("status")
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def published_staleness() -> list[dict[str, Any]]:
+    """Post-publish staleness dashboard rows (Editorial Gate E4c): every published
+    comparison article with its two dates (prose reviewed_at + figures
+    data_updated_at), its stale flag, what has moved since the last human
+    baseline (winner / headline figure / ranking order), its stored fact-check
+    status, and whether the comparison is still eligible (>=5 venues). Sorted
+    stale-first so the ones needing a human sit at the top."""
+    meta = read_meta()
+    rows: list[dict[str, Any]] = []
+    for key, info in _published_comparisons().items():
+        e = meta.get(key) or {}
+        reviewed = e.get("reviewed") or {}
+        current = e.get("current") or {}
+        rows.append({
+            "query_key": key,
+            "slug": info["slug"],
+            "title": e.get("title", info["slug"]),
+            "stale": bool(e.get("stale")),
+            "reviewed_at": info["reviewed_at"],
+            "data_updated_at": e.get("data_updated_at"),
+            "moved": {
+                "winner": reviewed.get("winner") != current.get("winner"),
+                "headline": reviewed.get("headline") != current.get("headline"),
+                "order": reviewed.get("order") != current.get("order"),
+            },
+            "report_status": _factcheck_status(info["slug"]),
+            "eligible": key in meta,
+        })
+    return sorted(rows, key=lambda r: (not r["stale"], r["slug"]))
 
 
 def main() -> None:

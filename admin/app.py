@@ -50,7 +50,7 @@ from admin.mdx_preview import (
     temperature_line,
     verification_summary,
 )
-from admin.pipeline import article_db, article_pipeline, article_store, articles, blog, claims, claims_store, deploy, discovery, goatcounter, images, notify, orchestrator, places, staging, stripe_client
+from admin.pipeline import article_db, article_pipeline, article_store, articles, blog, claims, claims_store, deploy, discovery, goatcounter, gsc, images, notify, orchestrator, places, staging, stripe_client
 from admin.pipeline.articles import PublishBlocked
 from admin.pipeline.articles import ValidationFailed as ArticleValidationFailed
 from admin.pipeline.blog import ValidationFailed as BlogValidationFailed
@@ -636,12 +636,36 @@ def api_decide_brief(brief_id: int, body: DecideBriefBody):
     return {"ok": True, "brief": brief}
 
 
+@app.get("/api/articles/published")
+def api_published_staleness():
+    """Post-publish staleness dashboard (Editorial Gate E4c) — published
+    comparison articles with their two dates, stale flag, what has moved since the
+    last human baseline, and fact-check status. Also reports whether a
+    GSC/analytics demand feed is wired (a documented seam, deferred)."""
+    return {"articles": article_store.published_staleness(), "demand_feed": gsc.is_configured()}
+
+
+# NOTE: this static route must be declared before /api/articles/{slug} so it is
+# not swallowed as slug="published".
 @app.get("/api/articles/{slug}")
 def api_get_article(slug: str):
     try:
         return _article_detail(articles.get_staging(slug))
     except FileNotFoundError:
         raise HTTPException(404, f"no staged article '{slug}'")
+
+
+@app.post("/api/articles/{query_key}/rebaseline")
+def api_rebaseline_article(query_key: str):
+    """Sign off a stale article: re-baseline it to the current figures, clearing
+    the stale flag (a human has re-read the prose against the moved data). The
+    Stage-8 re-verification (re-run the fact-check) is the existing
+    /api/articles/{slug}/factcheck endpoint."""
+    try:
+        article_store.accept(query_key)
+    except Exception as exc:  # noqa: BLE001 — surface a refresh-runner failure
+        raise HTTPException(500, f"re-baseline failed — {exc}")
+    return {"ok": True}
 
 
 class GenerateArticleBody(BaseModel):
