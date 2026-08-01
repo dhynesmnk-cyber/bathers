@@ -156,7 +156,7 @@ def decide_brief(brief_id: int, status: str, *, decided_by: str | None = None, n
 
 
 def approved_keys() -> set[str]:
-    """Intents whose *latest* brief is approved — the set the draft gate allows."""
+    """Intents whose *latest* brief is approved (ignoring queue disposition)."""
     conn = _connect()
     try:
         rows = conn.execute(
@@ -170,6 +170,16 @@ def approved_keys() -> set[str]:
         return {r["query_key"] for r in rows}
     finally:
         conn.close()
+
+
+def draftable_keys() -> set[str]:
+    """Intents an operator may draft *right now*: latest brief approved, not
+    already written, and not dismissed from the queue. The single predicate the
+    draft gate and the opportunity queue's `draftable` flag both key off — an
+    approved-then-dismissed intent must not slip through the gate."""
+    taken = articles.existing_query_keys()
+    dismissed = {k for k, v in dispositions().items() if v["disposition"] == "dismissed"}
+    return {k for k in approved_keys() if k not in taken and k not in dismissed}
 
 
 # ---- Opportunity-queue overrides -------------------------------------------
@@ -238,6 +248,7 @@ def opportunities() -> list[dict[str, Any]]:
     meta = article_store.read_meta()
     taken = articles.existing_query_keys()
     disp = dispositions()
+    draftable = draftable_keys()
     out: list[dict[str, Any]] = []
     for key, entry in meta.items():
         if not isinstance(entry, dict):
@@ -275,14 +286,9 @@ def opportunities() -> list[dict[str, Any]]:
             "reason": reason,
             "disposition": d["disposition"] if d else None,
             "brief": _brief_summary(brief),
-            # Draftable only once a human has approved a brief for it (and it's
-            # neither written nor dismissed) — the gate article_pipeline enforces.
-            "draftable": (
-                not written
-                and status != "dismissed"
-                and brief is not None
-                and brief.get("status") == "approved"
-            ),
+            # Single source of truth (draftable_keys): approved brief, not written,
+            # not dismissed — the exact predicate the article_pipeline gate enforces.
+            "draftable": key in draftable,
         })
     out.sort(key=lambda o: (o["written"], o["status"] != "candidate", o["query_key"]))
     return out

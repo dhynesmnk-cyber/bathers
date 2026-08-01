@@ -187,18 +187,18 @@ def run(query_key: str, slug: str, author: str | None = None) -> Iterator[LogLin
         yield from drain()
         return
 
-    # Brief gate (Editorial Gate E4a): no drafting spend without a human-approved
-    # brief for this intent — the cheapest stop. Published articles predate the
-    # gate and are never re-drafted (the slug-exists guard below), so there is
-    # nothing to grandfather here.
-    if query_key not in article_db.approved_keys():
-        existing = article_db.latest_brief(query_key)
-        state = existing["status"] if existing else "none"
-        log(
-            f"no approved brief for '{query_key}' (brief: {state}) — generate a brief and "
-            "approve it before drafting (brief gate)",
-            "error",
-        )
+    # Brief gate (Editorial Gate E4a): no drafting spend unless this intent is
+    # draftable — an approved brief, not dismissed from the queue (the same
+    # predicate the admin surfaces). Published articles predate the gate and are
+    # never re-drafted (the slug-exists guard below), so nothing to grandfather.
+    if query_key not in article_db.draftable_keys():
+        disp = article_db.dispositions().get(query_key)
+        if disp and disp["disposition"] == "dismissed":
+            reason = "it is dismissed from the queue — restore it first"
+        else:
+            existing = article_db.latest_brief(query_key)
+            reason = f"no approved brief (brief: {existing['status'] if existing else 'none'}) — brief and approve it first"
+        log(f"cannot draft '{query_key}': {reason} (brief gate)", "error")
         yield from drain()
         return
 
