@@ -18,3 +18,8 @@ content-staging/
 # unlike data/directory.db which is an intentionally-committed derived
 # artefact. Covers the -wal/-shm SQLite journal siblings too.
 data/claims.db*
+
+# Editorial pipeline working-state (Gate E4a, 2026-08-01) — opportunity-queue
+# overrides + briefs. Admin-only source-of-truth, not derived from published
+# content, so it's gitignored like claims.db (never committed).
+data/articles.db*

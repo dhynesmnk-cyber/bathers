@@ -70,6 +70,15 @@ ARTICLES_META_JSON_PATH = ROOT / "site" / "src" / "data" / "articles-meta.json"
 # there. Gitignored (holds requester PII), never committed.
 CLAIMS_DB_PATH = ROOT / "data" / "claims.db"
 
+# Editorial pipeline working-state (Gate E4a, 2026-08-01) — the relational home
+# for the opportunity queue's operator overrides (pin/dismiss) and the brief
+# gate (auto-brief + approve/kill before drafting). Admin-only; the derived,
+# committed truths stay elsewhere (articles-meta.json for staleness,
+# data/factchecks/ for published reports). Gitignored like claims.db and never
+# destructively rebuilt — a brief the operator wrote can't be reconstructed from
+# published content.
+ARTICLES_DB_PATH = ROOT / "data" / "articles.db"
+
 TEMP_DATA_DIR = ROOT / "temp_data"
 IMAGES_DIR = TEMP_DATA_DIR / "images"
 FAILED_DIR = TEMP_DATA_DIR / "failed"
@@ -113,6 +122,11 @@ MODEL_GATEKEEPER = _ENV.get("MODEL_GATEKEEPER", "claude-haiku-4-5")
 # here; override independently in .env when a different model is wanted.
 MODEL_ARTICLE = _ENV.get("MODEL_ARTICLE", MODEL_ARCHITECT)
 MODEL_FACTCHECK = _ENV.get("MODEL_FACTCHECK", MODEL_ARCHITECT)
+# Brief gate (Gate E4a, 2026-08-01). Drafts a short editorial brief for an
+# opportunity — the cheapest stop, killed or approved before any drafting spend.
+# Defaults to MODEL_ARTICLE (the working prose model) so an .env overriding only
+# the article model still gets a valid id; override in .env to run it cheaper.
+MODEL_BRIEF = _ENV.get("MODEL_BRIEF", MODEL_ARTICLE)
 ADMIN_PORT = int(_ENV.get("ADMIN_PORT", "8787"))
 ADMIN_USERNAME = _ENV.get("ADMIN_USERNAME", "")
 ADMIN_PASSWORD = _ENV.get("ADMIN_PASSWORD", "")
