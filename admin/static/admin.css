@@ -554,6 +554,16 @@ textarea.text-input {
   font-size: 11px;
 }
 
+.deploy-chip {
+  color: var(--ink-faded);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.deploy-chip.blocked {
+  color: var(--oxide);
+}
+
 /* Actions */
 
 .review-actions {

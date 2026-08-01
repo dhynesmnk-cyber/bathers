@@ -30,6 +30,8 @@
   const statusChip = el("status-chip");
   const publishBtn = el("publish-btn");
   const deleteBtn = el("delete-btn");
+  const unpublishBtn = el("unpublish-btn");
+  const deployChip = el("deploy-chip");
 
   const quill = new Quill("#quill-editor", {
     theme: "snow",
@@ -175,11 +177,19 @@
     fieldCoverLicense.value = fm.cover_image_license || "";
     suppressQuillEvent = true;
     quill.root.innerHTML = entry.body || "";
-    suppressQuillEvent = false;
+    // Quill detects the innerHTML swap via a MutationObserver and emits
+    // `text-change` on a LATER tick — after this function has returned. Resetting
+    // the flag synchronously here let that spurious event through, so merely
+    // opening a post queued an autosave that re-serialised the body (wrapping
+    // Markdown like `## heading` in <p>…</p> and breaking the build). Defer the
+    // reset to a macrotask so it lands after the observer's event has been
+    // suppressed; genuine edits happen long afterwards and still save normally.
+    setTimeout(() => { suppressQuillEvent = false; }, 0);
     statusChip.className = "status-chip status-" + entry.status;
     statusChip.textContent = entry.status;
     publishBtn.hidden = entry.status === "published";
     deleteBtn.hidden = entry.status === "published";
+    unpublishBtn.hidden = entry.status !== "published";
     saveStatusEl.textContent = "";
   }
 
@@ -253,6 +263,25 @@
     }
     await fetchList();
     await selectSlug(selectedSlug);
+    markDeploying();
+  });
+
+  unpublishBtn.addEventListener("click", async () => {
+    if (!selectedSlug) return;
+    const post = posts.find((p) => p.slug === selectedSlug);
+    let msg = `Take "${(post && post.title) || selectedSlug}" off the live site? It moves back to drafts, so you can fix and re-publish it.`;
+    if (post && post.is_protected) {
+      msg += "\n\nThis post is linked from the site footer/nav — unpublishing will leave a dead link there.";
+    }
+    if (!confirm(msg)) return;
+    const res = await fetch(`/api/blog/${encodeURIComponent(selectedSlug)}/unpublish`, { method: "POST" });
+    if (!res.ok) {
+      saveStatusEl.textContent = "Couldn't unpublish — check the log.";
+      return;
+    }
+    await fetchList();
+    await selectSlug(selectedSlug);
+    markDeploying();
   });
 
   deleteBtn.addEventListener("click", async () => {
@@ -265,5 +294,43 @@
     await fetchList();
   });
 
+  // ---- Deploy status chip (one-click go-live feedback) ----
+
+  function renderDeployChip(status) {
+    if (!deployChip) return;
+    deployChip.classList.toggle("blocked", !!status.blocked);
+    if (status.deploying) {
+      deployChip.textContent = "deploying…";
+    } else if (status.blocked) {
+      deployChip.textContent = "deploy blocked — check the hub";
+    } else if (status.file_count > 0) {
+      deployChip.textContent = `${status.file_count} change(s) pending`;
+    } else {
+      deployChip.textContent = `live · last deploy ${status.last_deploy}`;
+    }
+  }
+
+  async function refreshDeployStatus() {
+    try {
+      const res = await fetch("/api/deploy/status");
+      if (res.ok) renderDeployChip(await res.json());
+    } catch (_e) {
+      /* transient — the interval retries */
+    }
+  }
+
+  function markDeploying() {
+    if (deployChip) {
+      deployChip.classList.remove("blocked");
+      deployChip.textContent = "deploying…";
+    }
+    // The build+push takes ~1 min; nudge a couple of refreshes then let the
+    // steady interval settle it to "live".
+    setTimeout(refreshDeployStatus, 8000);
+    setTimeout(refreshDeployStatus, 30000);
+  }
+
   fetchList();
+  refreshDeployStatus();
+  setInterval(refreshDeployStatus, 10000);
 })();
