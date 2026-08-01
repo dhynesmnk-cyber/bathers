@@ -24,8 +24,17 @@ if [ ! -d "$REPO_DIR/.git" ]; then
   echo "cloning $REPO_URL into $REPO_DIR"
   git clone "$REPO_URL" "$REPO_DIR"
 else
-  echo "pulling latest into $REPO_DIR"
-  git -C "$REPO_DIR" pull --ff-only
+  echo "syncing $REPO_DIR to origin/main"
+  git -C "$REPO_DIR" fetch --prune origin
+  # The volume checkout accumulates runtime writes to *tracked, committed*
+  # derived artefacts — data/directory.db (SQLite), site/src/data/venues.json
+  # & forewords.json (regenerated on rebuild), and any _published files the
+  # approve action rewrites. A plain `pull --ff-only` aborts on that dirt, and
+  # under `set -e` that crash-loops the container. Hard-reset to the remote
+  # instead: the committed versions of those derived files are authoritative,
+  # and all gitignored volume-only state (claims.db, articles.db, temp_data/,
+  # content-staging/, node_modules/) is left untouched by a tracked-file reset.
+  git -C "$REPO_DIR" reset --hard origin/main
 fi
 
 cd "$REPO_DIR"
