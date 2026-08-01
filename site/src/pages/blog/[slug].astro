@@ -91,7 +91,8 @@ const breadcrumbLd = isComparison
 <BaseLayout
   title={`${data.title} — ${SITE_NAME}`}
   description={data.summary}
-  image={data.cover_image}
+  image={data.cover_image ?? `/og/${post.id}.png`}
+  imageAlt={data.title}
   type="article"
 >
   <script type="application/ld+json" set:html={JSON.stringify(blogPostingLd)} />

@@ -136,7 +136,7 @@ const faqLd = data.faq && data.faq.length > 0
   : null;
 ---
 
-<BaseLayout title={`${data.name} — Where We Bathe`} description={data.summary} image={data.image ?? undefined}>
+<BaseLayout title={`${data.name} — Where We Bathe`} description={data.summary} image={data.image ?? `/og/${venue.id}.png`} imageAlt={`${data.name}, ${data.suburb}`}>
   <script type="application/ld+json" set:html={JSON.stringify(localBusinessLd)} />
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbLd)} />
   {faqLd && <script type="application/ld+json" set:html={JSON.stringify(faqLd)} />}

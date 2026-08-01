@@ -13,12 +13,17 @@ interface Props {
   description: string;
   canonicalPath?: string;
   image?: string;
+  imageAlt?: string;
   type?: "website" | "article";
   noindex?: boolean;
 }
 
-const { title, description, canonicalPath, image, type = "website", noindex = false } = Astro.props;
+const { title, description, canonicalPath, image, imageAlt, type = "website", noindex = false } = Astro.props;
 const canonicalHref = canonicalPath ?? Astro.url.pathname;
+// og:image:alt describes the share card/photo for screen readers and crawlers
+// (Gate E4b). Falls back to the page description, then the title — every page
+// carries both, so the alt is never empty.
+const imageAltText = imageAlt ?? description ?? title;
 // Astro.site (site/astro.config.mjs `site:`) gives absolute URLs for
 // canonical/OG/JSON-LD — search engines and AI crawlers alike expect these
 // to be absolute, not root-relative (2026-07-24 SEO/GEO pass).
@@ -91,10 +96,12 @@ const searchIndex = searchVenues.map((v) => ({
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:alt" content={imageAltText} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={imageUrl} />
+    <meta name="twitter:image:alt" content={imageAltText} />
     <script type="application/ld+json" set:html={JSON.stringify(organizationLd)} />
     <script type="application/ld+json" set:html={JSON.stringify(websiteLd)} />
     <script type="application/json" id="search-index-data" set:html={JSON.stringify(searchIndex)} />

@@ -30,6 +30,11 @@ SITE_DIR = ROOT / "site"
 SITE_DIST_DIR = SITE_DIR / "dist"
 SITE_FONTS_DIR = SITE_DIR / "public" / "fonts"
 SITE_IMAGES_DIR = SITE_DIR / "public" / "images"
+# Generated Open Graph share cards (Gate E4b, 2026-08-01) — 1200x630 PNGs
+# rendered from an HTML template via the existing Playwright/chromium (the
+# harvest fallback) so they use the real brand woff2 fonts, one per venue/article
+# lacking a real photo. Committed + served by Netlify; deployed via the allow-list.
+OG_CARDS_DIR = SITE_DIR / "public" / "og"
 
 PUBLISHED_DIR = ROOT / "site" / "src" / "content" / "spas" / "_published"
 STAGING_DIR = ROOT / "content-staging" / "_staging"
