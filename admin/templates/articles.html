@@ -49,6 +49,12 @@
         <h2 class="mono pane-heading" style="margin-top: 1.5rem;">IN REVIEW</h2>
         <ul id="art-list" class="queue-list" role="listbox" aria-label="Staged articles"></ul>
         <p id="art-list-empty" class="mono empty-state" hidden>No articles staged. Approve a brief, then generate one.</p>
+
+        <h2 class="mono pane-heading" style="margin-top: 1.5rem;">PUBLISHED (staleness)</h2>
+        <p class="mono field-label">Post-publish watch. A stale article's figures moved since its last human review; re-verify re-runs the fact-check, re-baseline signs off the current figures.</p>
+        <ul id="pub-list" class="queue-list" aria-label="Published comparison articles"></ul>
+        <p id="pub-empty" class="mono empty-state" hidden>No published comparison articles yet.</p>
+        <p id="demand-seam" class="mono field-label"></p>
       </section>
 
       <!-- Right: review -->

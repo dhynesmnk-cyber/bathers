@@ -161,6 +161,51 @@ async function decideBrief(newStatus) {
 $("brief-approve-btn").addEventListener("click", () => decideBrief("approved"));
 $("brief-kill-btn").addEventListener("click", () => decideBrief("killed"));
 
+// ---- Published staleness dashboard (E4c) ----
+async function loadPublished() {
+  const data = await (await fetch("/api/articles/published")).json();
+  const ul = $("pub-list");
+  ul.innerHTML = "";
+  $("pub-empty").hidden = data.articles.length > 0;
+  for (const a of data.articles) {
+    const li = document.createElement("li");
+    li.className = "opp-item";
+    const chip = a.stale ? '<span class="mono chip-warn">STALE</span>' : '<span class="mono chip-ok">CURRENT</span>';
+    const moved = Object.entries(a.moved).filter(([, v]) => v).map(([k]) => k);
+    const movedStr = a.stale && moved.length ? ` · moved: ${moved.join(", ")}` : "";
+    const elig = a.eligible ? "" : ' · <span class="chip-blocked">below 5 venues</span>';
+    li.innerHTML = `
+      <div class="opp-head">
+        <span class="queue-title">${escapeHtml(a.title)}</span>
+        ${chip}
+      </div>
+      <div class="mono opp-meta">reviewed ${a.reviewed_at || "?"} · figures ${a.data_updated_at || "?"}${movedStr}${elig}</div>
+      <div class="opp-actions"></div>`;
+    const actions = li.querySelector(".opp-actions");
+    addBtn(actions, "Re-verify", "btn-plain", () => reverifyPublished(a.slug));
+    if (a.stale) addBtn(actions, "Re-baseline", "btn-thermal btn-xs", () => rebaseline(a.query_key, a.title));
+    ul.appendChild(li);
+  }
+  $("demand-seam").textContent = data.demand_feed
+    ? "Demand feed: wired."
+    : "Demand feed (GSC/analytics): not wired — opportunities come from the comparison registry.";
+}
+
+async function reverifyPublished(slug) {
+  status(`re-verifying ${slug}…`);
+  await streamJob(`/api/articles/${slug}/factcheck`, $("gen-log"));
+  await loadPublished();
+  status("re-verified — see the log");
+}
+
+async function rebaseline(queryKey, title) {
+  if (!confirm(`Re-baseline "${title}"? This signs off the current figures and clears the stale flag.`)) return;
+  status("re-baselining…");
+  const res = await fetch(`/api/articles/${encodeURIComponent(queryKey)}/rebaseline`, { method: "POST" });
+  status(res.ok ? "re-baselined" : "re-baseline failed");
+  await loadPublished();
+}
+
 // ---- Staged articles (E2) ----
 async function loadList() {
   const list = await (await fetch("/api/articles")).json();
@@ -319,6 +364,8 @@ $("approve-btn").addEventListener("click", async () => {
     $("redirect-text").textContent = redirect;
     status("published");
     await loadList();
+    await loadPublished();
+    await loadOpportunities();
   } else {
     const err = await res.json().catch(() => ({}));
     const detail = err.detail || {};
@@ -348,3 +395,4 @@ $("reject-btn").addEventListener("click", async () => {
 loadOpportunities();
 loadBriefs();
 loadList();
+loadPublished();
