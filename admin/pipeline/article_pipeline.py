@@ -36,10 +36,11 @@ from admin.config import (
     FACTCHECKS_DIR,
     FAILED_DIR,
     MODEL_ARTICLE,
+    MODEL_BRIEF,
     MODEL_FACTCHECK,
     VENUES_JSON_PATH,
 )
-from admin.pipeline import agents, article_factcheck
+from admin.pipeline import agents, article_db, article_factcheck
 from admin.pipeline.validate_articles import find_hardcoded_numbers, register_issues
 
 # The venue-record fields the agents may reason from (everything a comparison can
@@ -185,6 +186,22 @@ def run(query_key: str, slug: str, author: str | None = None) -> Iterator[LogLin
         log(f"unknown comparison '{query_key}' or below the 5-venue threshold — nothing to write", "error")
         yield from drain()
         return
+
+    # Brief gate (Editorial Gate E4a): no drafting spend without a human-approved
+    # brief for this intent — the cheapest stop. Published articles predate the
+    # gate and are never re-drafted (the slug-exists guard below), so there is
+    # nothing to grandfather here.
+    if query_key not in article_db.approved_keys():
+        existing = article_db.latest_brief(query_key)
+        state = existing["status"] if existing else "none"
+        log(
+            f"no approved brief for '{query_key}' (brief: {state}) — generate a brief and "
+            "approve it before drafting (brief gate)",
+            "error",
+        )
+        yield from drain()
+        return
+
     if (BLOG_PUBLISHED_DIR / f"{slug}.mdx").exists() or (ARTICLE_STAGING_DIR / f"{slug}.mdx").exists():
         log(f"slug '{slug}' already exists (staging or published) — pick another", "error")
         yield from drain()
@@ -271,6 +288,78 @@ def run(query_key: str, slug: str, author: str | None = None) -> Iterator[LogLin
         )
     else:
         log(f"staged '{slug}' — fact-check clean, ready for review")
+    yield from drain()
+
+
+def _validate_brief(text: str) -> str:
+    """A brief must be substantive and end on a clear write/skip recommendation
+    so the editor gets an unambiguous signal at the gate."""
+    text = _strip_code_fence(text).strip()
+    if len(text) < 80:
+        raise ValueError("brief is too short to be a useful plan")
+    if not re.search(r"^##\s*Recommendation:\s*(write|skip)\b", text, re.IGNORECASE | re.MULTILINE):
+        raise ValueError("brief must end with a '## Recommendation:' line resolving to 'write' or 'skip'")
+    return text
+
+
+def brief(query_key: str) -> Iterator[LogLine]:
+    """Auto-draft an editorial brief for an opportunity and store it pending in
+    articles.db (Editorial Gate E4a). A human approves or kills it before any
+    drafting spend — the brief gate. Streams LogLines like run(); does not draft."""
+    lines: list[LogLine] = []
+
+    def log(text: str, level: str = "info") -> None:
+        lines.append(LogLine(_now(), level, text))
+
+    def drain() -> Iterator[LogLine]:
+        nonlocal lines
+        out, lines = lines, []
+        yield from out
+
+    try:
+        meta = _load_meta()
+    except FileNotFoundError:
+        log("articles-meta.json missing — run article_store --rebuild first", "error")
+        yield from drain()
+        return
+    entry = meta.get(query_key)
+    if not entry:
+        log(f"unknown comparison '{query_key}' or below the 5-venue threshold — nothing to brief", "error")
+        yield from drain()
+        return
+
+    records = _resolved_records(entry["current"]["order"])
+    log(f"briefing '{entry['title']}' ({len(records)} venues) with {MODEL_BRIEF}")
+    yield from drain()
+
+    facts_pack = json.dumps(
+        {"query_key": query_key, "title": entry["title"], "caption": entry["caption"],
+         "kind": entry.get("kind"), "venues": records},
+        ensure_ascii=False, indent=2,
+    )
+    user = (
+        "Write the editorial brief for this proposed comparison article. The venue "
+        f"records are the only facts you may reason from.\n\n{facts_pack}"
+    )
+    try:
+        brief_md, usage = agents.call_agent(
+            MODEL_BRIEF, agents.load_prompt("article_brief.md"), user, 1200, _validate_brief, log
+        )
+    except agents.MalformedOutput as exc:
+        _save_failed("brief", query_key, exc.raw_text, log)
+        log("brief failed validation after retry — stopping", "error")
+        yield from drain()
+        return
+    except agents.AgentError as exc:
+        log(f"brief call failed — {exc}", "error")
+        yield from drain()
+        return
+
+    stored = article_db.create_brief(query_key, brief_md, title=entry.get("title"), model=MODEL_BRIEF)
+    log(
+        f"brief #{stored['id']} stored pending for '{query_key}' — approve or kill it before drafting "
+        f"({usage.input_tokens} in / {usage.output_tokens} out tokens)"
+    )
     yield from drain()
 
 
