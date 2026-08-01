@@ -10,15 +10,17 @@ Where We Bathe documents Australian venues built around heat, cold and water. Ea
 - Browse by setting within a state: indoor pools, outdoor pools, thermal springs, or other — e.g. `/vic/outdoor/`
 - Browse by amenity within a state — e.g. `/vic/cold-plunge/`
 - Browse by amenity nationally — e.g. `/magnesium-pool/`, `/infrared-sauna/`, `/traditional-sauna/`, `/cold-plunge/`, `/led-therapy/`
+- Browse by pool setting nationally — `/indoor-pool/`, `/outdoor-pool/`, `/natural-spring/`
+- Browse pregnancy-safe venues nationally: `/pregnancy-safe/`
 - Browse by venue category nationally: `/category/bathhouse/`, `/category/thermal-springs/`, `/category/hotel-spa/`
-- Compare venues side by side: `/compare/` — ranked tables (e.g. cheapest, natural thermal springs, contrast therapy) built from structured, source-verified data
+- Compare venues side by side: `/compare/` — a hub of ranked comparison tables built from structured, source-verified data, linking through to the in-depth comparison articles under `/blog/`
 - Browse by region: `/region/` — regional roundups (e.g. Mornington Peninsula, Daylesford & Hepburn)
 - Individual venue pages: `/spa/{venue-slug}/` — name, location, amenities, hours, cost, temperatures, FAQ, and source-verified detail
 - Glossary of amenity/facility terms: `/glossary/`
 
 ## Blog
 
-Longer-form writing about the project — its mission, values, and the people behind it: `/blog/`
+Writing at `/blog/`: essays about the project — its mission, values and the people behind it — alongside data-backed comparison articles (e.g. the cheapest venues, natural thermal springs, contrast therapy) whose every figure is resolved from the same source-verified venue data and re-checked when a venue changes.
 
 ## Links
 

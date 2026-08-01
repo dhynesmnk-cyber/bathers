@@ -9,10 +9,12 @@
 //   - national amenity/facility pages (/magnesium-pool/, /pregnancy-safe/
 //     etc., 2026-07-31 Gate 6 addition) — generated only for keys with >=1
 //     venue nationally.
-// National pool-type routes are deliberately NOT added here: their slugs
-// (thermal-springs, other) collide with existing /category/ slugs, and a
-// "national thermal springs" listing would just duplicate
-// /category/thermal-springs/.
+//   - national pool-setting pages (/indoor-pool/, /outdoor-pool/,
+//     /natural-spring/, Gate E3 2026-08-01) — crawlable homes for the homepage
+//     "By pool setting" chooser, which used to deep-link the client-only
+//     /?pooltype= filter. Descriptive slugs (indoor-pool, not indoor) keep them
+//     clear of the existing /category/ and /[state]/[pooltype]/ slugs; the
+//     residual POOL_TYPES.other setting has no national page (see config.ts).
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import VenueEntry from "../../components/VenueEntry.astro";
@@ -21,6 +23,7 @@ import {
   AMENITY_KEYS,
   AMENITY_NOTATION,
   CROSS_CUTTING_FACILITY_FILTERS,
+  POOL_NATIONAL_FILTERS,
   STATE_NAMES,
   STATES,
   amenityUrlSlug,
@@ -65,7 +68,16 @@ export async function getStaticPaths() {
     if (matching.length === 0) continue;
     paths.push({
       params: { scope: facilityFilter.slug },
-      props: { kind: "facility-national", facilityKey: facilityFilter.key, label: facilityFilter.label, venues: matching },
+      props: { kind: "facility-national", facilityKey: facilityFilter.key, label: facilityFilter.label, slug: facilityFilter.slug, venues: matching },
+    });
+  }
+
+  for (const poolFilter of POOL_NATIONAL_FILTERS) {
+    const matching = venues.filter((v) => v.data.facilities?.[poolFilter.key]);
+    if (matching.length === 0) continue;
+    paths.push({
+      params: { scope: poolFilter.slug },
+      props: { kind: "facility-national", facilityKey: poolFilter.key, label: poolFilter.label, slug: poolFilter.slug, venues: matching },
     });
   }
 
@@ -75,7 +87,7 @@ export async function getStaticPaths() {
 type Props =
   | { kind: "state"; state: (typeof STATES)[number]; venues: VenueList }
   | { kind: "amenity-national"; amenityKey: (typeof AMENITY_KEYS)[number]; venues: VenueList }
-  | { kind: "facility-national"; facilityKey: string; label: string; venues: VenueList };
+  | { kind: "facility-national"; facilityKey: string; label: string; slug: string; venues: VenueList };
 
 const props = Astro.props as Props;
 const { kind, venues } = props;
@@ -108,13 +120,15 @@ if (kind === "state" && state) {
   canonicalPath = `/${amenityUrlSlug(props.amenityKey)}/`;
   backLink = { href: `/glossary/${props.amenityKey.replace(/_/g, "-")}/`, label: "What is this?" };
 } else {
-  const { label, facilityKey } = props as { label: string; facilityKey: string };
-  const match = CROSS_CUTTING_FACILITY_FILTERS.find((f) => f.key === facilityKey);
+  // Cross-cutting facility nationals (pregnancy-safe) and pool-setting
+  // nationals (indoor-pool / outdoor-pool / natural-spring) render identically;
+  // the route slug is carried in props so this branch stays list-agnostic.
+  const { label, facilityKey, slug } = props as { label: string; facilityKey: string; slug: string };
   pageHeading = `${label} in Australia`;
   pageTitle = `${label} — ${venueCount} ${venueNoun} across Australia`;
   description =
     FOREWORDS.national?.facilities?.[facilityKey] || `${label} at ${venueCount} bathhouses and hot springs across Australia.`;
-  canonicalPath = `/${match?.slug ?? facilityKey}/`;
+  canonicalPath = `/${slug}/`;
   backLink = { href: `/glossary/${facilityKey.replace(/_/g, "-")}/`, label: "What is this?" };
 }
 ---

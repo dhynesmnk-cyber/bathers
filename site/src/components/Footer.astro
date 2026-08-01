@@ -4,16 +4,13 @@
 // sitewide footer. Public site only, rendered once from BaseLayout on
 // every page as the last in-flow element of .page-frame.
 import Icon from "./Icon.astro";
-import { SITE_BLUESKY_URL, SITE_CONTACT_EMAIL, SITE_NAME, SITE_TAGLINE, SITE_TIKTOK_URL } from "../config";
+import { SITE_CONTACT_EMAIL, SITE_NAME, SITE_TAGLINE, SITE_TIKTOK_URL } from "../config";
 ---
 
 <footer class="site-footer">
   <div class="mx-auto max-w-3xl px-6 py-10">
     <div class="mono site-footer-links">
-      <a href={SITE_BLUESKY_URL || "#"} class="site-footer-link" target="_blank" rel="noopener">
-        <Icon name="bluesky" size={20} /><span>Bluesky</span>
-      </a>
-      <a href={SITE_TIKTOK_URL || "#"} class="site-footer-link" target="_blank" rel="noopener">
+      <a href={SITE_TIKTOK_URL} class="site-footer-link" target="_blank" rel="noopener">
         <Icon name="tiktok" size={20} /><span>TikTok</span>
       </a>
       <a href={`mailto:${SITE_CONTACT_EMAIL}`} class="site-footer-link">

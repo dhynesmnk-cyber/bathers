@@ -181,6 +181,24 @@ export function poolTypeFromUrlSlug(segment: string): (typeof POOL_TYPES)[number
   return POOL_TYPES.find((t) => t.slug === segment);
 }
 
+// National pool-setting routes (Gate E3, 2026-08-01). The homepage "By pool
+// setting" chooser needs crawlable static destinations instead of the old
+// client-only `/?pooltype=` deep links, so each concrete pool facility gets a
+// national /[scope]/ page (the same slot + render as the amenity/facility
+// nationals in [scope]/index.astro). The residual POOL_TYPES.other setting has
+// no national page — it is "none of the above", not a browsable listing — and
+// stays a client-side results filter only. Slugs are descriptive (indoor-pool,
+// not indoor) so they read as national listings and don't shadow the
+// /[state]/[pooltype]/ slugs. Deliberately NOT folded into
+// CROSS_CUTTING_FACILITY_FILTERS: those also generate /[state]/[filter]/
+// routes, which for these keys would collide with the POOL_TYPES state routes
+// (/vic/indoor/ etc.).
+export const POOL_NATIONAL_FILTERS = [
+  { slug: "natural-spring", key: "natural_spring" as const, label: "Thermal springs" },
+  { slug: "indoor-pool", key: "indoor_pool" as const, label: "Indoor pools" },
+  { slug: "outdoor-pool", key: "outdoor_pool" as const, label: "Outdoor pools" },
+] as const;
+
 // Venue categories (2026-07-22 addition, day_spa retired 2026-07-26 — see
 // SCHEMA.md §2). A venue must have a pool or a sauna as a central offering;
 // hotel_spa covers hotel/lodge venues with a real bathing circuit, distinct
@@ -342,8 +360,11 @@ export const SITE_TAGLINE = "A field guide to Australian saunas, hot pools and b
 
 // Footer contact/social links (2026-07-27 addition, DESIGN.md §5d).
 export const SITE_CONTACT_EMAIL = "sebastian@wherewebathe.com";
-export const SITE_BLUESKY_URL = ""; // TODO: real Bluesky handle URL
-export const SITE_TIKTOK_URL = ""; // TODO: real TikTok handle URL
+export const SITE_TIKTOK_URL = "https://www.tiktok.com/@bathersbathe";
+// Bluesky: account not set up yet (2026-08-01, Gate E3) — the footer link is
+// omitted rather than left as a dead anchor. To restore it later, re-add
+// `export const SITE_BLUESKY_URL = "…";` here and the Bluesky block in
+// Footer.astro (the `bluesky` icon in icons/paths.ts is still defined).
 
 // Claim-listing CTA (2026-07-23 addition — TRD.md §8 exception, UX.md §2.5).
 // No longer used by the claim page itself since the 2026-07-25 form/payment

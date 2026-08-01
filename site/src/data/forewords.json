@@ -93,6 +93,9 @@
       "traditional_sauna": "Traditional dry-heat saunas across Australia, wood-fired or electric, at bathhouses and hot springs from coastal towns to inner-city suburbs."
     },
     "facilities": {
+      "natural_spring": "Australian bathhouses and hot springs fed by a natural thermal or mineral spring — geothermal or artesian bore water, not a heated town supply.",
+      "indoor_pool": "Australian bathhouses and spas with an indoor pool — sheltered, heated bathing you can use through winter or in poor weather, listed state by state.",
+      "outdoor_pool": "Australian bathhouses and hot springs with an outdoor pool — open-air bathing, from bushland springs to rooftop plunge pools, gathered by state.",
       "pregnancy_safe": "Pregnancy-safe bathing across Australia: venues confirmed suitable for pregnant visitors, flagged here by a human reviewer, not the AI pipeline."
     }
   }

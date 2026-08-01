@@ -5,7 +5,7 @@ import VenueEntry from "../components/VenueEntry.astro";
 import Icon from "../components/Icon.astro";
 import MarginAnimal from "../components/MarginAnimal.astro";
 import SearchBox from "../components/SearchBox.astro";
-import { AMENITY_KEYS, AMENITY_NOTATION, POOL_TYPES, SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES } from "../config";
+import { AMENITY_KEYS, AMENITY_NOTATION, POOL_NATIONAL_FILTERS, SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES, amenityUrlSlug } from "../config";
 
 const venues = await getCollection("spas");
 
@@ -20,11 +20,12 @@ const byState = STATES.map((state) => ({
 // the corner menu's state/category lists.
 const presentAmenities = AMENITY_KEYS.filter((key) => venues.some((v) => v.data.amenities?.[key]));
 
-// 2026-07-26 — pool-setting column reinstated on the homepage chooser itself
-// (DESIGN.md §5, reversing the same-day-earlier removal note), reusing the
-// same POOL_TYPES.match() rule as the corner menu and /[state]/[filter]/ so
-// the grouping logic isn't reimplemented a third time.
-const presentPoolTypes = POOL_TYPES.filter((t) => venues.some((v) => t.match(v.data.facilities)));
+// Pool-setting chooser (DESIGN.md §5, reinstated 2026-07-26). Each entry now
+// links to its national pool page (Gate E3, 2026-08-01) — POOL_NATIONAL_FILTERS,
+// present-only — instead of the old client-only /?pooltype= deep link. The
+// residual "other" pool setting has no national page (it is "none of the
+// above") so it drops out of the chooser; it stays a results filter chip below.
+const presentPoolNational = POOL_NATIONAL_FILTERS.filter((f) => venues.some((v) => v.data.facilities?.[f.key]));
 
 // 2026-07-26 — the map is gone (DESIGN.md §5, UX.md §2.1). Every venue still
 // renders server-side into the results area so it degrades to real markup,
@@ -130,10 +131,10 @@ const allVenues = venues.map((v) => ({
         <div class="chooser-group">
           <span class="mono chooser-group-label">By pool setting</span>
           <ul class="chooser-states">
-            {presentPoolTypes.map((t) => (
+            {presentPoolNational.map((f) => (
               <li>
-                <a class="mono chooser-state-link" href={`/?pooltype=${t.slug}#results-heading`}>
-                  {t.label}
+                <a class="mono chooser-state-link" href={`/${f.slug}/`}>
+                  {f.label}
                 </a>
               </li>
             ))}
@@ -145,7 +146,7 @@ const allVenues = venues.map((v) => ({
       <ul class="chooser-features">
         {presentAmenities.map((key) => (
           <li>
-            <a class="chooser-feature-link" href={`/?amenities=${key}#results-heading`}>
+            <a class="chooser-feature-link" href={`/${amenityUrlSlug(key)}/`}>
               <Icon name={key} size={40} />
               <span class="mono chooser-feature-label">{AMENITY_NOTATION[key].full}</span>
             </a>

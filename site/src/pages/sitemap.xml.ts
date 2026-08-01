@@ -10,6 +10,7 @@ import {
   CATEGORIES,
   CROSS_CUTTING_FACILITY_FILTERS,
   FACILITY_KEYS,
+  POOL_NATIONAL_FILTERS,
   POOL_TYPES,
   STATES,
   amenityUrlSlug,
@@ -72,6 +73,13 @@ export const GET: APIRoute = async ({ site }) => {
   for (const facilityFilter of CROSS_CUTTING_FACILITY_FILTERS) {
     if (venues.some((v) => v.data.facilities?.[facilityFilter.key])) {
       entries.push({ path: `/${facilityFilter.slug}/` });
+    }
+  }
+  // National pool-setting routes (Gate E3) — same /[scope]/ slot; see
+  // POOL_NATIONAL_FILTERS in config.ts and [scope]/index.astro.
+  for (const poolFilter of POOL_NATIONAL_FILTERS) {
+    if (venues.some((v) => v.data.facilities?.[poolFilter.key])) {
+      entries.push({ path: `/${poolFilter.slug}/` });
     }
   }
 

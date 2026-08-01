@@ -23,6 +23,7 @@ import {
   POOL_TYPES,
   STATE_NAMES,
   STATES,
+  amenityUrlSlug,
   categoryUrlSlug,
 } from "../config";
 
@@ -80,7 +81,7 @@ const presentAmenities = AMENITY_KEYS.filter((key) => venues.some((v) => v.data.
       <div class="corner-menu-features">
         {
           presentAmenities.map((key) => (
-            <a class="corner-menu-feature-link" href={`/?amenities=${key}#results-heading`}>
+            <a class="corner-menu-feature-link" href={`/${amenityUrlSlug(key)}/`}>
               <Icon name={key} size={20} />
               {AMENITY_NOTATION[key].full}
             </a>
