@@ -74,6 +74,13 @@ def _check(obj: dict, page: str, errors: list[str]) -> None:
         for dt in obj.get("hasDefinedTerm", []) or []:
             if dt.get("@type") != "DefinedTerm" or not dt.get("name"):
                 errors.append(f"{page}: DefinedTermSet term malformed")
+    # A BlogPosting image may be a bare URL string or, when it carries
+    # provenance (Gate E4b: photo credit/licence or an AI flag), a structured
+    # ImageObject — which must name its @type and a contentUrl.
+    if t == "BlogPosting":
+        img = obj.get("image")
+        if isinstance(img, dict) and (img.get("@type") != "ImageObject" or not img.get("contentUrl")):
+            errors.append(f"{page}: BlogPosting.image object is not a valid ImageObject (needs @type + contentUrl)")
 
 
 def run(dist: Path = DIST) -> tuple[list[str], set[str]]:

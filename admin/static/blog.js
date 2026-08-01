@@ -22,6 +22,11 @@
   const fieldVideoUrl = el("field-video-url");
   const coverImagePreview = el("cover-image-preview");
   const coverImageInput = el("cover-image-input");
+  const fieldCoverAlt = el("field-cover-alt");
+  const fieldCoverAi = el("field-cover-ai");
+  const fieldCoverCredit = el("field-cover-credit");
+  const fieldCoverSource = el("field-cover-source");
+  const fieldCoverLicense = el("field-cover-license");
   const statusChip = el("status-chip");
   const publishBtn = el("publish-btn");
   const deleteBtn = el("delete-btn");
@@ -163,6 +168,11 @@
     fieldDateline.value = fm.dateline || "";
     fieldVideoUrl.value = fm.video_url || "";
     renderCoverImage(fm.cover_image || "");
+    fieldCoverAlt.value = fm.cover_image_alt || "";
+    fieldCoverAi.checked = !!fm.cover_image_ai;
+    fieldCoverCredit.value = fm.cover_image_credit || "";
+    fieldCoverSource.value = fm.cover_image_source || "";
+    fieldCoverLicense.value = fm.cover_image_license || "";
     suppressQuillEvent = true;
     quill.root.innerHTML = entry.body || "";
     suppressQuillEvent = false;
@@ -223,6 +233,11 @@
   fieldSummary.addEventListener("input", () => queuePatch("summary", fieldSummary.value));
   fieldDateline.addEventListener("input", () => queuePatch("dateline", fieldDateline.value));
   fieldVideoUrl.addEventListener("input", () => queuePatch("video_url", fieldVideoUrl.value));
+  fieldCoverAlt.addEventListener("input", () => queuePatch("cover_image_alt", fieldCoverAlt.value));
+  fieldCoverAi.addEventListener("change", () => queuePatch("cover_image_ai", fieldCoverAi.checked));
+  fieldCoverCredit.addEventListener("input", () => queuePatch("cover_image_credit", fieldCoverCredit.value));
+  fieldCoverSource.addEventListener("input", () => queuePatch("cover_image_source", fieldCoverSource.value));
+  fieldCoverLicense.addEventListener("input", () => queuePatch("cover_image_license", fieldCoverLicense.value));
 
   // ---- Publish / delete ----
 

@@ -59,6 +59,31 @@
             <input id="cover-image-input" type="file" accept="image/*" class="mono" />
           </div>
 
+          <div class="field-row">
+            <label class="field">
+              <span class="mono field-label">Cover alt text</span>
+              <input id="field-cover-alt" class="text-input" type="text" placeholder="describe the cover for screen readers" />
+            </label>
+            <label class="field cover-ai-field">
+              <input id="field-cover-ai" type="checkbox" />
+              <span class="mono field-label">AI-generated header (must be credited)</span>
+            </label>
+          </div>
+          <div class="field-row">
+            <label class="field">
+              <span class="mono field-label">Cover credit</span>
+              <input id="field-cover-credit" class="text-input" type="text" placeholder="e.g. Illustration generated with … / Photo: name" />
+            </label>
+            <label class="field">
+              <span class="mono field-label">Cover source URL</span>
+              <input id="field-cover-source" class="text-input mono" type="url" placeholder="https://…" />
+            </label>
+          </div>
+          <label class="field">
+            <span class="mono field-label">Cover licence URL</span>
+            <input id="field-cover-license" class="text-input mono" type="url" placeholder="https://…" />
+          </label>
+
           <div class="field">
             <span class="mono field-label">Body</span>
             <div id="quill-editor"></div>

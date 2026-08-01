@@ -35,7 +35,14 @@ from PIL import Image
 
 from admin.config import BLOG_IMAGES_TEMP_DIR, BLOG_PUBLISHED_DIR, BLOG_STAGING_DIR, SITE_BLOG_IMAGES_DIR
 
-FRONTMATTER_FIELD_ORDER = ("title", "dateline", "summary", "cover_image", "video_url")
+FRONTMATTER_FIELD_ORDER = (
+    "title", "dateline", "summary", "cover_image",
+    # Cover-image provenance (Gate E4b) — kept in frontmatter so a post's
+    # generated/attributed header travels with the content, editable in admin.
+    "cover_image_alt", "cover_image_ai", "cover_image_credit",
+    "cover_image_license", "cover_image_source",
+    "video_url",
+)
 MAX_DIMENSION = 1600
 
 _SLUG_RE = re.compile(r"[^a-z0-9]+")

@@ -195,6 +195,16 @@ const blogCollection = defineCollection({
     query_key: z.string().optional(),
     reviewed_at: z.date().optional(),
     cover_image: z.string().optional(),
+    // Cover-image provenance + accessibility (Gate E4b, 2026-08-01). AI abstract
+    // header imagery is allowed but must be flagged and attributed: an image with
+    // `cover_image_ai: true` requires a credit line stating it, so the page and
+    // its ImageObject can be honest about generated imagery (CLAUDE rule 6 at the
+    // media level). Photographic credit/licence/source are optional provenance.
+    cover_image_alt: z.string().optional(),
+    cover_image_ai: z.boolean().optional(),
+    cover_image_credit: z.string().optional(),
+    cover_image_license: z.string().url().optional(),
+    cover_image_source: z.string().url().optional(),
     video_url: z
       .string()
       .url()
@@ -202,6 +212,24 @@ const blogCollection = defineCollection({
         message: "video_url must be a YouTube or Vimeo URL",
       })
       .optional(),
+  }).superRefine((data, ctx) => {
+    // Cover provenance/alt only mean anything with a cover image. cover_image_ai
+    // is only checked when truthy (a `false` flag on a cover-less post is fine).
+    const stringProvenance = ["cover_image_alt", "cover_image_credit", "cover_image_license", "cover_image_source"] as const;
+    if (!data.cover_image) {
+      for (const key of stringProvenance) {
+        if (data[key] !== undefined) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: [key], message: `${key} set without a cover_image` });
+        }
+      }
+      if (data.cover_image_ai) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["cover_image_ai"], message: "cover_image_ai set without a cover_image" });
+      }
+    }
+    // AI headers must carry a credit line stating they are AI-generated.
+    if (data.cover_image_ai && !data.cover_image_credit) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["cover_image_credit"], message: "cover_image_ai requires cover_image_credit (attribute the AI generation)" });
+    }
   }),
 });
 

@@ -71,7 +71,23 @@ const blogPostingLd: Record<string, unknown> = {
   author: data.author ? { "@type": "Person", name: data.author } : { "@type": "Organization", name: SITE_NAME },
   publisher: { "@type": "Organization", name: SITE_NAME },
 };
-if (data.cover_image) blogPostingLd.image = new URL(data.cover_image, Astro.site).toString();
+if (data.cover_image) {
+  const coverUrl = new URL(data.cover_image, Astro.site).toString();
+  // With provenance (credit/licence) or an AI flag, emit a structured
+  // ImageObject so the attribution is machine-readable — honest about
+  // generated imagery without a public caption (DESIGN.md §7: blog covers have
+  // none). Otherwise a bare URL, as before.
+  const hasProvenance = data.cover_image_credit || data.cover_image_license || data.cover_image_ai;
+  blogPostingLd.image = hasProvenance
+    ? {
+        "@type": "ImageObject",
+        contentUrl: coverUrl,
+        ...(data.cover_image_alt && { caption: data.cover_image_alt }),
+        ...(data.cover_image_credit && { creditText: data.cover_image_credit }),
+        ...(data.cover_image_license && { license: data.cover_image_license }),
+      }
+    : coverUrl;
+}
 
 // Comparison articles live under /blog/ but are reachable from the /compare/
 // hub, so they carry a Compare breadcrumb (essays do not).
@@ -117,7 +133,7 @@ const breadcrumbLd = isComparison
         data.cover_image && (
           <img
             src={data.cover_image}
-            alt={data.title}
+            alt={data.cover_image_alt ?? data.title}
             class="mb-12 w-full"
             style="border: 3px solid var(--paper-raised);"
           />
