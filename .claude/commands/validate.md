@@ -41,4 +41,8 @@ Run the full validation pass and report results as a pass/fail table. This comma
 
 20. **Routing hygiene.** `python3 -m admin.pipeline.validate_routing` must exit 0 — after `npm run build`, no internal `<a href>` in the built site emits a query-param URL (Gate E3 pointed the homepage + corner-menu chooser links at static national routes — amenity pages and the new `/indoor-pool/`·`/outdoor-pool/`·`/natural-spring/` pool pages — so crawlers never index the client-only `/?amenities=`/`/?pooltype=` filter space), and the homepage `<link rel="canonical">` is the apex root `/` with no query/fragment. External links carrying query strings are ignored. The module self-tests both checks against corrupted fixtures.
 
+## Editorial Gate E4a checks (opportunity queue + brief gate, 2026-08-01)
+
+21. **Article intent-uniqueness.** `python3 -m admin.pipeline.validate_intents` must exit 0 — no `query_key` in `site/src/content/blog/_published/` is carried by more than one post. One search intent, one comparison article: this is the invariant the opportunity queue's dedupe and the `/compare/<key>/ → /blog/<slug>/` 301 both rely on (two articles for one intent is the self-competition the model exists to avoid). Essays (no `query_key`) are ignored. A deliberately corrupted fixture (two files sharing a `query_key`) must fail; the module self-tests both the catch and a clean pass. *(The opportunity queue and brief gate themselves live in the admin-only, gitignored `articles.db` and so aren't build-gate-checkable; this asserts their published-layer invariant.)*
+
 Output: a summary table (check / result / details), then the word **VALIDATE PASS** or **VALIDATE FAIL** on its own line. Do not fix anything during this command — report only.
