@@ -50,7 +50,7 @@ from admin.mdx_preview import (
     temperature_line,
     verification_summary,
 )
-from admin.pipeline import article_pipeline, article_store, articles, blog, claims, claims_store, deploy, discovery, goatcounter, images, notify, orchestrator, places, staging, stripe_client
+from admin.pipeline import article_db, article_pipeline, article_store, articles, blog, claims, claims_store, deploy, discovery, goatcounter, images, notify, orchestrator, places, staging, stripe_client
 from admin.pipeline.articles import PublishBlocked
 from admin.pipeline.articles import ValidationFailed as ArticleValidationFailed
 from admin.pipeline.blog import ValidationFailed as BlogValidationFailed
@@ -556,19 +556,84 @@ def api_list_articles():
 
 @app.get("/api/articles/opportunities")
 def api_article_opportunities():
-    """Eligible comparisons (>=5 venues) that have no article yet — a light
-    Stage-1 opportunity list feeding the generate form. (Full auto-derivation +
-    dedupe-on-intent + Search Console gaps land in a later gate.)"""
-    meta = article_store.read_meta()
-    taken = articles.existing_query_keys()
-    return sorted(
-        (
-            {"query_key": key, "title": e.get("title"), "venue_count": e.get("venue_count")}
-            for key, e in meta.items()
-            if key not in taken
-        ),
-        key=lambda o: o["query_key"],
-    )
+    """The opportunity queue (Editorial Gate E4a): every registry comparison
+    (>=5 venues) tagged with whether it's already written, its field
+    completeness, the operator's disposition (pin/dismiss) and its latest brief.
+    Draftable intents (approved brief, not written/dismissed) feed the generate
+    form; the rest surface for briefing or dismissal."""
+    return article_db.opportunities()
+
+
+class DispositionBody(BaseModel):
+    disposition: str  # "pinned" | "dismissed" | "clear"
+    reason: str | None = None
+
+
+@app.post("/api/articles/opportunities/{query_key}/disposition")
+def api_set_disposition(query_key: str, body: DispositionBody):
+    """Pin an opportunity (keep despite a sparse table) or dismiss it (hide from
+    drafting), or clear the override."""
+    if body.disposition == "clear":
+        article_db.clear_disposition(query_key)
+        return {"ok": True, "disposition": None}
+    try:
+        row = article_db.set_disposition(query_key, body.disposition, reason=body.reason)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
+    return {"ok": True, "disposition": row["disposition"]}
+
+
+class GenerateBriefBody(BaseModel):
+    query_key: str
+
+
+@app.post("/api/articles/brief/generate")
+def api_generate_brief(body: GenerateBriefBody):
+    """Auto-draft an editorial brief for an intent and store it pending — the
+    brief gate's first step. Streams the pipeline log (SSE)."""
+    if not _article_lock.acquire(blocking=False):
+        raise HTTPException(409, "an article job is already running")
+
+    def stream():
+        try:
+            for line in article_pipeline.brief(body.query_key):
+                yield _sse_line({"time": line.time, "level": line.level, "text": line.text})
+        finally:
+            _article_lock.release()
+        yield "event: done\ndata: {}\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@app.get("/api/articles/briefs")
+def api_list_briefs(status: str | None = None):
+    return article_db.list_briefs(status)
+
+
+@app.get("/api/articles/briefs/{brief_id}")
+def api_get_brief(brief_id: int):
+    try:
+        return article_db.get_brief(brief_id)
+    except KeyError:
+        raise HTTPException(404, f"no brief #{brief_id}")
+
+
+class DecideBriefBody(BaseModel):
+    status: str  # "approved" | "killed"
+    decided_by: str | None = None
+    note: str | None = None
+
+
+@app.post("/api/articles/briefs/{brief_id}/decide")
+def api_decide_brief(brief_id: int, body: DecideBriefBody):
+    """Approve or kill a brief — the human gate before any drafting spend."""
+    try:
+        brief = article_db.decide_brief(brief_id, body.status, decided_by=body.decided_by, note=body.note)
+    except KeyError:
+        raise HTTPException(404, f"no brief #{brief_id}")
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
+    return {"ok": True, "brief": brief}
 
 
 @app.get("/api/articles/{slug}")

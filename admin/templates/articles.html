@@ -17,12 +17,21 @@
     </header>
 
     <main class="articles-grid">
-      <!-- Left: generate + staging queue -->
-      <section class="pane" aria-labelledby="art-list-heading">
-        <h2 id="art-list-heading" class="mono pane-heading">GENERATE</h2>
+      <!-- Left: opportunity queue -> brief gate -> generate -> staging queue -->
+      <section class="pane" aria-labelledby="opp-list-heading">
+        <h2 id="opp-list-heading" class="mono pane-heading">OPPORTUNITIES</h2>
+        <p class="mono field-label">Comparisons with ≥5 venues. Brief one to open the gate; drafting needs an approved brief.</p>
+        <ul id="opp-list" class="queue-list" aria-label="Opportunity queue"></ul>
+        <p id="opp-empty" class="mono empty-state" hidden>No opportunities — run <code>article_store --rebuild</code>.</p>
+
+        <h2 class="mono pane-heading" style="margin-top: 1.5rem;">BRIEFS</h2>
+        <ul id="brief-list" class="queue-list" role="listbox" aria-label="Editorial briefs"></ul>
+        <p id="brief-empty" class="mono empty-state" hidden>No briefs yet. Brief an opportunity above.</p>
+
+        <h2 class="mono pane-heading" style="margin-top: 1.5rem;">GENERATE</h2>
         <form id="generate-form" class="art-new-form">
           <label class="field">
-            <span class="mono field-label">Comparison (intent)</span>
+            <span class="mono field-label">Comparison (intent — approved briefs only)</span>
             <select id="gen-query-key" class="text-input mono" required></select>
           </label>
           <label class="field">
@@ -39,13 +48,25 @@
 
         <h2 class="mono pane-heading" style="margin-top: 1.5rem;">IN REVIEW</h2>
         <ul id="art-list" class="queue-list" role="listbox" aria-label="Staged articles"></ul>
-        <p id="art-list-empty" class="mono empty-state" hidden>No articles staged. Generate one above.</p>
+        <p id="art-list-empty" class="mono empty-state" hidden>No articles staged. Approve a brief, then generate one.</p>
       </section>
 
       <!-- Right: review -->
       <section class="pane" aria-labelledby="art-review-heading">
         <h2 id="art-review-heading" class="mono pane-heading">REVIEW</h2>
-        <div id="review-empty" class="mono empty-state">Select a staged article to review.</div>
+        <div id="review-empty" class="mono empty-state">Select a brief or a staged article to review.</div>
+
+        <div id="brief-review" hidden>
+          <h3 class="mono pane-heading">EDITORIAL BRIEF</h3>
+          <p id="brief-meta" class="mono field-label"></p>
+          <pre id="brief-md" class="art-brief mono"></pre>
+          <div class="art-actions">
+            <button id="brief-approve-btn" class="btn btn-thermal">Approve brief</button>
+            <button id="brief-kill-btn" class="btn btn-oxide">Kill</button>
+          </div>
+          <p class="mono field-label">Approving opens the drafting gate for this intent. Killing re-closes it (a later brief can reopen it).</p>
+        </div>
+
         <div id="review-content" hidden>
           <label class="field">
             <span class="mono field-label">Title</span>
