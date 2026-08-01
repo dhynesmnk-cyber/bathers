@@ -187,7 +187,11 @@ def index(request: Request):
 
 @app.get("/blog", response_class=HTMLResponse)
 def blog_page(request: Request):
-    return templates.TemplateResponse(request, "blog.html", {})
+    return templates.TemplateResponse(
+        request,
+        "blog.html",
+        {"static_version": _static_version("blog.js", "blog.css", "admin.css")},
+    )
 
 
 @app.get("/claims", response_class=HTMLResponse)

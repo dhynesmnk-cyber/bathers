@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Where We Bathe — Blog</title>
-    <link rel="stylesheet" href="/static/admin.css" />
+    <link rel="stylesheet" href="/static/admin.css?v={{ static_version }}" />
     <link rel="stylesheet" href="/static/vendor/quill/quill.snow.css" />
-    <link rel="stylesheet" href="/static/blog.css" />
+    <link rel="stylesheet" href="/static/blog.css?v={{ static_version }}" />
   </head>
   <body>
     <header class="hub-header">
@@ -101,6 +101,6 @@
     </main>
 
     <script src="/static/vendor/quill/quill.js"></script>
-    <script src="/static/blog.js"></script>
+    <script src="/static/blog.js?v={{ static_version }}"></script>
   </body>
 </html>
