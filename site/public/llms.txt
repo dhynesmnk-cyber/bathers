@@ -11,7 +11,6 @@ Where We Bathe documents Australian venues built around heat, cold and water. Ea
 - Browse by amenity within a state — e.g. `/vic/cold-plunge/`
 - Browse by amenity nationally — e.g. `/magnesium-pool/`, `/infrared-sauna/`, `/traditional-sauna/`, `/cold-plunge/`, `/led-therapy/`
 - Browse by pool setting nationally — `/indoor-pool/`, `/outdoor-pool/`, `/natural-spring/`
-- Browse pregnancy-safe venues nationally: `/pregnancy-safe/`
 - Browse by venue category nationally: `/category/bathhouse/`, `/category/thermal-springs/`, `/category/hotel-spa/`
 - Compare venues side by side: `/compare/` — a hub of ranked comparison tables built from structured, source-verified data, linking through to the in-depth comparison articles under `/blog/`
 - Browse by region: `/region/` — regional roundups (e.g. Mornington Peninsula, Daylesford & Hepburn)
