@@ -45,6 +45,20 @@ FRONTMATTER_FIELD_ORDER = (
 )
 MAX_DIMENSION = 1600
 
+# Published posts that are site furniture — linked from the footer/nav (mission,
+# about, methodology-style pages), not ordinary journal entries. Unpublishing one
+# leaves a dead navigation link, so the admin warns (never blocks) first.
+PROTECTED_SLUGS = frozenset(
+    {
+        "our-mission",
+        "what-we-stand-for",
+        "on-being-present",
+        "why-we-love-to-bathe",
+        "a-calm-directory-for-calm-experiences",
+        "a-dream-of-bathing-in-switzerland",
+    }
+)
+
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
 # MDX parses the body as JSX, which requires void elements to be
@@ -292,3 +306,20 @@ def publish(slug: str) -> None:
         for f in image_dir.iterdir():
             f.unlink()
         image_dir.rmdir()
+
+
+def unpublish(slug: str) -> None:
+    """Take a published post off the live site, recoverably (2026-08-01 admin-UX
+    change). The MDX moves back to _blog_staging so it can be fixed and
+    re-published; the deploy strip carries the _published deletion to Netlify on
+    the next push. Public images under site/public/blog-images/ are left in place
+    — harmless while unpublished and re-used verbatim on re-publish, since the
+    body already references their /blog-images/ URLs (a re-publish only rewrites
+    fresh /api/blog/ draft refs)."""
+    path = BLOG_PUBLISHED_DIR / f"{slug}.mdx"
+    if not path.exists():
+        raise FileNotFoundError(slug)
+    BLOG_STAGING_DIR.mkdir(parents=True, exist_ok=True)
+    dest = BLOG_STAGING_DIR / f"{slug}.mdx"
+    dest.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
+    path.unlink()

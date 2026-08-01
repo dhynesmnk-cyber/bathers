@@ -399,7 +399,9 @@ def api_remove_published_image(slug: str):
 
 @app.get("/api/deploy/status")
 def api_deploy_status():
-    return deploy.status_summary()
+    # `deploying` reflects the shared DEPLOY_LOCK, so the blog/article screens'
+    # go-live chip is truthful whether the deploy was manual or auto-triggered.
+    return {**deploy.status_summary(), "deploying": deploy.DEPLOY_LOCK.locked()}
 
 
 @app.get("/api/deploy/preview")
@@ -459,6 +461,7 @@ def _blog_summary(entry: blog.BlogEntry, location: str) -> dict[str, Any]:
         "dateline": str(fm.get("dateline")) if fm.get("dateline") else None,
         "status": location,
         "saved_at": entry.saved_at,
+        "is_protected": entry.slug in blog.PROTECTED_SLUGS,
     }
 
 
@@ -516,14 +519,29 @@ def api_delete_blog_draft(slug: str):
 
 
 @app.post("/api/blog/{slug}/publish")
-def api_publish_blog_post(slug: str):
+def api_publish_blog_post(slug: str, background_tasks: BackgroundTasks):
     try:
         blog.publish(slug)
     except FileNotFoundError:
         raise HTTPException(404, f"no draft '{slug}'")
     except BlogValidationFailed as exc:
         raise HTTPException(422, detail={"errors": exc.errors})
-    return {"ok": True}
+    # One-click go-live (2026-08-01): publishing to _published now auto-deploys,
+    # so the operator doesn't have to switch to the hub Deploy strip afterwards.
+    background_tasks.add_task(deploy.run_auto_deploy)
+    return {"ok": True, "deploying": True}
+
+
+@app.post("/api/blog/{slug}/unpublish")
+def api_unpublish_blog_post(slug: str, background_tasks: BackgroundTasks):
+    """Take a published post off the live site, recoverably — moves it back to
+    drafts and auto-deploys the _published deletion."""
+    try:
+        blog.unpublish(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"no published post '{slug}'")
+    background_tasks.add_task(deploy.run_auto_deploy)
+    return {"ok": True, "deploying": True}
 
 
 # ---- Comparison articles (Editorial Gate E2) — draft -> fact-check -> review ----
@@ -690,6 +708,30 @@ def api_generate_article(body: GenerateArticleBody):
     return StreamingResponse(stream(), media_type="text/event-stream")
 
 
+class WriteArticleBody(BaseModel):
+    query_key: str
+    author: str | None = None
+
+
+@app.post("/api/articles/write")
+def api_write_article(body: WriteArticleBody):
+    """Collapsed 'write about X' flow (2026-08-01): brief -> auto-approve ->
+    draft -> fact-check as one streamed job, landing in review for the human
+    publish gate. One button instead of the brief/generate stages."""
+    if not _article_lock.acquire(blocking=False):
+        raise HTTPException(409, "an article job is already running")
+
+    def stream():
+        try:
+            for line in article_pipeline.write(body.query_key, body.author):
+                yield _sse_line({"time": line.time, "level": line.level, "text": line.text})
+        finally:
+            _article_lock.release()
+        yield "event: done\ndata: {}\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
 @app.post("/api/articles/{slug}/factcheck")
 def api_refactcheck_article(slug: str):
     """Re-run the fact-check on an already-published article (Stage 8
@@ -721,7 +763,7 @@ def api_update_article(slug: str, body: ArticlePatchBody):
 
 
 @app.post("/api/articles/{slug}/approve")
-def api_approve_article(slug: str):
+def api_approve_article(slug: str, background_tasks: BackgroundTasks):
     try:
         redirect = articles.approve(slug)
     except FileNotFoundError:
@@ -730,7 +772,10 @@ def api_approve_article(slug: str):
         raise HTTPException(409, detail={"blocked": str(exc)})
     except ArticleValidationFailed as exc:
         raise HTTPException(422, detail={"errors": exc.errors})
-    return {"ok": True, "redirect": redirect}
+    # One-click go-live (2026-08-01): a clean, human-approved article now
+    # auto-deploys. The fact-check block above still gates this path.
+    background_tasks.add_task(deploy.run_auto_deploy)
+    return {"ok": True, "redirect": redirect, "deploying": True}
 
 
 class RejectArticleBody(BaseModel):
@@ -744,6 +789,19 @@ def api_reject_article(slug: str, body: RejectArticleBody):
     except FileNotFoundError:
         raise HTTPException(404, f"no staged article '{slug}'")
     return {"ok": True}
+
+
+@app.post("/api/articles/{slug}/unpublish")
+def api_unpublish_article(slug: str, background_tasks: BackgroundTasks):
+    """Take a published comparison article off the live site, recoverably —
+    moves it back to article staging (with its fact-check report) and
+    auto-deploys the _published deletion."""
+    try:
+        articles.unpublish(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"no published article '{slug}'")
+    background_tasks.add_task(deploy.run_auto_deploy)
+    return {"ok": True, "deploying": True}
 
 
 @app.get("/api/blog/{slug}/images/{index}/file")

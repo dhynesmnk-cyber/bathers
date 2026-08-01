@@ -363,6 +363,58 @@ def brief(query_key: str) -> Iterator[LogLine]:
     yield from drain()
 
 
+_SLUG_RE = re.compile(r"[^a-z0-9]+")
+
+
+def _slugify(title: str) -> str:
+    """Slug from a comparison title, made unique against the published (/blog/)
+    and article-staging sets so the collapsed write flow doesn't collide."""
+    base = _SLUG_RE.sub("-", title.strip().lower()).strip("-") or "article"
+    slug = base
+    n = 2
+    while (BLOG_PUBLISHED_DIR / f"{slug}.mdx").exists() or (ARTICLE_STAGING_DIR / f"{slug}.mdx").exists():
+        slug = f"{base}-{n}"
+        n += 1
+    return slug
+
+
+def write(query_key: str, author: str | None = None) -> Iterator[LogLine]:
+    """Collapsed 'write about X' flow (2026-08-01 admin-UX change): brief ->
+    auto-approve the brief -> draft -> fact-check, streamed as one job, landing
+    the draft in _article_staging for the unchanged human publish gate. The brief
+    is still generated and stored as the editorial record; only its approval is
+    automatic (the operator's editorial direction is the topic they chose). The
+    fact-check block and the human Approve & publish step are NOT bypassed."""
+
+    def log(text: str, level: str = "info") -> LogLine:
+        return LogLine(_now(), level, text)
+
+    before = article_db.latest_brief(query_key)
+    before_id = before["id"] if before else None
+
+    # brief() streams its own log lines and stores a pending brief on success.
+    yield from brief(query_key)
+
+    latest = article_db.latest_brief(query_key)
+    if latest is None or latest["id"] == before_id:
+        yield log("brief step produced no new brief — stopping before drafting", "error")
+        return
+
+    article_db.decide_brief(latest["id"], "approved", decided_by="auto — collapsed write flow")
+    yield log(f"brief #{latest['id']} auto-approved (collapsed write flow)")
+
+    try:
+        meta = _load_meta()
+    except FileNotFoundError:
+        yield log("articles-meta.json missing — run article_store --rebuild first", "error")
+        return
+    entry = meta.get(query_key) or {}
+    slug = _slugify(entry.get("title") or query_key)
+
+    # run()'s own slug-exists and validation guards still apply from here.
+    yield from run(query_key, slug, author)
+
+
 def factcheck_existing(slug: str) -> Iterator[LogLine]:
     """Fact-check an already-published comparison article against the current
     venue data and write/refresh its stored report (data/factchecks/<slug>.json).

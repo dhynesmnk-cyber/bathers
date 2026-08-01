@@ -231,3 +231,35 @@ def reject(slug: str, reason: str) -> None:
         )
     path.unlink()
     _report_path(slug).unlink(missing_ok=True)
+
+
+def unpublish(slug: str) -> None:
+    """Take a published comparison article off the live site, recoverably
+    (2026-08-01 admin-UX change). The MDX moves back to _article_staging and its
+    committed fact-check record moves back beside it as <slug>.factcheck.json, so
+    re-review keeps its report (mirror of approve/reject). articles-meta.json is
+    rebuilt so the intent drops out of the published set and reappears as an
+    opportunity. The /compare/<query_key>/ redirect in netlify.toml is left in
+    place — the article is coming back, and netlify.toml is outside the deploy
+    set anyway. The _published deletion rides the next deploy to Netlify."""
+    path = BLOG_PUBLISHED_DIR / f"{slug}.mdx"
+    if not path.exists():
+        raise FileNotFoundError(slug)
+    ARTICLE_STAGING_DIR.mkdir(parents=True, exist_ok=True)
+    (ARTICLE_STAGING_DIR / f"{slug}.mdx").write_text(
+        path.read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    committed_report = FACTCHECKS_DIR / f"{slug}.json"
+    if committed_report.exists():
+        _report_path(slug).write_text(
+            committed_report.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        committed_report.unlink()
+    path.unlink()
+
+    # Refresh the derived staleness metadata so the now-unpublished intent leaves
+    # the published set (best-effort — a meta hiccup must not strand the file).
+    try:
+        article_store.rebuild()
+    except Exception:  # noqa: BLE001
+        pass
