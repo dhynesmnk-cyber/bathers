@@ -516,12 +516,17 @@ def api_update_blog_post(slug: str, body: BlogPatchBody):
 
 
 @app.delete("/api/blog/{slug}")
-def api_delete_blog_draft(slug: str):
+def api_delete_blog_post(slug: str, background_tasks: BackgroundTasks):
+    """Permanently delete a blog post (draft or published). Deleting a published
+    post removes it from the live site, so that deletion rides an auto-deploy."""
     try:
-        blog.delete_draft(slug)
+        location = blog.delete(slug)
     except FileNotFoundError:
-        raise HTTPException(404, f"no draft '{slug}'")
-    return {"ok": True}
+        raise HTTPException(404, f"no blog post '{slug}'")
+    deploying = location == "published"
+    if deploying:
+        background_tasks.add_task(deploy.run_auto_deploy)
+    return {"ok": True, "deploying": deploying}
 
 
 @app.post("/api/blog/{slug}/publish")
@@ -834,6 +839,21 @@ def api_unpublish_article(slug: str, background_tasks: BackgroundTasks):
         raise HTTPException(404, f"no published article '{slug}'")
     background_tasks.add_task(deploy.run_auto_deploy)
     return {"ok": True, "deploying": True}
+
+
+@app.delete("/api/articles/{slug}")
+def api_delete_article(slug: str, background_tasks: BackgroundTasks):
+    """Permanently delete a staged or published article/essay. Deleting a published
+    one removes it from the live site, so that deletion rides an auto-deploy.
+    Unlike reject/unpublish this keeps no recoverable copy."""
+    try:
+        location = articles.delete(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"no article '{slug}'")
+    deploying = location == "published"
+    if deploying:
+        background_tasks.add_task(deploy.run_auto_deploy)
+    return {"ok": True, "deploying": deploying}
 
 
 @app.get("/api/blog/{slug}/images/{index}/file")

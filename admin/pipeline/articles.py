@@ -245,6 +245,34 @@ def reject(slug: str, reason: str) -> None:
     _report_path(slug).unlink(missing_ok=True)
 
 
+def delete(slug: str) -> str:
+    """Permanently delete a staged or published article/essay (2026-08-02).
+    Staged: remove the MDX and its fact-check report from _article_staging.
+    Published: remove the MDX from the blog collection (the deletion rides the next
+    deploy off the live site) and its committed fact-check record; for a comparison
+    article, refresh articles-meta so the intent returns to the opportunity list.
+    Unlike unpublish this is NOT recoverable. Returns the location deleted from
+    ('staging' | 'published')."""
+    staging_path = ARTICLE_STAGING_DIR / f"{slug}.mdx"
+    if staging_path.exists():
+        staging_path.unlink()
+        _report_path(slug).unlink(missing_ok=True)
+        return "staging"
+    published_path = BLOG_PUBLISHED_DIR / f"{slug}.mdx"
+    if published_path.exists():
+        fm, _ = _split_frontmatter(published_path.read_text(encoding="utf-8"))
+        published_path.unlink()
+        (FACTCHECKS_DIR / f"{slug}.json").unlink(missing_ok=True)
+        if fm.get("query_key"):
+            # A comparison article's intent should reappear as an opportunity.
+            try:
+                article_store.rebuild()
+            except Exception:  # noqa: BLE001 — meta refresh is best-effort
+                pass
+        return "published"
+    raise FileNotFoundError(slug)
+
+
 def unpublish(slug: str) -> None:
     """Take a published comparison article off the live site, recoverably
     (2026-08-01 admin-UX change). The MDX moves back to _article_staging and its

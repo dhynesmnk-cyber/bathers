@@ -177,18 +177,39 @@ def update(slug: str, patch: dict[str, Any]) -> tuple[BlogEntry, Location]:
     return _entry_from_path(path), location
 
 
-def delete_draft(slug: str) -> None:
-    """Drafts only — deleting an already-published post isn't offered (not
-    asked for; publishing is meant to be a considered, deliberate action)."""
-    path = BLOG_STAGING_DIR / f"{slug}.mdx"
-    if not path.exists():
-        raise FileNotFoundError(slug)
-    path.unlink()
+def _delete_draft_files(slug: str) -> None:
+    """Remove a draft's staging MDX and its gitignored temp image directory."""
+    (BLOG_STAGING_DIR / f"{slug}.mdx").unlink()
     image_dir = draft_image_dir(slug)
     if image_dir.exists():
         for f in image_dir.iterdir():
             f.unlink()
         image_dir.rmdir()
+
+
+def delete_draft(slug: str) -> None:
+    """Delete a draft (staging only). Kept for callers that specifically mean a
+    draft; delete() handles a post in either location."""
+    if not (BLOG_STAGING_DIR / f"{slug}.mdx").exists():
+        raise FileNotFoundError(slug)
+    _delete_draft_files(slug)
+
+
+def delete(slug: str) -> Location:
+    """Permanently delete a post from wherever it lives (2026-08-02). A draft's
+    staging MDX (and its temp images) are removed; a published post's committed
+    MDX is removed so the deletion rides the next deploy off the live site (its
+    public /blog-images/ files are left in place, harmless, mirroring unpublish).
+    Unlike unpublish this is NOT recoverable — the file is gone. Returns the
+    location deleted from so the caller can decide whether to deploy."""
+    location = _location(slug)
+    if location is None:
+        raise FileNotFoundError(slug)
+    if location == "draft":
+        _delete_draft_files(slug)
+    else:
+        (BLOG_PUBLISHED_DIR / f"{slug}.mdx").unlink()
+    return location
 
 
 # ---- Draft images (temp, gitignored — mirrors pipeline.images candidates) ----

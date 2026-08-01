@@ -115,6 +115,7 @@ async function loadPublished() {
     addBtn(actions, "Re-verify", "btn-plain btn-xs", () => reverifyPublished(a.slug));
     if (a.stale) addBtn(actions, "Re-baseline", "btn-thermal btn-xs", () => rebaseline(a.query_key, a.title));
     addBtn(actions, "Unpublish", "btn-oxide btn-xs", () => unpublishArticle(a.slug, a.title));
+    addBtn(actions, "Delete", "btn-oxide btn-xs", () => deletePublishedArticle(a.slug, a.title));
     ul.appendChild(li);
   }
   $("demand-seam").textContent = data.demand_feed
@@ -153,6 +154,19 @@ async function unpublishArticle(slug, title) {
   await loadList();
   await loadOpportunities();
   markDeploying();
+}
+
+async function deletePublishedArticle(slug, title) {
+  if (!confirm(`Permanently delete "${title || slug}"? This removes it from the repo and the live site, and cannot be undone. (Use Unpublish instead to keep a copy.)`)) return;
+  status("deleting…");
+  const res = await fetch(`/api/articles/${encodeURIComponent(slug)}`, { method: "DELETE" });
+  if (!res.ok) { status("delete failed — check the log"); return; }
+  const body = await res.json().catch(() => ({}));
+  status("deleted — updating the live site");
+  await loadPublished();
+  await loadList();
+  await loadOpportunities();
+  if (body.deploying) markDeploying();
 }
 
 // ---- Staged articles (in review) ----
@@ -364,6 +378,21 @@ $("reject-btn").addEventListener("click", async () => {
   } else {
     status("reject failed");
   }
+});
+
+$("delete-btn").addEventListener("click", async () => {
+  if (!currentSlug) return;
+  const label = $("field-title").value || currentSlug;
+  if (!confirm(`Permanently delete "${label}"? This removes the draft and its report, and cannot be undone. (Reject keeps a copy in _article_rejected.)`)) return;
+  const res = await fetch(`/api/articles/${encodeURIComponent(currentSlug)}`, { method: "DELETE" });
+  if (!res.ok) { status("delete failed"); return; }
+  const body = await res.json().catch(() => ({}));
+  currentSlug = null;
+  showReview("empty");
+  status("deleted");
+  await loadList();
+  await loadOpportunities();
+  if (body.deploying) markDeploying();
 });
 
 loadOpportunities();

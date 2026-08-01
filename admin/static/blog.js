@@ -188,7 +188,7 @@
     statusChip.className = "status-chip status-" + entry.status;
     statusChip.textContent = entry.status;
     publishBtn.hidden = entry.status === "published";
-    deleteBtn.hidden = entry.status === "published";
+    deleteBtn.hidden = false; // permanent delete is offered in either state
     unpublishBtn.hidden = entry.status !== "published";
     saveStatusEl.textContent = "";
   }
@@ -286,12 +286,27 @@
 
   deleteBtn.addEventListener("click", async () => {
     if (!selectedSlug) return;
+    const post = posts.find((p) => p.slug === selectedSlug);
+    const title = (post && post.title) || selectedSlug;
+    const isPublished = currentStatus === "published";
+    let msg = isPublished
+      ? `Permanently delete "${title}"? This removes it from the repo and the live site, and cannot be undone. (Use Unpublish instead to keep a copy.)`
+      : `Permanently delete draft "${title}"? This cannot be undone.`;
+    if (post && post.is_protected) {
+      msg += "\n\nThis post is linked from the site footer/nav — deleting it will leave a dead link there.";
+    }
+    if (!confirm(msg)) return;
     const res = await fetch(`/api/blog/${encodeURIComponent(selectedSlug)}`, { method: "DELETE" });
-    if (!res.ok) return;
+    if (!res.ok) {
+      saveStatusEl.textContent = "Couldn't delete — check the log.";
+      return;
+    }
+    const body = await res.json().catch(() => ({}));
     selectedSlug = null;
     editorContent.hidden = true;
     editorEmpty.hidden = false;
     await fetchList();
+    if (body.deploying) markDeploying();
   });
 
   // ---- Deploy status chip (one-click go-live feedback) ----
