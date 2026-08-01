@@ -161,10 +161,12 @@ def _entry_detail(entry: staging.StagingEntry) -> dict[str, Any]:
     }
 
 
-def _static_version() -> int:
-    """Cache-buster for /static includes — stale browser-cached admin.js
-    running against a newer template silently breaks the editor."""
-    return max(int((BASE_DIR / "static" / name).stat().st_mtime) for name in ("admin.js", "admin.css"))
+def _static_version(*names: str) -> int:
+    """Cache-buster for /static includes — a stale browser-cached script running
+    against a newer template silently breaks the screen. Defaults to the shared
+    admin bundle; pass a screen's own assets to bust those too."""
+    names = names or ("admin.js", "admin.css")
+    return max(int((BASE_DIR / "static" / name).stat().st_mtime) for name in names)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -195,7 +197,11 @@ def claims_page(request: Request):
 
 @app.get("/articles", response_class=HTMLResponse)
 def articles_page(request: Request):
-    return templates.TemplateResponse(request, "articles.html", {})
+    return templates.TemplateResponse(
+        request,
+        "articles.html",
+        {"static_version": _static_version("articles.js", "articles.css", "admin.css")},
+    )
 
 
 @app.get("/preview/{slug}", response_class=HTMLResponse)
