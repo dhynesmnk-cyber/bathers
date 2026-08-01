@@ -27,7 +27,7 @@ from admin.config import (
     FACTCHECKS_DIR,
 )
 from admin.pipeline import article_store
-from admin.pipeline.article_factcheck import report_status
+from admin.pipeline.article_factcheck import deterministic_findings, register_findings, report_status
 from admin.pipeline.validate_articles import find_hardcoded_numbers, register_issues
 
 _FIELD_ORDER = ("title", "dateline", "summary", "author", "query_key", "reviewed_at")
@@ -118,10 +118,10 @@ def get_staging(slug: str) -> ArticleEntry:
 
 
 def update_staging(slug: str, patch: dict[str, Any]) -> ArticleEntry:
-    """Edit a staged article (frontmatter fields and/or body) before approval —
-    e.g. after a human resolves a flagged claim. A body edit re-runs the
-    deterministic hardcoded-number scan into the report so the block clears only
-    when the prose is actually clean; the LLM claim rows are preserved."""
+    """Edit a staged article or essay (frontmatter fields and/or body) before
+    approval — e.g. after a human resolves a flagged claim. A body edit re-runs the
+    deterministic layer into the report so the block clears only when the prose is
+    actually clean; the LLM claim rows are preserved."""
     path = ARTICLE_STAGING_DIR / f"{slug}.mdx"
     if not path.exists():
         raise FileNotFoundError(slug)
@@ -130,21 +130,20 @@ def update_staging(slug: str, patch: dict[str, Any]) -> ArticleEntry:
         body = patch.pop("body")
     fm.update(patch)
     path.write_text(_render_mdx(fm, body), encoding="utf-8")
-    _resync_report(slug, body)
+    _resync_report(slug, body, is_essay=not fm.get("query_key"))
     return _entry(path)
 
 
-def _resync_report(slug: str, body: str) -> None:
-    """Recompute the deterministic layer of the report against the current body
-    (an edit may have removed a hardcoded figure). LLM findings are kept."""
+def _resync_report(slug: str, body: str, is_essay: bool = False) -> None:
+    """Recompute the deterministic layer of the report against the current body (an
+    edit may have removed a hardcoded figure, or fixed a register/visit tell). LLM
+    findings are kept. Essays use the register/visit layer; comparison articles use
+    the hardcoded-figure layer — the same split as generation."""
     report = _read_report(slug)
     if report is None:
         return
     kept = [c for c in report.get("claims", []) if c.get("source") != "deterministic"]
-    kept += [
-        {"claim": hit, "verdict": "unsupported", "note": "hardcoded figure in prose — must be a data component/token", "source": "deterministic"}
-        for hit in find_hardcoded_numbers(body)
-    ]
+    kept += register_findings(body) if is_essay else deterministic_findings(body)
     status, unsupported = report_status(kept)
     report["claims"] = kept
     report["status"] = status
@@ -164,8 +163,13 @@ def _validate_for_publish(entry: ArticleEntry) -> list[str]:
         errors.append(f"summary is {len(str(summary))} chars (max 160)")
     query_key = fm.get("query_key")
     if not query_key:
-        errors.append("query_key is required (this is a comparison article)")
-    elif query_key not in article_store.read_meta():
+        # Essay: no live comparison, so no query_key or data-token discipline. The
+        # house register (no em dashes / banned constructions / first-person visit)
+        # still applies to every published word.
+        for issue in register_issues(entry.body):
+            errors.append(f"register — {issue}")
+        return errors
+    if query_key not in article_store.read_meta():
         errors.append(f"query_key '{query_key}' is not eligible (unknown or below the 5-venue threshold)")
     if find_hardcoded_numbers(entry.body):
         errors.append("body contains a hardcoded figure — every figure must be a data component")
@@ -174,13 +178,16 @@ def _validate_for_publish(entry: ArticleEntry) -> list[str]:
     return errors
 
 
-def approve(slug: str) -> str:
-    """Publish a staged article. Refuses if the fact-check report is missing or
-    blocked, or if the frontmatter/body fails validation. On success: moves the
-    MDX to _published, writes the report to the committed factchecks record, and
-    re-baselines the comparison (records this review as the fresh baseline, so it
-    is not immediately flagged stale). Returns the netlify 301 line to add for
-    the superseded /compare/ page."""
+def approve(slug: str) -> str | None:
+    """Publish a staged article or essay. Refuses if the report is missing or
+    blocked, or if the frontmatter/body fails validation. On success the MDX moves
+    into the blog _published collection and staging is cleared.
+
+    A comparison article (has query_key) also writes its report to the committed
+    factchecks record and re-baselines the comparison (records this review as the
+    fresh baseline, so it isn't immediately flagged stale), and returns the netlify
+    301 line for the superseded /compare/ page. An essay (no query_key) is a plain
+    blog post: no committed report, no 301, no re-baseline — returns None."""
     entry = get_staging(slug)
     report = entry.report
     if report is None:
@@ -193,18 +200,23 @@ def approve(slug: str) -> str:
     if errors:
         raise ValidationFailed(errors)
 
-    query_key = entry.frontmatter["query_key"]
     BLOG_PUBLISHED_DIR.mkdir(parents=True, exist_ok=True)
-    FACTCHECKS_DIR.mkdir(parents=True, exist_ok=True)
     (BLOG_PUBLISHED_DIR / f"{slug}.mdx").write_text(
         _render_mdx(entry.frontmatter, entry.body), encoding="utf-8"
-    )
-    FACTCHECKS_DIR.joinpath(f"{slug}.json").write_text(
-        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     (ARTICLE_STAGING_DIR / f"{slug}.mdx").unlink()
     _report_path(slug).unlink(missing_ok=True)
 
+    query_key = entry.frontmatter.get("query_key")
+    if not query_key:
+        # Essay: a plain blog post. The build validators (validate_articles) only
+        # audit posts carrying a query_key, so nothing further is needed to publish.
+        return None
+
+    FACTCHECKS_DIR.mkdir(parents=True, exist_ok=True)
+    FACTCHECKS_DIR.joinpath(f"{slug}.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     # Publishing after a fresh fact-check is a review — baseline the comparison so
     # it isn't reported stale against its own just-approved state.
     try:

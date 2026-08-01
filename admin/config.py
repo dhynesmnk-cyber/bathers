@@ -132,6 +132,14 @@ MODEL_FACTCHECK = _ENV.get("MODEL_FACTCHECK", MODEL_ARCHITECT)
 # Defaults to MODEL_ARTICLE (the working prose model) so an .env overriding only
 # the article model still gets a valid id; override in .env to run it cheaper.
 MODEL_BRIEF = _ENV.get("MODEL_BRIEF", MODEL_ARTICLE)
+# Free-form essay (2026-08-01). MODEL_ESSAY drafts a voiced blog essay in the
+# house style (no data table, no query_key); MODEL_ESSAY_CHECK is a *separate*
+# integrity role that flags first-person visit claims, invented venue facts and
+# named cultural references for the human — the "rarely named" guardrail. Default
+# to the article/factcheck models so an .env overriding only those still gets
+# valid ids here; override independently in .env when a different model is wanted.
+MODEL_ESSAY = _ENV.get("MODEL_ESSAY", MODEL_ARTICLE)
+MODEL_ESSAY_CHECK = _ENV.get("MODEL_ESSAY_CHECK", MODEL_FACTCHECK)
 ADMIN_PORT = int(_ENV.get("ADMIN_PORT", "8787"))
 ADMIN_USERNAME = _ENV.get("ADMIN_USERNAME", "")
 ADMIN_PASSWORD = _ENV.get("ADMIN_PASSWORD", "")

@@ -69,22 +69,13 @@ range, which the table lays out.`
    venue's own record says, and prefer a `<Figure>` even then. Superlatives and
    the winner come only from `<Superlative>` / `<ExtractiveAnswer>`.
 
-## Register
+## Voice
 
-Write like a friend who's done the homework and is telling you what to expect
-before you go. Warm, plain, genuinely useful. Contractions where they read
-naturally. Vary sentence length. Read every sentence as if said aloud. 350 words
-of true is worth more than 700 of padding.
-
-## Banned
-
-Marketing/spa vocabulary: sanctuary, oasis, haven, retreat, nestled, tranquil,
-serene(ity), rejuvenate, revitalise, indulge(nt), pamper, luxurious, luxury,
-bliss(ful), escape the everyday, unwind, wellness journey, self-care, curated,
-bespoke, elevated, immersive, holistic, soothe the soul, awaken the senses.
-Also: em dashes (—) anywhere; "not X but Y" / "X rather than Y" contrast
-constructions; exclamation marks; "treat yourself" imperatives; rhetorical
-questions. Australian English throughout (-ise, -our, metric units).
+Tone, rhythm, the artistic subtext, the banned vocabulary and the Australian-English
+rules are in the HOUSE VOICE section appended below — it governs how every sentence
+sounds, and it is binding. One thing specific to a comparison piece: keep the
+atmosphere to a light touch, a single thread carried under the usefulness. The table
+is the point; let the subtext breathe in a line or two, never a paragraph.
 
 ## Output
 

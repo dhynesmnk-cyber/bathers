@@ -37,6 +37,8 @@ from admin.config import (
     FAILED_DIR,
     MODEL_ARTICLE,
     MODEL_BRIEF,
+    MODEL_ESSAY,
+    MODEL_ESSAY_CHECK,
     MODEL_FACTCHECK,
     VENUES_JSON_PATH,
 )
@@ -50,6 +52,11 @@ _RECORD_FIELDS = (
     "amenities", "facilities", "hours", "cost", "dress_code", "session_gender",
     "session_gender_note", "silence_policy", "phone_policy", "minimum_age",
 )
+
+# The lighter roster an essay is grounded on: the only real venues it may name, and
+# the only facts about them it may state. Deliberately narrow — an essay is prose,
+# not a data table, so it gets identity + location + kind, nothing to recite.
+_ROSTER_FIELDS = ("name", "suburb", "state", "category")
 
 _FENCE_RE = re.compile(r"^```[a-zA-Z]*\n(.*)\n```$", re.DOTALL)
 
@@ -152,11 +159,28 @@ def _resolved_records(order: list[str]) -> list[dict[str, Any]]:
     return records
 
 
+def _venue_roster() -> list[dict[str, Any]]:
+    """Every published venue trimmed to _ROSTER_FIELDS — the only real venues an
+    essay may name, and the only facts about them it may state. Read straight from
+    the committed venues.json (no scrape, no comparison selection)."""
+    venues = json.loads(VENUES_JSON_PATH.read_text(encoding="utf-8"))
+    return [{k: v[k] for k in _ROSTER_FIELDS if k in v} for v in venues]
+
+
 def _save_failed(stage: str, slug: str, raw_text: str, log) -> None:
     FAILED_DIR.mkdir(parents=True, exist_ok=True)
     path = FAILED_DIR / f"article-{stage}-{slug}.txt"
     path.write_text(raw_text, encoding="utf-8")
     log(f"saved raw {stage} output to {path.relative_to(FAILED_DIR.parent.parent)}", "warn")
+
+
+def _draft_system(prompt_file: str) -> str:
+    """Compose a drafter's structural prompt with the shared HOUSE VOICE spec, so
+    tone, the artistic subtext, the banned vocabulary and the Australian-English
+    rules live in one file (PROMPTS/house_voice.md) across every article and essay
+    drafter. Checkers (factcheck.md, essay_check.md) and the internal brief are not
+    composed with it — they classify or plan, they don't write published prose."""
+    return agents.load_prompt(prompt_file) + "\n\n" + agents.load_prompt("house_voice.md")
 
 
 def run(query_key: str, slug: str, author: str | None = None) -> Iterator[LogLine]:
@@ -226,7 +250,7 @@ def run(query_key: str, slug: str, author: str | None = None) -> Iterator[LogLin
     )
     try:
         (fm, body), usage = agents.call_agent(
-            MODEL_ARTICLE, agents.load_prompt("article_draft.md"), draft_user, 3000, _validate_draft, log
+            MODEL_ARTICLE, _draft_system("article_draft.md"), draft_user, 3000, _validate_draft, log
         )
     except agents.MalformedOutput as exc:
         _save_failed("draft", slug, exc.raw_text, log)
@@ -413,6 +437,152 @@ def write(query_key: str, author: str | None = None) -> Iterator[LogLine]:
 
     # run()'s own slug-exists and validation guards still apply from here.
     yield from run(query_key, slug, author)
+
+
+def _validate_essay_draft(text: str) -> tuple[dict[str, Any], str]:
+    """Essay draft validation: like _validate_draft but without the data-component
+    discipline (an essay binds no live figures, so general prose numbers such as
+    "a 40-degree bath" are legitimate). Still enforces frontmatter, at least one
+    section heading (GEO structure), and the house register."""
+    text = _strip_code_fence(text)
+    data, body = _split_frontmatter(text)
+    body = _clean_register(body)
+    if not data.get("title"):
+        raise ValueError("frontmatter has no title")
+    summary = data.get("summary")
+    if not summary:
+        raise ValueError("frontmatter has no summary")
+    if len(str(summary)) > 160:
+        raise ValueError(f"summary is {len(str(summary))} chars (max 160)")
+    if not body.strip():
+        raise ValueError("body is empty")
+    if "## " not in body:
+        raise ValueError("essay needs at least one '##' section heading")
+    if "query_key" in data:
+        raise ValueError("an essay must not set query_key (that is a comparison article)")
+    reg = register_issues(body)
+    if reg:
+        raise ValueError("house-register violations — fix these: " + "; ".join(reg[:3]))
+    return data, body
+
+
+def essay(topic: str, author: str | None = None) -> Iterator[LogLine]:
+    """Free-form essay flow (2026-08-01): draft a voiced blog essay on a typed
+    topic in the house style, then run a *separate* integrity check that flags
+    first-person visit claims, invented venue facts and named cultural references
+    for the human. No query_key and no live table — the piece stages beside the
+    comparison drafts and publishes into the blog collection as a plain essay. The
+    human publish gate (reading the report, then Approve & publish) is unchanged."""
+    lines: list[LogLine] = []
+
+    def log(text: str, level: str = "info") -> None:
+        lines.append(LogLine(_now(), level, text))
+
+    def drain() -> Iterator[LogLine]:
+        nonlocal lines
+        out, lines = lines, []
+        yield from out
+
+    topic = topic.strip()
+    if not topic:
+        log("no topic given for the essay", "error")
+        yield from drain()
+        return
+    log(f"essay on '{topic}'")
+    yield from drain()
+
+    try:
+        roster = _venue_roster()
+    except FileNotFoundError:
+        log("venues.json missing — rebuild the data store first", "error")
+        yield from drain()
+        return
+    log(f"grounding on {len(roster)} published venues (name/suburb/state/category only)")
+    yield from drain()
+    roster_pack = json.dumps({"topic": topic, "venues": roster}, ensure_ascii=False, indent=2)
+
+    # 1. Draft.
+    log(f"drafting with {MODEL_ESSAY}")
+    yield from drain()
+    draft_user = (
+        f"Write the essay on this topic: {topic}\n\n"
+        "You may name only the venues in this roster, and only the plain facts given. "
+        "Do not invent venues or figures.\n\n"
+        f"{roster_pack}"
+    )
+    try:
+        (fm, body), usage = agents.call_agent(
+            MODEL_ESSAY, _draft_system("essay_draft.md"), draft_user, 2500, _validate_essay_draft, log
+        )
+    except agents.MalformedOutput as exc:
+        _save_failed("essay-draft", _slugify(topic), exc.raw_text, log)
+        log("essay draft failed validation after retry — stopping", "error")
+        yield from drain()
+        return
+    except agents.AgentError as exc:
+        log(f"essay draft call failed — {exc}", "error")
+        yield from drain()
+        return
+    slug = _slugify(fm["title"])
+    log(f"drafted '{fm['title']}' -> {slug} ({usage.input_tokens} in / {usage.output_tokens} out tokens)")
+    yield from drain()
+
+    # 2. Integrity check (a distinct role — visit claims, invented facts, named refs).
+    log(f"integrity check with {MODEL_ESSAY_CHECK}")
+    yield from drain()
+    check_user = (
+        "Audit this essay body. Return the JSON claim table only.\n\n"
+        f"--- ESSAY BODY ---\n{body}\n\n"
+        f"--- VENUE ROSTER (the only real venues + facts) ---\n{roster_pack}"
+    )
+    try:
+        llm_claims, fc_usage = agents.call_agent(
+            MODEL_ESSAY_CHECK, agents.load_prompt("essay_check.md"), check_user, 2000, _validate_factcheck, log
+        )
+    except agents.MalformedOutput as exc:
+        _save_failed("essay-check", slug, exc.raw_text, log)
+        log("integrity check failed validation after retry — stopping", "error")
+        yield from drain()
+        return
+    except agents.AgentError as exc:
+        log(f"integrity check call failed — {exc}", "error")
+        yield from drain()
+        return
+
+    report = article_factcheck.build_report(
+        slug, None, MODEL_ESSAY_CHECK, llm_claims, body,
+        deterministic=article_factcheck.register_findings,
+    )
+    # The essay_check prompt notes a real reference with the exact prefix "named
+    # cultural reference — …"; match the prefix so a note that *denies* one ("no
+    # named cultural reference to surface") isn't miscounted.
+    named = sum(1 for c in report["claims"] if c.get("note", "").lower().lstrip().startswith("named cultural reference"))
+    log(
+        f"integrity: {len(report['claims'])} claim(s), {report['unsupported_count']} to resolve"
+        + (f", {named} named reference(s) to verify" if named else "")
+        + f" ({fc_usage.input_tokens} in / {fc_usage.output_tokens} out tokens)"
+    )
+    yield from drain()
+
+    # 3. Stamp deterministic frontmatter (no query_key, no reviewed_at) + write.
+    fm["dateline"] = datetime.date.today()
+    if author:
+        fm["author"] = author
+    ARTICLE_STAGING_DIR.mkdir(parents=True, exist_ok=True)
+    (ARTICLE_STAGING_DIR / f"{slug}.mdx").write_text(_render_mdx(fm, body), encoding="utf-8")
+    (ARTICLE_STAGING_DIR / f"{slug}.factcheck.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+
+    if report["status"] == "blocked":
+        log(
+            f"staged essay '{slug}' but BLOCKED for review: {report['unsupported_count']} claim(s) "
+            "must be resolved before it can be approved",
+            "error",
+        )
+    else:
+        log(f"staged essay '{slug}' — integrity clean, ready for review")
+    yield from drain()
 
 
 def factcheck_existing(slug: str) -> Iterator[LogLine]:

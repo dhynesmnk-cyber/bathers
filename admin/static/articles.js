@@ -70,6 +70,27 @@ async function writeArticle(query_key, title) {
   }
 }
 
+// ---- Write: free-form essay (no data table) ----
+async function writeEssay() {
+  if (jobRunning) { status("a job is already running — one at a time"); return; }
+  const topic = $("essay-topic").value.trim();
+  if (!topic) { status("type an essay topic first"); return; }
+  const author = $("essay-author").value.trim() || undefined;
+  if (!confirm(`Write an essay about "${topic}"? This drafts and integrity-checks it (uses AI).`)) return;
+  jobRunning = true;
+  status(`writing essay "${topic}"…`);
+  try {
+    await streamJob("/api/articles/write-essay", $("gen-log"), { topic, author });
+    $("essay-topic").value = "";
+    await loadList();
+    const list = await (await fetch("/api/articles")).json();
+    if (list.length) await selectArticle(list[0].slug).catch(() => {});
+    status("draft ready — review the integrity check, then publish");
+  } finally {
+    jobRunning = false;
+  }
+}
+
 // ---- Published articles (staleness + unpublish) ----
 async function loadPublished() {
   const data = await (await fetch("/api/articles/published")).json();
@@ -162,9 +183,15 @@ async function selectArticle(slug) {
   const a = await res.json();
   currentSlug = slug;
   $("redirect-box").hidden = true;
+  const isEssay = !a.frontmatter.query_key;
   $("field-title").value = a.frontmatter.title || "";
   $("field-summary").value = a.frontmatter.summary || "";
   $("field-query").textContent = a.frontmatter.query_key || "?";
+  $("query-line").hidden = isEssay;
+  $("check-heading").textContent = isEssay ? "INTEGRITY CHECK" : "FACT-CHECK";
+  $("body-help").textContent = isEssay
+    ? "Edit to resolve a flagged claim, then re-check. Keep the house voice: no first-person visits, no invented venue facts, and verify any named reference."
+    : "Edit to resolve a flagged claim, then re-fact-check. Every figure must be a data component, never a literal.";
   $("field-body").value = a.body || "";
   updateSummaryCount();
   renderReport(a.report);
@@ -281,6 +308,7 @@ function markDeploying() {
 }
 
 // ---- wiring ----
+$("essay-btn").addEventListener("click", writeEssay);
 $("field-title").addEventListener("input", scheduleSave);
 $("field-summary").addEventListener("input", () => { updateSummaryCount(); scheduleSave(); });
 $("field-body").addEventListener("input", scheduleSave);
@@ -301,8 +329,12 @@ $("approve-btn").addEventListener("click", async () => {
   const res = await fetch(`/api/articles/${currentSlug}/approve`, { method: "POST" });
   if (res.ok) {
     const { redirect } = await res.json();
-    $("redirect-box").hidden = false;
-    $("redirect-text").textContent = redirect;
+    if (redirect) {
+      $("redirect-box").hidden = false;
+      $("redirect-text").textContent = redirect;
+    } else {
+      $("redirect-box").hidden = true; // an essay has no /compare/ 301
+    }
     status("published — going live");
     await loadList();
     await loadPublished();

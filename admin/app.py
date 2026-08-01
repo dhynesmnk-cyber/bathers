@@ -732,6 +732,32 @@ def api_write_article(body: WriteArticleBody):
     return StreamingResponse(stream(), media_type="text/event-stream")
 
 
+class WriteEssayBody(BaseModel):
+    topic: str
+    author: str | None = None
+
+
+@app.post("/api/articles/write-essay")
+def api_write_essay(body: WriteEssayBody):
+    """Free-form essay flow (2026-08-01): draft a voiced blog essay on a typed
+    topic + integrity-check it as one streamed job, landing in review beside the
+    comparison drafts. No query_key and no live table — it publishes into the blog
+    collection as a plain essay. The human publish gate is unchanged; the integrity
+    block (first-person visit claims, invented venue facts) still gates approval."""
+    if not _article_lock.acquire(blocking=False):
+        raise HTTPException(409, "an article job is already running")
+
+    def stream():
+        try:
+            for line in article_pipeline.essay(body.topic, body.author):
+                yield _sse_line({"time": line.time, "level": line.level, "text": line.text})
+        finally:
+            _article_lock.release()
+        yield "event: done\ndata: {}\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
 @app.post("/api/articles/{slug}/factcheck")
 def api_refactcheck_article(slug: str):
     """Re-run the fact-check on an already-published article (Stage 8
