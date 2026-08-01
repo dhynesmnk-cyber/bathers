@@ -1,7 +1,8 @@
-// Comparison-article review screen (Editorial Gates E2 + E4a). Vanilla JS, no
-// framework (TRD.md §2). Mirrors admin.js's fetch-stream SSE consumption and
-// debounced autosave. E4a adds the opportunity queue and the brief gate:
-// draft only after a human has approved a brief for the intent.
+// Comparison-article screen (Editorial Gates E2 + E4, simplified 2026-08-01).
+// Vanilla JS, no framework (TRD.md §2). The funnel is collapsed to one action:
+// "Write an article" runs brief -> auto-approve -> draft -> fact-check in one
+// streamed job, landing the draft in review. The human publish gate (reading the
+// fact-check, then Approve & publish) is unchanged; publishing auto-deploys.
 "use strict";
 
 const $ = (id) => document.getElementById(id);
@@ -9,159 +10,67 @@ const status = (msg) => { $("action-status").textContent = msg || ""; };
 
 let currentSlug = null;
 let saveTimer = null;
+let jobRunning = false;
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 }
 
-// Right pane has three mutually-exclusive modes.
+// Right pane has two mutually-exclusive modes.
 function showReview(mode) {
   $("review-empty").hidden = mode !== "empty";
-  $("brief-review").hidden = mode !== "brief";
   $("review-content").hidden = mode !== "article";
-}
-
-// ---- Opportunity queue (E4a) ----
-const OPP_CHIP = {
-  candidate: "chip-ok", suppressed: "chip-warn", pinned: "chip-pin",
-  dismissed: "chip-muted", written: "chip-muted",
-};
-
-async function loadOpportunities() {
-  const items = await (await fetch("/api/articles/opportunities")).json();
-  const ul = $("opp-list");
-  ul.innerHTML = "";
-  $("opp-empty").hidden = items.length > 0;
-  for (const o of items) {
-    const li = document.createElement("li");
-    li.className = "queue-item opp-item";
-    const chipCls = OPP_CHIP[o.status] || "chip-muted";
-    const briefChip = o.brief ? ` · brief <span class="mono chip-${o.brief.status === "approved" ? "ok" : o.brief.status === "killed" ? "muted" : "pending"}">${o.brief.status}</span>` : "";
-    li.innerHTML = `
-      <div class="opp-head">
-        <span class="queue-title">${escapeHtml(o.title || o.query_key)}</span>
-        <span class="mono ${chipCls}">${o.status}</span>
-      </div>
-      <div class="mono opp-meta">${o.populated}/${o.total} figures${briefChip}${o.reason ? ` · ${escapeHtml(o.reason)}` : ""}</div>
-      <div class="opp-actions"></div>`;
-    const actions = li.querySelector(".opp-actions");
-    if (o.status !== "written") {
-      addBtn(actions, "Brief", "btn-plain", () => generateBrief(o.query_key));
-      if (o.disposition === "pinned") addBtn(actions, "Unpin", "btn-plain", () => setDisposition(o.query_key, "clear"));
-      else if (o.disposition === "dismissed") addBtn(actions, "Restore", "btn-plain", () => setDisposition(o.query_key, "clear"));
-      else {
-        addBtn(actions, "Pin", "btn-plain", () => setDisposition(o.query_key, "pinned"));
-        addBtn(actions, "Dismiss", "btn-plain", () => setDisposition(o.query_key, "dismissed"));
-      }
-    }
-    ul.appendChild(li);
-  }
-  populateGenerateSelect(items);
 }
 
 function addBtn(parent, label, cls, onClick) {
   const b = document.createElement("button");
-  b.className = `btn ${cls} btn-xs`;
+  b.className = `btn ${cls}`;
   b.textContent = label;
   b.addEventListener("click", onClick);
   parent.appendChild(b);
 }
 
-function populateGenerateSelect(items) {
-  const sel = $("gen-query-key");
-  const draftable = items.filter((o) => o.draftable);
-  sel.innerHTML = "";
-  if (draftable.length === 0) {
-    sel.innerHTML = '<option value="">No approved briefs — brief and approve one first</option>';
-    return;
-  }
-  for (const o of draftable) {
-    const opt = document.createElement("option");
-    opt.value = o.query_key;
-    opt.textContent = `${o.title} (${o.venue_count})`;
-    sel.appendChild(opt);
-  }
-  suggestSlug();
-}
-
-function suggestSlug() {
-  const key = $("gen-query-key").value;
-  if (key && !$("gen-slug").value) $("gen-slug").value = `${key}-in-australia`;
-}
-
-async function setDisposition(query_key, disposition, reason) {
-  await fetch(`/api/articles/opportunities/${encodeURIComponent(query_key)}/disposition`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ disposition, reason: reason || null }),
-  });
-  await loadOpportunities();
-}
-
-async function generateBrief(query_key) {
-  status(`briefing ${query_key}…`);
-  await streamJob("/api/articles/brief/generate", $("gen-log"), { query_key });
-  await loadOpportunities();
-  await loadBriefs();
-  status("brief ready — review it before approving");
-}
-
-// ---- Briefs (the gate) ----
-async function loadBriefs() {
-  const briefs = await (await fetch("/api/articles/briefs")).json();
-  const ul = $("brief-list");
+// ---- Write: topics to write about ----
+async function loadOpportunities() {
+  const items = await (await fetch("/api/articles/opportunities")).json();
+  const ul = $("opp-list");
   ul.innerHTML = "";
-  $("brief-empty").hidden = briefs.length > 0;
-  for (const b of briefs) {
+  const writable = items.filter((o) => o.status !== "written");
+  $("opp-empty").hidden = writable.length > 0;
+  for (const o of writable) {
     const li = document.createElement("li");
-    li.className = "queue-item";
-    li.setAttribute("role", "option");
-    const cls = b.status === "approved" ? "chip-ok" : b.status === "killed" ? "chip-muted" : "chip-pending";
-    li.innerHTML = `<button class="queue-row" data-brief="${b.id}">
-      <span class="queue-title">${escapeHtml(b.title || b.query_key)}</span>
-      <span class="mono ${cls}">${b.status}</span>
-    </button>`;
-    li.querySelector("button").addEventListener("click", () => selectBrief(b.id));
+    li.className = "queue-item opp-item";
+    li.innerHTML = `
+      <div class="opp-head">
+        <span class="queue-title">${escapeHtml(o.title || o.query_key)}</span>
+      </div>
+      <div class="mono opp-meta">${o.populated}/${o.total} figures${o.venue_count ? ` · ${o.venue_count} venues` : ""}</div>
+      <div class="opp-actions"></div>`;
+    const actions = li.querySelector(".opp-actions");
+    addBtn(actions, "Write article", "btn-thermal btn-xs", () => writeArticle(o.query_key, o.title));
     ul.appendChild(li);
   }
 }
 
-let currentBriefId = null;
-async function selectBrief(id) {
-  const res = await fetch(`/api/articles/briefs/${id}`);
-  if (!res.ok) { status("could not load brief"); return; }
-  const b = await res.json();
-  currentBriefId = id;
-  currentSlug = null;
-  $("brief-meta").textContent = `#${b.id} · ${b.query_key} · ${b.status}${b.model ? ` · ${b.model}` : ""}`;
-  $("brief-md").textContent = b.brief_md || "";
-  const decided = b.status !== "pending";
-  $("brief-approve-btn").disabled = decided && b.status === "approved";
-  $("brief-kill-btn").disabled = decided && b.status === "killed";
-  showReview("brief");
-}
-
-async function decideBrief(newStatus) {
-  if (currentBriefId == null) return;
-  const res = await fetch(`/api/articles/briefs/${currentBriefId}/decide`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status: newStatus }),
-  });
-  if (res.ok) {
-    status(`brief ${newStatus}`);
-    await selectBrief(currentBriefId);
-    await loadBriefs();
+async function writeArticle(query_key, title) {
+  if (jobRunning) { status("a job is already running — one at a time"); return; }
+  const label = title || query_key;
+  if (!confirm(`Write an article about "${label}"? This drafts and fact-checks it (uses AI).`)) return;
+  jobRunning = true;
+  status(`writing "${label}"…`);
+  try {
+    await streamJob("/api/articles/write", $("gen-log"), { query_key });
     await loadOpportunities();
-  } else {
-    status("could not update brief");
+    const list = await (await fetch("/api/articles")).json();
+    await loadList();
+    if (list.length) await selectArticle(list[0].slug).catch(() => {});
+    status("draft ready — review the fact-check, then publish");
+  } finally {
+    jobRunning = false;
   }
 }
 
-$("brief-approve-btn").addEventListener("click", () => decideBrief("approved"));
-$("brief-kill-btn").addEventListener("click", () => decideBrief("killed"));
-
-// ---- Published staleness dashboard (E4c) ----
+// ---- Published articles (staleness + unpublish) ----
 async function loadPublished() {
   const data = await (await fetch("/api/articles/published")).json();
   const ul = $("pub-list");
@@ -182,20 +91,27 @@ async function loadPublished() {
       <div class="mono opp-meta">reviewed ${a.reviewed_at || "?"} · figures ${a.data_updated_at || "?"}${movedStr}${elig}</div>
       <div class="opp-actions"></div>`;
     const actions = li.querySelector(".opp-actions");
-    addBtn(actions, "Re-verify", "btn-plain", () => reverifyPublished(a.slug));
+    addBtn(actions, "Re-verify", "btn-plain btn-xs", () => reverifyPublished(a.slug));
     if (a.stale) addBtn(actions, "Re-baseline", "btn-thermal btn-xs", () => rebaseline(a.query_key, a.title));
+    addBtn(actions, "Unpublish", "btn-oxide btn-xs", () => unpublishArticle(a.slug, a.title));
     ul.appendChild(li);
   }
   $("demand-seam").textContent = data.demand_feed
     ? "Demand feed: wired."
-    : "Demand feed (GSC/analytics): not wired — opportunities come from the comparison registry.";
+    : "Demand feed (GSC/analytics): not wired — topics come from the comparison registry.";
 }
 
 async function reverifyPublished(slug) {
+  if (jobRunning) { status("a job is already running — one at a time"); return; }
+  jobRunning = true;
   status(`re-verifying ${slug}…`);
-  await streamJob(`/api/articles/${slug}/factcheck`, $("gen-log"));
-  await loadPublished();
-  status("re-verified — see the log");
+  try {
+    await streamJob(`/api/articles/${slug}/factcheck`, $("gen-log"));
+    await loadPublished();
+    status("re-verified — see the log");
+  } finally {
+    jobRunning = false;
+  }
 }
 
 async function rebaseline(queryKey, title) {
@@ -206,7 +122,19 @@ async function rebaseline(queryKey, title) {
   await loadPublished();
 }
 
-// ---- Staged articles (E2) ----
+async function unpublishArticle(slug, title) {
+  if (!confirm(`Take "${title || slug}" off the live site? It moves back to review, so you can fix and re-publish it.`)) return;
+  status("unpublishing…");
+  const res = await fetch(`/api/articles/${encodeURIComponent(slug)}/unpublish`, { method: "POST" });
+  if (!res.ok) { status("unpublish failed — check the log"); return; }
+  status("unpublished — moved back to review");
+  await loadPublished();
+  await loadList();
+  await loadOpportunities();
+  markDeploying();
+}
+
+// ---- Staged articles (in review) ----
 async function loadList() {
   const list = await (await fetch("/api/articles")).json();
   const ul = $("art-list");
@@ -233,7 +161,6 @@ async function selectArticle(slug) {
   if (!res.ok) { status("could not load article"); return; }
   const a = await res.json();
   currentSlug = slug;
-  currentBriefId = null;
   $("redirect-box").hidden = true;
   $("field-title").value = a.frontmatter.title || "";
   $("field-summary").value = a.frontmatter.summary || "";
@@ -326,33 +253,47 @@ async function streamJob(url, logEl, body) {
   }
 }
 
-// ---- wiring ----
-$("generate-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const query_key = $("gen-query-key").value;
-  const slug = $("gen-slug").value.trim();
-  if (!query_key || !slug) return;
-  $("gen-btn").disabled = true;
-  status("drafting + fact-checking…");
-  try {
-    await streamJob("/api/articles/generate", $("gen-log"), { query_key, slug, author: $("gen-author").value.trim() || null });
-    await loadList();
-    await selectArticle(slug).catch(() => {});
-    status("done — review the fact-check before approving");
-  } finally {
-    $("gen-btn").disabled = false;
-  }
-});
+// ---- Deploy status chip (one-click go-live feedback) ----
+function renderDeployChip(s) {
+  const chip = $("deploy-chip");
+  if (!chip) return;
+  chip.classList.toggle("blocked", !!s.blocked);
+  if (s.deploying) chip.textContent = "deploying…";
+  else if (s.blocked) chip.textContent = "deploy blocked — check the hub";
+  else if (s.file_count > 0) chip.textContent = `${s.file_count} change(s) pending`;
+  else chip.textContent = `live · last deploy ${s.last_deploy}`;
+}
 
-$("gen-query-key").addEventListener("change", suggestSlug);
+async function refreshDeployStatus() {
+  try {
+    const res = await fetch("/api/deploy/status");
+    if (res.ok) renderDeployChip(await res.json());
+  } catch (_e) {
+    /* transient — the interval retries */
+  }
+}
+
+function markDeploying() {
+  const chip = $("deploy-chip");
+  if (chip) { chip.classList.remove("blocked"); chip.textContent = "deploying…"; }
+  setTimeout(refreshDeployStatus, 8000);
+  setTimeout(refreshDeployStatus, 30000);
+}
+
+// ---- wiring ----
 $("field-title").addEventListener("input", scheduleSave);
 $("field-summary").addEventListener("input", () => { updateSummaryCount(); scheduleSave(); });
 $("field-body").addEventListener("input", scheduleSave);
 
 $("refactcheck-btn").addEventListener("click", async () => {
-  if (!currentSlug) return;
-  await streamJob(`/api/articles/${currentSlug}/factcheck`, $("gen-log"));
-  await selectArticle(currentSlug);
+  if (!currentSlug || jobRunning) return;
+  jobRunning = true;
+  try {
+    await streamJob(`/api/articles/${currentSlug}/factcheck`, $("gen-log"));
+    await selectArticle(currentSlug);
+  } finally {
+    jobRunning = false;
+  }
 });
 
 $("approve-btn").addEventListener("click", async () => {
@@ -362,10 +303,11 @@ $("approve-btn").addEventListener("click", async () => {
     const { redirect } = await res.json();
     $("redirect-box").hidden = false;
     $("redirect-text").textContent = redirect;
-    status("published");
+    status("published — going live");
     await loadList();
     await loadPublished();
     await loadOpportunities();
+    markDeploying();
   } else {
     const err = await res.json().catch(() => ({}));
     const detail = err.detail || {};
@@ -393,6 +335,7 @@ $("reject-btn").addEventListener("click", async () => {
 });
 
 loadOpportunities();
-loadBriefs();
 loadList();
 loadPublished();
+refreshDeployStatus();
+setInterval(refreshDeployStatus, 10000);
