@@ -70,6 +70,50 @@ _VOID_TAG_RE = re.compile(r"<(img|br|hr|input)((?:[^>]*[^/>])?)>", re.IGNORECASE
 def _mdx_safe_html(html: str) -> str:
     return _VOID_TAG_RE.sub(lambda m: f"<{m.group(1)}{m.group(2)} />", html)
 
+
+# Tags MDX/JSX treats as void: must be self-closing (handled by _mdx_safe_html),
+# so a bare/closing one here is a genuine error.
+_VOID_ELEMENTS = frozenset(
+    {"area", "base", "br", "col", "embed", "hr", "img", "input",
+     "link", "meta", "param", "source", "track", "wbr"}
+)
+_TAG_SCAN_RE = re.compile(r"<(/?)([A-Za-z][A-Za-z0-9.]*)([^>]*?)(/?)>")
+_FENCE_RE = re.compile(r"```.*?```", re.DOTALL)
+_INLINE_CODE_RE = re.compile(r"`[^`]*`")
+
+
+def _mdx_body_errors(body: str) -> list[str]:
+    """Cheap structural check that a body won't break the MDX/Astro build.
+
+    MDX parses HTML as JSX: every non-void tag must be explicitly closed and every
+    void tag self-closed, or the build fails ("Expected a closing tag …") — and in
+    the deploy build gate that failure blocks *every* deploy. This catches the
+    Quill-mangled-Markdown class (a stray unclosed <p> wrapped around a Markdown
+    essay) before it can reach _published. Backstop only: the real fix is not
+    feeding Markdown/MDX bodies through the HTML editor. Code spans are ignored."""
+    scan = _INLINE_CODE_RE.sub("", _FENCE_RE.sub("", body))
+    stack: list[str] = []
+    for m in _TAG_SCAN_RE.finditer(scan):
+        closing, name, _attrs, selfclose = m.group(1), m.group(2), m.group(3), m.group(4)
+        if name.lower() in _VOID_ELEMENTS:
+            if closing:
+                return [f"stray closing tag </{name}> on a void element — would break the MDX build"]
+            continue
+        if selfclose:
+            continue
+        if closing:
+            if not stack:
+                return [f"closing tag </{name}> with no matching open tag — would break the MDX build"]
+            opened = stack.pop()
+            if opened != name:
+                return [f"mismatched tags: <{opened}> closed by </{name}> — would break the MDX build"]
+        else:
+            stack.append(name)
+    if stack:
+        return [f"unclosed <{stack[-1]}> tag — every tag must be closed or the MDX build fails"]
+    return []
+
+
 Location = Literal["draft", "published"]
 
 
@@ -172,6 +216,13 @@ def update(slug: str, patch: dict[str, Any]) -> tuple[BlogEntry, Location]:
     data, body = _split_frontmatter(path.read_text(encoding="utf-8"))
     if "body" in patch:
         body = _mdx_safe_html(patch.pop("body"))
+        # A published post writes straight to _published, so a body that would
+        # break the MDX build must never land there (it blocks every deploy).
+        # Drafts stay in staging and are validated at publish instead.
+        if location == "published":
+            errors = _mdx_body_errors(body)
+            if errors:
+                raise ValidationFailed(errors)
     data.update(patch)
     path.write_text(_render_mdx(data, body), encoding="utf-8")
     return _entry_from_path(path), location
@@ -310,6 +361,7 @@ def publish(slug: str) -> None:
         errors.append("summary is required")
     if not data.get("dateline"):
         errors.append("dateline is required")
+    errors += _mdx_body_errors(body)
     if errors:
         raise ValidationFailed(errors)
 

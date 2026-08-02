@@ -32,6 +32,11 @@
   const deleteBtn = el("delete-btn");
   const unpublishBtn = el("unpublish-btn");
   const deployChip = el("deploy-chip");
+  const quillContainer = el("quill-editor");
+  const bodySource = el("body-source");
+  const mdxSourceNote = el("mdx-source-note");
+  let quillToolbar = null; // set after Quill mounts its toolbar
+  let bodyMode = "quill"; // "quill" for HTML posts, "source" for Markdown/MDX essays
 
   const quill = new Quill("#quill-editor", {
     theme: "snow",
@@ -51,9 +56,38 @@
     },
   });
 
+  // Quill inserts its toolbar as the sibling before #quill-editor on mount.
+  quillToolbar = document.querySelector("#editor-content .ql-toolbar");
+
   quill.on("text-change", () => {
-    if (suppressQuillEvent) return;
+    if (suppressQuillEvent || bodyMode !== "quill") return;
     queuePatch("body", quill.root.innerHTML);
+  });
+
+  // Markdown/MDX essays (AI essay pipeline, e.g. `## heading`, <Pull>…) can't
+  // survive Quill's HTML round-trip — it mangles them into broken MDX that fails
+  // the build. Detect them and edit as verbatim source instead of the visual
+  // editor. New/HTML posts (Quill's own output) stay on the visual editor.
+  function isMdxBody(body) {
+    const s = (body || "").trim();
+    if (!s) return false; // new/empty post → author visually
+    if (/^#{1,6}\s/m.test(s)) return true; // Markdown heading
+    if (/<(Pull|Figure|ComparisonTable|Superlative|ExtractiveAnswer|TippedPhoto)\b/.test(s)) return true;
+    // Quill bodies always open with a block-level HTML tag; anything else is prose/Markdown.
+    return !/^<(h[1-6]|p|ul|ol|blockquote|div|figure|img)\b/i.test(s);
+  }
+
+  function setBodyMode(mode) {
+    bodyMode = mode;
+    const source = mode === "source";
+    bodySource.hidden = !source;
+    mdxSourceNote.hidden = !source;
+    quillContainer.hidden = source;
+    if (quillToolbar) quillToolbar.hidden = source;
+  }
+
+  bodySource.addEventListener("input", () => {
+    if (bodyMode === "source") queuePatch("body", bodySource.value);
   });
 
   function fileToBase64(file) {
@@ -175,16 +209,23 @@
     fieldCoverCredit.value = fm.cover_image_credit || "";
     fieldCoverSource.value = fm.cover_image_source || "";
     fieldCoverLicense.value = fm.cover_image_license || "";
-    suppressQuillEvent = true;
-    quill.root.innerHTML = entry.body || "";
-    // Quill detects the innerHTML swap via a MutationObserver and emits
-    // `text-change` on a LATER tick — after this function has returned. Resetting
-    // the flag synchronously here let that spurious event through, so merely
-    // opening a post queued an autosave that re-serialised the body (wrapping
-    // Markdown like `## heading` in <p>…</p> and breaking the build). Defer the
-    // reset to a macrotask so it lands after the observer's event has been
-    // suppressed; genuine edits happen long afterwards and still save normally.
-    setTimeout(() => { suppressQuillEvent = false; }, 0);
+    if (isMdxBody(entry.body)) {
+      // Markdown/MDX essay: edit as verbatim source, never through Quill.
+      bodySource.value = entry.body || "";
+      setBodyMode("source");
+    } else {
+      suppressQuillEvent = true;
+      quill.root.innerHTML = entry.body || "";
+      // Quill detects the innerHTML swap via a MutationObserver and emits
+      // `text-change` on a LATER tick — after this function has returned. Resetting
+      // the flag synchronously here let that spurious event through, so merely
+      // opening a post queued an autosave that re-serialised the body (wrapping
+      // Markdown like `## heading` in <p>…</p> and breaking the build). Defer the
+      // reset to a macrotask so it lands after the observer's event has been
+      // suppressed; genuine edits happen long afterwards and still save normally.
+      setTimeout(() => { suppressQuillEvent = false; }, 0);
+      setBodyMode("quill");
+    }
     statusChip.className = "status-chip status-" + entry.status;
     statusChip.textContent = entry.status;
     publishBtn.hidden = entry.status === "published";
@@ -228,7 +269,14 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ patch }),
     });
-    if (!res.ok) return;
+    if (!res.ok) {
+      // Surface the build-safety backstop (422) instead of dropping the save
+      // silently — the edit stays in the box, so the fix isn't lost.
+      const b = await res.json().catch(() => null);
+      const errors = b && b.detail && b.detail.errors;
+      saveStatusEl.textContent = errors ? `not saved — ${errors.join("; ")}` : "save failed";
+      return;
+    }
     const entry = await res.json();
     const idx = posts.findIndex((p) => p.slug === selectedSlug);
     if (idx !== -1) {

@@ -41,6 +41,26 @@
   min-height: 320px;
 }
 
+/* Source-editing mode for Markdown/MDX essays (never fed through Quill). */
+.body-source {
+  min-height: 320px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  tab-size: 2;
+  resize: vertical;
+}
+
+.field-note {
+  margin: 0 0 0.5rem;
+  color: var(--ink-faded);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.field-note code {
+  background: var(--paper-raised);
+  padding: 0 0.2em;
+}
+
 #cover-image-preview img,
 .image-strip img {
   max-width: 160px;

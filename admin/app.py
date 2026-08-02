@@ -516,6 +516,8 @@ def api_update_blog_post(slug: str, body: BlogPatchBody):
         entry, location = blog.update(slug, body.patch)
     except FileNotFoundError:
         raise HTTPException(404, f"no blog post '{slug}'")
+    except BlogValidationFailed as exc:
+        raise HTTPException(422, detail={"errors": exc.errors})
     return _blog_detail(entry, location)
 
 
