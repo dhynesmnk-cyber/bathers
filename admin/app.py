@@ -775,14 +775,17 @@ def api_write_essay(body: WriteEssayBody):
 
 @app.post("/api/articles/{slug}/factcheck")
 def api_refactcheck_article(slug: str):
-    """Re-run the fact-check on an already-published article (Stage 8
-    re-verification) and rewrite its stored report."""
+    """Re-run the fact-check and rewrite the stored report. Dispatches on where the
+    slug lives: a staged draft (the review-pane Re-fact-check button) rewrites its
+    staging sidecar report so a block can clear; an already-published article (the
+    Published list's Re-verify, Stage 8 re-verification) rewrites its committed
+    factchecks record."""
     if not _article_lock.acquire(blocking=False):
         raise HTTPException(409, "an article job is already running")
 
     def stream():
         try:
-            for line in article_pipeline.factcheck_existing(slug):
+            for line in article_pipeline.refactcheck(slug):
                 yield _sse_line({"time": line.time, "level": line.level, "text": line.text})
         finally:
             _article_lock.release()

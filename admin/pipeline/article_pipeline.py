@@ -645,6 +645,112 @@ def factcheck_existing(slug: str) -> Iterator[LogLine]:
     yield from drain()
 
 
+def refactcheck(slug: str) -> Iterator[LogLine]:
+    """Re-fact-check a slug wherever it lives. A staged draft (the review-pane
+    Re-fact-check button) rewrites its staging sidecar report; a published article
+    (the Published list's Re-verify) rewrites its committed factchecks record.
+    Dispatch is staging-first — approve/unpublish keep a slug out of both at once."""
+    if (ARTICLE_STAGING_DIR / f"{slug}.mdx").exists():
+        yield from factcheck_staged(slug)
+    else:
+        yield from factcheck_existing(slug)
+
+
+def factcheck_staged(slug: str) -> Iterator[LogLine]:
+    """Re-run the fact-check on a *staged* draft and rewrite its staging sidecar
+    report (content-staging/_article_staging/<slug>.factcheck.json) — the record the
+    review screen and the approve gate read. This is how an operator clears a
+    blocked draft after editing: an LLM-flagged unsupported claim only clears on a
+    fresh full check (a body edit alone re-runs the deterministic layer only,
+    keeping LLM claims). Handles both a comparison draft (query_key, audited against
+    the venue records) and an essay (no query_key, integrity-checked against the
+    roster) — the same two roles as generation. Does not modify the prose."""
+    lines: list[LogLine] = []
+
+    def log(text: str, level: str = "info") -> None:
+        lines.append(LogLine(_now(), level, text))
+
+    def drain() -> Iterator[LogLine]:
+        nonlocal lines
+        out, lines = lines, []
+        yield from out
+
+    path = ARTICLE_STAGING_DIR / f"{slug}.mdx"
+    if not path.exists():
+        log(f"no staged article '{slug}'", "error")
+        yield from drain()
+        return
+    fm, body = _split_frontmatter(path.read_text(encoding="utf-8"))
+    query_key = fm.get("query_key")
+
+    if not query_key:
+        # Essay: integrity-check against the roster (register/visit deterministic
+        # layer), the same stage as essay generation.
+        try:
+            roster = _venue_roster()
+        except FileNotFoundError:
+            log("venues.json missing — rebuild the data store first", "error")
+            yield from drain()
+            return
+        roster_pack = json.dumps(
+            {"topic": fm.get("title", slug), "venues": roster}, ensure_ascii=False, indent=2
+        )
+        log(f"re-checking essay '{slug}' with {MODEL_ESSAY_CHECK}")
+        yield from drain()
+        check_user = (
+            "Audit this essay body. Return the JSON claim table only.\n\n"
+            f"--- ESSAY BODY ---\n{body}\n\n"
+            f"--- VENUE ROSTER (the only real venues + facts) ---\n{roster_pack}"
+        )
+        try:
+            llm_claims, _ = agents.call_agent(
+                MODEL_ESSAY_CHECK, agents.load_prompt("essay_check.md"), check_user, 2000, _validate_factcheck, log
+            )
+        except (agents.MalformedOutput, agents.AgentError) as exc:
+            log(f"integrity check failed — {exc}", "error")
+            yield from drain()
+            return
+        report = article_factcheck.build_report(
+            slug, None, MODEL_ESSAY_CHECK, llm_claims, body,
+            deterministic=article_factcheck.register_findings,
+        )
+    else:
+        # Comparison: audit against the current venue records (hardcoded-figure
+        # deterministic layer), the same stage as generation / published re-verify.
+        entry = _load_meta().get(query_key)
+        if not entry:
+            log(f"comparison '{query_key}' is no longer eligible", "error")
+            yield from drain()
+            return
+        records = _resolved_records(entry["current"]["order"])
+        facts_pack = json.dumps(
+            {"query_key": query_key, "title": entry["title"], "caption": entry["caption"], "venues": records},
+            ensure_ascii=False, indent=2,
+        )
+        log(f"re-fact-checking '{slug}' with {MODEL_FACTCHECK}")
+        yield from drain()
+        fc_user = (
+            "Audit this article body against the venue records. Return the JSON claim table only.\n\n"
+            f"--- ARTICLE BODY ---\n{body}\n\n--- VENUE RECORDS ---\n{facts_pack}"
+        )
+        try:
+            llm_claims, _ = agents.call_agent(
+                MODEL_FACTCHECK, agents.load_prompt("factcheck.md"), fc_user, 2000, _validate_factcheck, log
+            )
+        except (agents.MalformedOutput, agents.AgentError) as exc:
+            log(f"fact-check failed — {exc}", "error")
+            yield from drain()
+            return
+        report = article_factcheck.build_report(slug, query_key, MODEL_FACTCHECK, llm_claims, body)
+
+    (ARTICLE_STAGING_DIR / f"{slug}.factcheck.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    level = "error" if report["status"] == "blocked" else "info"
+    log(f"report written: {report['status']} ({report['unsupported_count']} unsupported)", level)
+    yield from drain()
+
+
 _FIELD_ORDER = ("title", "dateline", "summary", "author", "query_key", "reviewed_at")
 
 
