@@ -806,10 +806,18 @@ def api_update_article(slug: str, body: ArticlePatchBody):
         raise HTTPException(404, f"no staged article '{slug}'")
 
 
+class ApproveArticleBody(BaseModel):
+    # Optional operator force-publish (2026-08-03): a reason bypasses ONLY the
+    # fact-check block, recorded on the report. A plain approve sends no body.
+    override_reason: str | None = None
+
+
 @app.post("/api/articles/{slug}/approve")
-def api_approve_article(slug: str, background_tasks: BackgroundTasks):
+def api_approve_article(
+    slug: str, background_tasks: BackgroundTasks, body: ApproveArticleBody = ApproveArticleBody()
+):
     try:
-        redirect = articles.approve(slug)
+        redirect = articles.approve(slug, override_reason=body.override_reason)
     except FileNotFoundError:
         raise HTTPException(404, f"no staged article '{slug}'")
     except PublishBlocked as exc:

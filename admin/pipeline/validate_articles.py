@@ -118,7 +118,12 @@ def check_articles(blog_dir: Path = BLOG_PUBLISHED_DIR, meta_path: Path = ARTICL
             errors.append(f"{path.name}: no fact-check report (data/factchecks/{path.stem}.json) — run the pipeline or factcheck_existing")
         else:
             report = json.loads(report_path.read_text(encoding="utf-8"))
-            if report.get("status") == "blocked" or report.get("unsupported_count", 0) > 0:
+            # A deliberate operator force-publish (2026-08-03, TRD.md) carries an
+            # `override` record; its unsupported claims stay visible in the report
+            # but no longer fail the build. Without an override the block stands.
+            if not report.get("override") and (
+                report.get("status") == "blocked" or report.get("unsupported_count", 0) > 0
+            ):
                 errors.append(f"{path.name}: fact-check report has {report.get('unsupported_count', 0)} unsupported claim(s) — must be resolved")
     return errors
 

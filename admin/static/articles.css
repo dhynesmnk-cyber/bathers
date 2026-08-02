@@ -74,6 +74,16 @@
   flex-wrap: wrap;
 }
 
+/* Approve refusal: a persistent oxide line beside the actions, so a blocked /
+   invalid publish is legible (the header status line gets overwritten by autosave). */
+.art-note {
+  margin-top: 0.75rem;
+  color: var(--oxide);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  max-width: 60ch;
+}
+
 .art-redirect {
   margin-top: 1rem;
 }

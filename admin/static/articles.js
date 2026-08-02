@@ -8,6 +8,16 @@
 const $ = (id) => document.getElementById(id);
 const status = (msg) => { $("action-status").textContent = msg || ""; };
 
+// A persistent refusal line beside the approve actions. The header status line is
+// shared with the debounced autosave and gets overwritten, so a blocked/invalid
+// publish would otherwise read as "the button did nothing". Empty clears + hides.
+function showApproveNote(msg) {
+  const el = $("approve-note");
+  if (!el) return;
+  el.hidden = !msg;
+  el.textContent = msg || "";
+}
+
 let currentSlug = null;
 let saveTimer = null;
 let jobRunning = false;
@@ -197,6 +207,7 @@ async function selectArticle(slug) {
   const a = await res.json();
   currentSlug = slug;
   $("redirect-box").hidden = true;
+  showApproveNote(""); // clear any refusal from a previously-selected article
   const isEssay = !a.frontmatter.query_key;
   $("field-title").value = a.frontmatter.title || "";
   $("field-summary").value = a.frontmatter.summary || "";
@@ -213,6 +224,9 @@ async function selectArticle(slug) {
 }
 
 function renderReport(report) {
+  // Force-publish is offered only when the report is actually blocked.
+  const forceBtn = $("force-approve-btn");
+  if (forceBtn) forceBtn.hidden = !(report && report.status === "blocked");
   const statusEl = $("report-status");
   const rows = $("report-rows");
   rows.innerHTML = "";
@@ -338,9 +352,25 @@ $("refactcheck-btn").addEventListener("click", async () => {
   }
 });
 
-$("approve-btn").addEventListener("click", async () => {
+// Approve, optionally force-publishing past the fact-check block. Any refusal is
+// shown in the persistent #approve-note (not just the autosave-shared header line),
+// so a blocked/invalid publish is legible instead of looking like a dead button.
+async function doApprove(overrideReason) {
   if (!currentSlug) return;
-  const res = await fetch(`/api/articles/${currentSlug}/approve`, { method: "POST" });
+  showApproveNote("");
+  status(overrideReason ? "force-publishing…" : "publishing…");
+  let res;
+  try {
+    res = await fetch(`/api/articles/${currentSlug}/approve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(overrideReason ? { override_reason: overrideReason } : {}),
+    });
+  } catch (_e) {
+    status("not published");
+    showApproveNote("Could not reach the server — check the admin is up, then try again.");
+    return;
+  }
   if (res.ok) {
     const { redirect } = await res.json();
     if (redirect) {
@@ -357,7 +387,44 @@ $("approve-btn").addEventListener("click", async () => {
   } else {
     const err = await res.json().catch(() => ({}));
     const detail = err.detail || {};
-    status(detail.blocked || (detail.errors && detail.errors.join("; ")) || "approve failed");
+    const msg = detail.blocked
+      || (detail.errors && detail.errors.join("; "))
+      || (typeof detail === "string" ? detail : "")
+      || "approve failed";
+    status("not published");
+    showApproveNote(msg);
+  }
+}
+
+$("approve-btn").addEventListener("click", () => doApprove(null));
+
+$("force-approve-btn").addEventListener("click", () => {
+  if (!currentSlug) return;
+  const reason = prompt(
+    "Force-publish past the fact-check block?\n\n" +
+      "The unsupported claim(s) stay recorded on the report — this does not fake a clean " +
+      "check. Enter a short reason (what you verified by hand):"
+  );
+  if (reason === null) return;
+  if (!reason.trim()) { showApproveNote("A reason is required to force-publish."); return; }
+  doApprove(reason.trim());
+});
+
+// Manual "post to live": stream the deploy so success/failure is visible, and give
+// a retry when the auto-deploy after an approve silently fails (its errors are
+// server-log-only). Deploys all pending changes in the publish set, not just this one.
+$("deploy-now-btn").addEventListener("click", async () => {
+  if (jobRunning) { status("a job is already running — one at a time"); return; }
+  jobRunning = true;
+  status("deploying…");
+  markDeploying();
+  try {
+    await streamJob("/api/deploy", $("gen-log"), { commit_message: "" });
+    await loadPublished();
+    await refreshDeployStatus();
+    status("deploy finished — see the log on the left");
+  } finally {
+    jobRunning = false;
   }
 });
 

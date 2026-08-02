@@ -178,10 +178,17 @@ def _validate_for_publish(entry: ArticleEntry) -> list[str]:
     return errors
 
 
-def approve(slug: str) -> str | None:
+def approve(slug: str, override_reason: str | None = None) -> str | None:
     """Publish a staged article or essay. Refuses if the report is missing or
     blocked, or if the frontmatter/body fails validation. On success the MDX moves
     into the blog _published collection and staging is cleared.
+
+    `override_reason` is a deliberate operator force-publish (2026-08-03, TRD.md):
+    it bypasses ONLY the fact-check block (unsupported claims the human has verified
+    by hand), never the structural checks in _validate_for_publish, and never a
+    missing report. The reason is stamped onto the committed report as an honest
+    `override` record — the unsupported claims stay visible; the report is not faked
+    clean — which validate_articles then accepts at build time.
 
     A comparison article (has query_key) also writes its report to the committed
     factchecks record and re-baselines the comparison (records this review as the
@@ -192,13 +199,18 @@ def approve(slug: str) -> str | None:
     report = entry.report
     if report is None:
         raise PublishBlocked("no fact-check report — re-run the pipeline before approving")
-    if report.get("status") == "blocked":
+    reason = (override_reason or "").strip()
+    if report.get("status") == "blocked" and not reason:
         raise PublishBlocked(
             f"{report.get('unsupported_count', 0)} unsupported claim(s) must be resolved before approval"
         )
     errors = _validate_for_publish(entry)
     if errors:
         raise ValidationFailed(errors)
+    if reason:
+        # Honest force-publish: keep the claims/counts, add the override record so
+        # the committed report says what was overridden and why (never faked clean).
+        report = {**report, "override": {"reason": reason, "at": date.today().isoformat()}}
 
     BLOG_PUBLISHED_DIR.mkdir(parents=True, exist_ok=True)
     (BLOG_PUBLISHED_DIR / f"{slug}.mdx").write_text(

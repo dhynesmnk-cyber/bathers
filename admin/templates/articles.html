@@ -12,6 +12,7 @@
       <span class="mono eyebrow">WHERE WE BATHE — ARTICLES &amp; ESSAYS</span>
       <p id="action-status" class="mono save-status" aria-live="polite"></p>
       <span id="deploy-chip" class="mono deploy-chip" aria-live="polite"></span>
+      <button id="deploy-now-btn" class="btn btn-plain">Post to live</button>
       <a href="/blog" class="btn btn-plain">Blog</a>
       <a href="/claims" class="btn btn-plain">Claims</a>
       <a href="/" class="btn btn-plain">Back to hub</a>
@@ -85,9 +86,11 @@
           <div class="art-actions">
             <button id="refactcheck-btn" class="btn btn-plain">Re-fact-check</button>
             <button id="approve-btn" class="btn btn-thermal">Approve &amp; publish</button>
+            <button id="force-approve-btn" class="btn btn-oxide" hidden>Force publish (override block)</button>
             <button id="reject-btn" class="btn btn-oxide">Reject</button>
             <button id="delete-btn" class="btn btn-oxide">Delete</button>
           </div>
+          <p id="approve-note" class="mono art-note" role="alert" aria-live="assertive" hidden></p>
           <div id="redirect-box" class="art-redirect" hidden>
             <p class="mono field-label">Published. Add this 301 to <code>netlify.toml</code>:</p>
             <pre id="redirect-text" class="mono"></pre>
