@@ -17,7 +17,10 @@
     "state": "Bitter Springs in Mataranka sits within the thermal spring country south of Katherine, where warm groundwater surfaces year-round in a landscape that makes bathing feel less like a leisure activity and more like a geographical fact. The Northern Territory's bathhouse and thermal listing is short, shaped by remoteness and climate rather than any shortage of interest."
   },
   "QLD": {
-    "amenities": {},
+    "amenities": {
+      "cold_plunge": "Queensland's single listed cold plunge venue sits at the far western edge of the state, in Cunnamulla, where the artesian basin shapes what's on offer. Cold plunge pools work by brief immersion in water typically below 15°C, a contrast to heat exposure that many bathers seek for circulation and recovery. With only one venue currently on this page, the list may grow as more Queensland operators document the amenity.",
+      "traditional_sauna": "Queensland's heat and humidity make a traditional sauna a more deliberate choice than in cooler climates, one people seek out for the specific, dry intensity that ambient conditions don't provide. A traditional sauna works by raising air temperature well above what the body can sustain, prompting sweating as a response rather than a side effect. Cunnamulla Hot Springs, in the state's south-west, is currently the only Queensland venue listed here with this amenity."
+    },
     "amenity_meta_descriptions": {},
     "meta_description": "Bathhouses and hot springs in Queensland: an artesian bore bath at Eulo, drawing on the Great Artesian Basin under the state's interior.",
     "state": "Queensland's entry in this directory is brief: one venue, in Eulo, drawing on the Great Artesian Basin that underlies much of the state's interior. That basin is one of the largest and deepest freshwater aquifer systems on earth, and the mineralised waters it produces have made outback Queensland a quiet destination for this kind of bathing for well over a century."
@@ -93,8 +96,8 @@
       "traditional_sauna": "Traditional dry-heat saunas across Australia, wood-fired or electric, at bathhouses and hot springs from coastal towns to inner-city suburbs."
     },
     "facilities": {
-      "natural_spring": "Australian bathhouses and hot springs fed by a natural thermal or mineral spring — geothermal or artesian bore water, not a heated town supply.",
       "indoor_pool": "Australian bathhouses and spas with an indoor pool — sheltered, heated bathing you can use through winter or in poor weather, listed state by state.",
+      "natural_spring": "Australian bathhouses and hot springs fed by a natural thermal or mineral spring — geothermal or artesian bore water, not a heated town supply.",
       "outdoor_pool": "Australian bathhouses and hot springs with an outdoor pool — open-air bathing, from bushland springs to rooftop plunge pools, gathered by state.",
       "pregnancy_safe": "Pregnancy-safe bathing across Australia: venues confirmed suitable for pregnant visitors, flagged here by a human reviewer, not the AI pipeline."
     }
