@@ -18,6 +18,7 @@
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import VenueEntry from "../../components/VenueEntry.astro";
+import PromoClaimModal from "../../components/PromoClaimModal.astro";
 import Icon from "../../components/Icon.astro";
 import {
   AMENITY_KEYS,
@@ -196,7 +197,9 @@ if (kind === "state" && state) {
             name={venue.data.name}
             slug={venue.id}
             suburb={venue.data.suburb}
-            state={venue.data.state}
+            city={venue.data.city}
+            state_province={venue.data.state_province || venue.data.state}
+            country={venue.data.country || 'AU'}
             summary={venue.data.summary}
             amenities={venue.data.amenities}
             facilities={venue.data.facilities}

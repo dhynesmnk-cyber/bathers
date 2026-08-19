@@ -43,12 +43,23 @@ export const H2H_ROWS: H2HRow[] = [
   {
     label: "Adult drop-in",
     value: (v) => {
-      const n = v.data.price?.adult_drop_in_aud;
-      if (n != null) return fmtAud(n);
+      const n = v.data.price?.adult_drop_in;
+      if (n != null) {
+        const currency = v.data.currency ?? 'AUD';
+        return fmtAud(n) + (currency !== 'AUD' ? ` ${currency}` : '');
+      }
       return v.data.cost ? priceRange(v.data.cost) : null;
     },
   },
-  { label: "Location", value: (v) => `${v.data.suburb}, ${STATE_NAMES[v.data.state]}` },
+  { 
+    label: "Location", 
+    value: (v) => {
+      const city = v.data.city || v.data.suburb;
+      const stateOrProvince = v.data.state_province || v.data.state;
+      const countryDisplay = v.data.country && v.data.country !== 'AU' ? `, ${v.data.country}` : '';
+      return `${city}, ${stateOrProvince}${countryDisplay}`;
+    }
+  },
   { label: "Type", value: (v) => CATEGORY_LABELS[v.data.category] },
   {
     label: "Features",

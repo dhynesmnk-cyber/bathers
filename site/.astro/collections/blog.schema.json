@@ -1,0 +1,86 @@
+{
+  "$ref": "#/definitions/blog",
+  "definitions": {
+    "blog": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "dateline": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "integer",
+              "format": "unix-time"
+            }
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "author": {
+          "type": "string"
+        },
+        "query_key": {
+          "type": "string"
+        },
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "integer",
+              "format": "unix-time"
+            }
+          ]
+        },
+        "cover_image": {
+          "type": "string"
+        },
+        "cover_image_alt": {
+          "type": "string"
+        },
+        "cover_image_ai": {
+          "type": "boolean"
+        },
+        "cover_image_credit": {
+          "type": "string"
+        },
+        "cover_image_license": {
+          "type": "string",
+          "format": "uri"
+        },
+        "cover_image_source": {
+          "type": "string",
+          "format": "uri"
+        },
+        "video_url": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "title",
+        "dateline",
+        "summary"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

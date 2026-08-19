@@ -1,0 +1,30 @@
+# Where We Bathe
+
+> A free, ad-free directory of Australian bathhouses, saunas and thermal springs — magnesium pools, cold plunges, hot springs — catalogued state by state, with no sponsored listings.
+
+Where We Bathe documents Australian venues built around heat, cold and water. Each entry begins as the venue's own published account, then is checked and tightened by hand before publication; every factual figure traces back to the venue's own materials, and no venue can pay for placement or ranking. How the directory is made, and how strongly each fact is verified, is described at `/methodology/`.
+
+## Structure
+
+- Browse by state: `/vic/`, `/nsw/`, `/qld/`, `/sa/`, `/wa/`, `/tas/`, `/nt/`, `/act/` (only states with at least one listed venue exist)
+- Browse by setting within a state: indoor pools, outdoor pools, thermal springs, or other — e.g. `/vic/outdoor/`
+- Browse by amenity within a state — e.g. `/vic/cold-plunge/`
+- Browse by amenity nationally — e.g. `/magnesium-pool/`, `/infrared-sauna/`, `/traditional-sauna/`, `/cold-plunge/`, `/led-therapy/`
+- Browse by pool setting nationally — `/indoor-pool/`, `/outdoor-pool/`, `/natural-spring/`
+- Browse by venue category nationally: `/category/bathhouse/`, `/category/thermal-springs/`, `/category/hotel-spa/`
+- Compare venues side by side: `/compare/` — a hub of ranked comparison tables built from structured, source-verified data, linking through to the in-depth comparison articles under `/blog/`
+- Browse by region: `/region/` — regional roundups (e.g. Mornington Peninsula, Daylesford & Hepburn)
+- Individual venue pages: `/spa/{venue-slug}/` — name, location, amenities, hours, cost, temperatures, FAQ, and source-verified detail
+- Glossary of amenity/facility terms: `/glossary/`
+
+## Blog
+
+Writing at `/blog/`: essays about the project — its mission, values and the people behind it — alongside data-backed comparison articles (e.g. the cheapest venues, natural thermal springs, contrast therapy) whose every figure is resolved from the same source-verified venue data and re-checked when a venue changes.
+
+## Links
+
+- Homepage: https://wherewebathe.com/
+- How this directory is made: https://wherewebathe.com/methodology/
+- Compare venues: https://wherewebathe.com/compare/
+- Blog: https://wherewebathe.com/blog/
+- Sitemap: https://wherewebathe.com/sitemap.xml

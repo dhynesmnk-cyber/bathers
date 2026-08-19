@@ -1,0 +1,603 @@
+{
+  "$ref": "#/definitions/spas",
+  "definitions": {
+    "spas": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "VIC",
+            "NSW",
+            "QLD",
+            "SA",
+            "WA",
+            "TAS",
+            "NT",
+            "ACT"
+          ]
+        },
+        "state_province": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string",
+          "default": "AU"
+        },
+        "city": {
+          "type": "string"
+        },
+        "zipcode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "website": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uri"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "contact_email": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "email"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "currency": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "AUD",
+                "USD"
+              ]
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "default": "AUD"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "thermal_springs",
+            "bathhouse",
+            "hotel_spa",
+            "other"
+          ]
+        },
+        "suburb": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "latitude": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -44,
+              "maximum": -9
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "longitude": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 112,
+              "maximum": 154
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "amenities": {
+          "type": "object",
+          "properties": {
+            "magnesium_pool": {
+              "type": "boolean"
+            },
+            "infrared_sauna": {
+              "type": "boolean"
+            },
+            "traditional_sauna": {
+              "type": "boolean"
+            },
+            "cold_plunge": {
+              "type": "boolean"
+            },
+            "led_therapy": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "magnesium_pool",
+            "infrared_sauna",
+            "traditional_sauna",
+            "cold_plunge",
+            "led_therapy"
+          ],
+          "additionalProperties": false
+        },
+        "facilities": {
+          "type": "object",
+          "properties": {
+            "parking": {
+              "type": "boolean",
+              "default": false
+            },
+            "towels_provided": {
+              "type": "boolean",
+              "default": false
+            },
+            "changerooms": {
+              "type": "boolean",
+              "default": false
+            },
+            "bookings_required": {
+              "type": "boolean",
+              "default": false
+            },
+            "wheelchair_access": {
+              "type": "boolean",
+              "default": false
+            },
+            "outdoor_pool": {
+              "type": "boolean",
+              "default": false
+            },
+            "indoor_pool": {
+              "type": "boolean",
+              "default": false
+            },
+            "natural_spring": {
+              "type": "boolean",
+              "default": false
+            },
+            "pregnancy_safe": {
+              "type": "boolean",
+              "default": false
+            },
+            "step_free_entry": {
+              "type": "boolean",
+              "default": false
+            },
+            "hoist_available": {
+              "type": "boolean",
+              "default": false
+            },
+            "accessible_changerooms": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "hours": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cost": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "access": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "temperatures": {
+          "type": "object",
+          "properties": {
+            "sauna_min_c": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 150
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sauna_max_c": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 150
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sauna_display": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "cold_plunge_min_c": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": -5,
+                  "maximum": 40
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "cold_plunge_max_c": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": -5,
+                  "maximum": 40
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "cold_plunge_display": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "dress_code": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "nude",
+                "swimwear",
+                "swimwear_optional",
+                "mixed"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "session_gender": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "mixed",
+                "single_sex",
+                "varies"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "session_gender_note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "silence_policy": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "phone_policy": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "minimum_age": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "price": {
+          "type": "object",
+          "properties": {
+            "adult_drop_in": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "standard_session": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "drive_time": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string"
+            },
+            "minutes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "km": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "from",
+            "minutes",
+            "km"
+          ],
+          "additionalProperties": false
+        },
+        "verification": {
+          "type": "object",
+          "properties": {
+            "price": {
+              "type": "object",
+              "properties": {
+                "source": {
+                  "type": "string"
+                },
+                "tier": {
+                  "type": "string",
+                  "enum": [
+                    "unverified",
+                    "published_by_venue",
+                    "observed_on_visit",
+                    "operator_confirmed"
+                  ]
+                },
+                "date": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    {
+                      "type": "integer",
+                      "format": "unix-time"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "source",
+                "tier",
+                "date"
+              ],
+              "additionalProperties": false
+            },
+            "hours": {
+              "$ref": "#/definitions/spas/properties/verification/properties/price"
+            },
+            "temperatures": {
+              "$ref": "#/definitions/spas/properties/verification/properties/price"
+            },
+            "dress_code": {
+              "$ref": "#/definitions/spas/properties/verification/properties/price"
+            },
+            "session_gender": {
+              "$ref": "#/definitions/spas/properties/verification/properties/price"
+            },
+            "silence_policy": {
+              "$ref": "#/definitions/spas/properties/verification/properties/price"
+            },
+            "phone_policy": {
+              "$ref": "#/definitions/spas/properties/verification/properties/price"
+            },
+            "minimum_age": {
+              "$ref": "#/definitions/spas/properties/verification/properties/price"
+            }
+          },
+          "additionalProperties": false
+        },
+        "change_log": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "from": {},
+              "to": {},
+              "date": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  {
+                    "type": "integer",
+                    "format": "unix-time"
+                  }
+                ]
+              },
+              "trigger": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "field",
+              "date",
+              "trigger"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "unclaimed",
+            "claimed"
+          ],
+          "default": "unclaimed"
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "drafted": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "integer",
+              "format": "unix-time"
+            }
+          ]
+        },
+        "verified": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "string",
+              "format": "date"
+            },
+            {
+              "type": "integer",
+              "format": "unix-time"
+            }
+          ]
+        },
+        "source_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "image": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "image_source": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uri"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "image_caption": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "faq": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "question": {
+                "type": "string"
+              },
+              "answer": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "question",
+              "answer"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 8
+        }
+      },
+      "required": [
+        "name",
+        "state_province",
+        "city",
+        "category",
+        "address",
+        "amenities",
+        "summary",
+        "drafted",
+        "verified",
+        "source_url"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

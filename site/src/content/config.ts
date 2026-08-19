@@ -59,8 +59,8 @@ const temperaturesSchema = z
 // string by /validate, not zod (zod can't see `cost` from here cheaply).
 const priceSchema = z
   .object({
-    adult_drop_in_aud: z.number().nonnegative().nullable().optional(),
-    standard_session_aud: z.number().nonnegative().nullable().optional(),
+    adult_drop_in: z.number().nonnegative().nullable().optional(),
+    standard_session: z.number().nonnegative().nullable().optional(),
   })
   .strict()
   .optional();
@@ -123,13 +123,19 @@ const spasCollection = defineCollection({
   schema: z
     .object({
       name: z.string(),
-      state: z.enum(STATES),
+      state: z.enum(STATES).optional(),
+      state_province: z.string(),
+      country: z.string().default("AU"),
+      city: z.string(),
+      zipcode: z.string().nullable().optional(),
+      website: z.string().url().nullable().optional(),
+      contact_email: z.string().email().nullable().optional(),
+      currency: z.enum(['AUD', 'USD']).or(z.string()).default("AUD"),
       category: z.enum(CATEGORIES),
-      suburb: z.string(),
+      suburb: z.string().optional(),
       address: z.string(),
       latitude: z.number().min(AU_LATITUDE_BOUNDS.min).max(AU_LATITUDE_BOUNDS.max).nullable().optional(),
       longitude: z.number().min(AU_LONGITUDE_BOUNDS.min).max(AU_LONGITUDE_BOUNDS.max).nullable().optional(),
-      website: z.string().url(),
       amenities: amenitiesSchema,
       facilities: facilitiesSchema,
       hours: z.string().nullable().optional(),

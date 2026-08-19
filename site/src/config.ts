@@ -383,3 +383,22 @@ export const CLAIM_API_BASE_URL = "https://bathers-admin.fly.dev";
 // The Astro build has no .env loader of its own (TRD.md §2 — no runtime
 // backend for the public site), so this lives here as a plain constant.
 export const GOATCOUNTER_SITE = "bathers";
+
+// Geographic bounds for coordinate validation (US expansion 2026)
+export const GEO_BOUNDS = {
+  AU: { lat: { min: -44.0, max: -9.0 }, lng: { min: 112.0, max: 154.0 } },
+  US: { lat: { min: 24.0, max: 71.0 }, lng: { min: -125.0, max: -66.0 } },
+} as const;
+
+// Promo campaign configuration (September 2026 campaign)
+export const PROMO_EXPIRY_DATE = "2026-09-30";
+
+// Currency formatting utility
+export function formatPrice(amount: number, currency: 'AUD' | 'USD' | string): string {
+  const symbols: Record<string, string> = {
+    AUD: '$',
+    USD: 'US$',
+  };
+  const symbol = symbols[currency] || '$';
+  return `${symbol}${amount} ${currency}`;
+}
