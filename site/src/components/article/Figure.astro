@@ -8,7 +8,7 @@ import { getCollection } from "astro:content";
 
 interface Props {
   venue: string; // venue slug
-  field: string; // dotted path into the venue's data, e.g. "price.adult_drop_in_aud"
+  field: string; // dotted path into the venue's data, e.g. "price.adult_drop_in"
 }
 const { venue, field } = Astro.props;
 const venues = await getCollection("spas");
@@ -25,7 +25,9 @@ const raw = get(v.data, field);
 let text = "Not published";
 if (raw != null && raw !== "") {
   if (field.startsWith("price.") && typeof raw === "number") {
-    text = `$${raw % 1 === 0 ? raw : raw.toFixed(2)}`;
+    const currency = v.data.currency ?? 'AUD';
+    const currencySuffix = currency !== 'AUD' ? ` ${currency}` : '';
+    text = `$${raw % 1 === 0 ? raw : raw.toFixed(2)}${currencySuffix}`;
   } else {
     text = String(raw);
   }

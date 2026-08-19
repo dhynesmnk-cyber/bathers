@@ -5,6 +5,7 @@ import VenueEntry from "../components/VenueEntry.astro";
 import Icon from "../components/Icon.astro";
 import MarginAnimal from "../components/MarginAnimal.astro";
 import SearchBox from "../components/SearchBox.astro";
+import PromoClaimModal from "../components/PromoClaimModal.astro";
 import { AMENITY_KEYS, AMENITY_NOTATION, POOL_NATIONAL_FILTERS, SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES, amenityUrlSlug } from "../config";
 
 const venues = await getCollection("spas");
@@ -36,13 +37,18 @@ const allVenues = venues.map((v) => ({
   slug: v.id,
   name: v.data.name,
   suburb: v.data.suburb,
-  state: v.data.state,
+  city: v.data.city,
+  state_province: v.data.state_province || v.data.state,
+  country: v.data.country || 'AU',
   summary: v.data.summary,
   amenities: v.data.amenities,
   facilities: v.data.facilities,
   latitude: v.data.latitude ?? null,
   longitude: v.data.longitude ?? null,
   image: v.data.image,
+  status: v.data.status,
+  currency: v.data.currency,
+  price: v.data.price,
 }));
 ---
 
@@ -182,11 +188,16 @@ const allVenues = venues.map((v) => ({
               name={venue.name}
               slug={venue.slug}
               suburb={venue.suburb}
-              state={venue.state}
+              city={venue.city}
+              state_province={venue.state_province}
+              country={venue.country}
               summary={venue.summary}
               amenities={venue.amenities}
               facilities={venue.facilities}
               image={venue.image}
+              status={venue.status}
+              currency={venue.currency}
+              price={venue.price}
             />
           ))
         }
@@ -206,6 +217,7 @@ const allVenues = venues.map((v) => ({
       />
     </section>
   </main>
+  <PromoClaimModal />
 </BaseLayout>
 
 <script>
@@ -442,6 +454,30 @@ const allVenues = venues.map((v) => ({
     }
 
     render();
+    
+    // Promo modal integration
+    const openPromoButtons = document.querySelectorAll<HTMLButtonElement>('[data-open-promo-modal]');
+    const promoModal = document.getElementById('promo-claim-modal');
+    
+    openPromoButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const venueSlug = btn.getAttribute('data-venue-slug');
+        if (promoModal && venueSlug) {
+          // Update hidden input with venue slug
+          const hiddenInput = promoModal.querySelector('input[name="venueSlug"]') as HTMLInputElement;
+          if (hiddenInput) {
+            hiddenInput.value = venueSlug;
+          }
+          // Show modal
+          promoModal.classList.remove('hidden');
+          // Focus first input for accessibility
+          const firstInput = promoModal.querySelector('input') as HTMLInputElement;
+          if (firstInput) {
+            setTimeout(() => firstInput.focus(), 100);
+          }
+        }
+      });
+    });
   }
 </script>
 

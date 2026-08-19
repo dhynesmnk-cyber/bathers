@@ -34,12 +34,22 @@ export interface Comparison {
 }
 
 // ---- shared cell helpers ----
-const locationCell = (v: Venue) => `${v.data.suburb}, ${v.data.state}`;
+const locationCell = (v: Venue) => {
+  const city = v.data.city || v.data.suburb;
+  const stateOrProvince = v.data.state_province || v.data.state;
+  const countryDisplay = v.data.country && v.data.country !== 'AU' ? `, ${v.data.country}` : '';
+  return `${city}, ${stateOrProvince}${countryDisplay}`;
+};
 const categoryCell = (v: Venue) => CATEGORY_LABELS[v.data.category];
-const dropIn = (v: Venue) => v.data.price?.adult_drop_in_aud ?? null;
+const dropIn = (v: Venue) => v.data.price?.adult_drop_in ?? null;
 const priceCell = (v: Venue) => {
   const n = dropIn(v);
-  if (n != null) return `$${n % 1 === 0 ? n : n.toFixed(2)}`;
+  if (n != null) {
+    const currency = v.data.currency ?? 'AUD';
+    const symbol = currency === 'AUD' || currency === 'USD' ? '$' : '$';
+    const currencySuffix = currency !== 'AUD' ? ` ${currency}` : '';
+    return `${symbol}${n % 1 === 0 ? n : n.toFixed(2)}${currencySuffix}`;
+  }
   return v.data.cost ? priceRange(v.data.cost) : null;
 };
 const amenityCell = (v: Venue) =>
@@ -241,5 +251,10 @@ export function comparisonFingerprint(columns: Column[], venues: Venue[]): Finge
 // venue-side "featured in" links all agree.
 export const comparePath = (slug: string) => `/compare/${slug}/`;
 export function stateHeading(v: Venue): string {
+  const stateOrProvince = v.data.state_province || v.data.state;
+  if (v.data.country && v.data.country !== 'AU') {
+    // For non-AU venues, we don't have STATE_NAMES, so just return state_province
+    return stateOrProvince;
+  }
   return STATE_NAMES[v.data.state];
 }

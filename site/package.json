@@ -15,5 +15,8 @@
     "astro": "5.18.2",
     "gsap": "3.15.0",
     "tailwindcss": "4.3.3"
+  },
+  "devDependencies": {
+    "yaml": "^2.9.0"
   }
 }

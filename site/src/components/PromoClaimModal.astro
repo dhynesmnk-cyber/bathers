@@ -1,0 +1,213 @@
+---
+/**
+ * PromoClaimModal.astro
+ * Modal form for venue owners to claim their listing with a promo code.
+ * Offer valid until September 30, 2026.
+ */
+
+interface Props {
+  venueSlug?: string;
+}
+
+const { venueSlug } = Astro.props;
+---
+
+<div
+  id="promo-claim-modal"
+  class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="modal-title"
+  aria-describedby="modal-description"
+>
+  <div class="relative w-full max-w-md rounded-2xl bg-[var(--paper)] p-8 shadow-2xl">
+    <!-- Close button -->
+    <button
+      type="button"
+      onclick="document.getElementById('promo-claim-modal')?.classList.add('hidden')"
+      class="absolute right-4 top-4 text-[var(--ink-faded)] hover:text-[var(--ink)] transition-colors"
+      aria-label="Close modal"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    <!-- Header -->
+    <div class="mb-6">
+      <h2 id="modal-title" class="font-display text-2xl font-light text-[var(--ink)]">
+        Claim your complimentary initial update
+      </h2>
+      <p id="modal-description" class="mt-2 text-[var(--ink-faded)]">
+        Enter your venue-specific promo code to update your listing for free.
+        Offer valid until September 30, 2026.
+      </p>
+    </div>
+
+    <!-- Form -->
+    <form
+      data-webhook-url="#"
+      data-venue-slug={venueSlug || ''}
+      class="space-y-5"
+      onsubmit={(e) => {
+        e.preventDefault();
+        const form = e.target as HTMLFormElement;
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        
+        // Client-side expiry check
+        const expiryDate = new Date('2026-09-30T23:59:59');
+        if (new Date() > expiryDate) {
+          alert('This offer has expired.');
+          return;
+        }
+        
+        // Log for now - will be connected to Make.com webhook later
+        console.log('Promo claim submission:', {
+          ...data,
+          venueSlug: venueSlug || '',
+          submittedAt: new Date().toISOString(),
+        });
+        
+        // Show success message
+        form.innerHTML = `
+          <div class="text-center py-8">
+            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 class="font-display text-xl font-light text-[var(--ink)]">Thank you!</h3>
+            <p class="mt-2 text-[var(--ink-faded)]">
+              Your claim has been submitted. We'll review your promo code and contact you shortly.
+            </p>
+            <button
+              type="button"
+              onclick="document.getElementById('promo-claim-modal')?.classList.add('hidden')"
+              class="mt-6 book-now-btn mono"
+            >
+              Close
+            </button>
+          </div>
+        `;
+      }}
+    >
+      <!-- Promo Code Input -->
+      <div>
+        <label for="promo-code" class="block text-sm font-medium text-[var(--ink)]">
+          Promo Code
+        </label>
+        <input
+          type="text"
+          id="promo-code"
+          name="promoCode"
+          required
+          placeholder="e.g., VENUE-SLUG-PROMO"
+          class="mt-1 block w-full rounded-lg border border-[var(--ink-faded)]/30 bg-[var(--paper-raised)] px-4 py-3 text-[var(--ink)] placeholder-[var(--ink-faded)] focus:border-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--ink)]/20"
+          autocomplete="off"
+        />
+        <p class="mt-1 text-xs text-[var(--ink-faded)]">
+          Check your email for your unique venue-specific code.
+        </p>
+      </div>
+
+      <!-- Email Input -->
+      <div>
+        <label for="email" class="block text-sm font-medium text-[var(--ink)]">
+          Email Address
+        </label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
+          placeholder="you@venue.com"
+          class="mt-1 block w-full rounded-lg border border-[var(--ink-faded)]/30 bg-[var(--paper-raised)] px-4 py-3 text-[var(--ink)] placeholder-[var(--ink-faded)] focus:border-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--ink)]/20"
+          autocomplete="email"
+        />
+      </div>
+
+      <!-- Hidden venue slug field -->
+      {venueSlug && (
+        <input type="hidden" name="venueSlug" value={venueSlug} />
+      )}
+
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        class="w-full book-now-btn mono py-3"
+      >
+        Submit Claim
+      </button>
+
+      <!-- Expiry Notice -->
+      <p class="text-center text-xs text-[var(--ink-faded)]">
+        Offer expires September 30, 2026. One claim per venue.
+      </p>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Close modal on ESC key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.getElementById('promo-claim-modal')?.classList.add('hidden');
+    }
+  });
+
+  // Close modal on outside click
+  document.getElementById('promo-claim-modal')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      (e.target as HTMLElement).classList.add('hidden');
+    }
+  });
+
+  // Focus trap for accessibility
+  const modal = document.getElementById('promo-claim-modal');
+  modal?.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+    
+    const focusableElements = modal.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstElement = focusableElements[0] as HTMLElement;
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+    if (e.shiftKey && document.activeElement === firstElement) {
+      e.preventDefault();
+      lastElement.focus();
+    } else if (!e.shiftKey && document.activeElement === lastElement) {
+      e.preventDefault();
+      firstElement.focus();
+    }
+  });
+</script>
+
+<style>
+  /* Animation for modal appearance */
+  #promo-claim-modal:not(.hidden) {
+    display: flex;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  #promo-claim-modal > div {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>

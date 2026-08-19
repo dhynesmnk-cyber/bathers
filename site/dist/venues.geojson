@@ -1,0 +1,87 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          145.7182,
+          -37.5493
+        ]
+      },
+      "properties": {
+        "slug": "romantic-getaways-melbourne",
+        "name": "Woodlands Rainforest Retreat",
+        "state": "VIC",
+        "category": "thermal_springs",
+        "suburb": "Narbethong",
+        "status": "unclaimed",
+        "summary": "Adults-only mountain resort near Narbethong with private mineral pools, an indoor Roman bathhouse, and couples spa packages.",
+        "has_image": true,
+        "amenities": {
+          "magnesium_pool": false,
+          "infrared_sauna": false,
+          "traditional_sauna": false,
+          "cold_plunge": false,
+          "led_therapy": false
+        },
+        "facilities": {
+          "parking": false,
+          "towels_provided": false,
+          "changerooms": false,
+          "bookings_required": false,
+          "wheelchair_access": false,
+          "outdoor_pool": true,
+          "indoor_pool": true,
+          "natural_spring": true,
+          "pregnancy_safe": false,
+          "step_free_entry": false,
+          "hoist_available": false,
+          "accessible_changerooms": false
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          144.9977831,
+          -37.8389012
+        ]
+      },
+      "properties": {
+        "slug": "soak-bathhouse",
+        "name": "Soak Bathhouse – South Yarra",
+        "state": "VIC",
+        "category": "bathhouse",
+        "suburb": "South Yarra",
+        "status": "unclaimed",
+        "summary": "Modern urban bathhouse in South Yarra with magnesium mineral pools, dry cedarwood sauna, steam room, cold plunge, and add-on treatments.",
+        "has_image": false,
+        "amenities": {
+          "magnesium_pool": true,
+          "infrared_sauna": true,
+          "traditional_sauna": true,
+          "cold_plunge": true,
+          "led_therapy": true
+        },
+        "facilities": {
+          "parking": false,
+          "towels_provided": false,
+          "changerooms": true,
+          "bookings_required": false,
+          "wheelchair_access": false,
+          "outdoor_pool": true,
+          "indoor_pool": true,
+          "natural_spring": false,
+          "pregnancy_safe": false,
+          "step_free_entry": false,
+          "hoist_available": false,
+          "accessible_changerooms": false
+        }
+      }
+    }
+  ]
+}

@@ -2,9 +2,7 @@
   {
     "slug": "about-time-bathhouse",
     "name": "About Time Bathhouse",
-    "state": "VIC",
     "category": "bathhouse",
-    "suburb": "Torquay",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -42,20 +40,25 @@
     },
     "temperatures": {
       "sauna_display": "Rock sauna 99°C, wood fire sauna 85°C, steam room 45°C",
-      "cold_plunge_min_c": 8.0,
-      "cold_plunge_max_c": 11.0
+      "cold_plunge_min_c": 8,
+      "cold_plunge_max_c": 11
     },
     "price": {
-      "adult_drop_in_aud": 49.0,
-      "standard_session_aud": 69.0
-    }
+      "adult_drop_in": 49,
+      "standard_session": 69
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Torquay",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "alba-thermal-springs-spa",
     "name": "Alba Thermal Springs and Spa",
-    "state": "VIC",
     "category": "thermal_springs",
-    "suburb": "Fingal",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -90,14 +93,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Fingal",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "artesian-mud-baths",
     "name": "Artesian Mud Baths Eulo",
-    "state": "QLD",
     "category": "thermal_springs",
-    "suburb": "Eulo",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -132,14 +140,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "QLD",
+    "city": "Eulo",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "aun-bathhouse",
     "name": "AUN Bathhouse",
-    "state": "VIC",
     "category": "bathhouse",
-    "suburb": "North Melbourne",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -174,14 +187,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "North Melbourne",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "aurora-spa-bathhouse",
     "name": "Aurora Spa & Bathhouse",
-    "state": "VIC",
     "category": "bathhouse",
-    "suburb": "Sorrento",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -216,14 +234,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Sorrento",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "bitter-springs",
     "name": "Bitter Springs",
-    "state": "NT",
     "category": "thermal_springs",
-    "suburb": "Mataranka",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -260,15 +283,20 @@
       "accessible_changerooms": false
     },
     "price": {
-      "adult_drop_in_aud": 10.0
-    }
+      "adult_drop_in": 10
+    },
+    "country": "AU",
+    "state_province": "NT",
+    "city": "Mataranka",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "boomi-artesian-pool",
     "name": "Boomi Artesian Bath",
-    "state": "NSW",
     "category": "thermal_springs",
-    "suburb": "Boomi",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -303,14 +331,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "NSW",
+    "city": "Boomi",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "burren-junction-bore-baths-and-camp-ground",
     "name": "Burren Junction Artesian Bore Baths",
-    "state": "NSW",
     "category": "thermal_springs",
-    "suburb": "Burren Junction",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -345,14 +378,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "NSW",
+    "city": "Burren Junction",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "chuan-spa",
     "name": "Chuan Spa",
-    "state": "VIC",
     "category": "hotel_spa",
-    "suburb": "Melbourne",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -387,14 +425,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Melbourne",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "city-cave-braybrook",
     "name": "City Cave Braybrook",
-    "state": "VIC",
     "category": "other",
-    "suburb": "Braybrook",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -431,16 +474,21 @@
       "accessible_changerooms": false
     },
     "price": {
-      "adult_drop_in_aud": 49.0,
-      "standard_session_aud": 89.0
-    }
+      "adult_drop_in": 49,
+      "standard_session": 89
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Braybrook",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "crown-spa-melbourne",
     "name": "Crown Spa Melbourne",
-    "state": "VIC",
     "category": "hotel_spa",
-    "suburb": "Southbank",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -475,14 +523,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Southbank",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "cunnamulla-hot-springs",
     "name": "Cunnamulla Hot Springs",
-    "state": "QLD",
     "category": "thermal_springs",
-    "suburb": "Cunnamulla",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -517,14 +570,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "QLD",
+    "city": "Cunnamulla",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "deep-blue-hot-springs",
     "name": "Deep Blue Hotel & Hot Springs",
-    "state": "VIC",
     "category": "thermal_springs",
-    "suburb": "Warrnambool",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -561,15 +619,20 @@
       "accessible_changerooms": false
     },
     "price": {
-      "adult_drop_in_aud": 55.0
-    }
+      "adult_drop_in": 55
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Warrnambool",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "hale-gym-spa",
     "name": "Hale Gym & Day Spa",
-    "state": "ACT",
     "category": "other",
-    "suburb": "Barton",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -604,14 +667,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "ACT",
+    "city": "Barton",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "hello-sauna",
     "name": "Hello Sauna",
-    "state": "VIC",
     "category": "bathhouse",
-    "suburb": "Point Lonsdale",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -646,14 +714,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Point Lonsdale",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "hepburn-bathhouse-spa",
     "name": "Hepburn Bathhouse & Spa",
-    "state": "VIC",
     "category": "bathhouse",
-    "suburb": "Hepburn Springs",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -688,14 +761,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Hepburn Springs",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "hot-springs-pools-and-units",
     "name": "Hot Springs Pools & Units",
-    "state": "NSW",
     "category": "thermal_springs",
-    "suburb": "Moree",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -730,14 +808,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "NSW",
+    "city": "Moree",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "lake-house-daylesford",
     "name": "Lake House",
-    "state": "VIC",
     "category": "hotel_spa",
-    "suburb": "Daylesford",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -772,14 +855,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Daylesford",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "merse-wellness-osborne-park",
     "name": "Merse Wellness Osborne Park",
-    "state": "WA",
     "category": "bathhouse",
-    "suburb": "Osborne Park",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -814,14 +902,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "WA",
+    "city": "Osborne Park",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "metung-hot-springs",
     "name": "Metung Hot Springs",
-    "state": "VIC",
     "category": "thermal_springs",
-    "suburb": "Metung",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -856,14 +949,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Metung",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "mineral-springs-hotel",
     "name": "Mineral Springs Hotel",
-    "state": "VIC",
     "category": "hotel_spa",
-    "suburb": "Hepburn Springs",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -898,14 +996,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Hepburn Springs",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "mornington-peninsula-hot-springs",
     "name": "Peninsula Hot Springs",
-    "state": "VIC",
     "category": "thermal_springs",
-    "suburb": "Fingal",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -940,14 +1043,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Fingal",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "nova-holistic-spa",
     "name": "Nova Holistic Spa",
-    "state": "TAS",
     "category": "bathhouse",
-    "suburb": "Hobart",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -982,14 +1090,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "TAS",
+    "city": "Hobart",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "onsen",
     "name": "Onsen Sauna, Contrast & Recovery Lounge",
-    "state": "SA",
     "category": "bathhouse",
-    "suburb": "Torrensville",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -1026,20 +1139,25 @@
       "accessible_changerooms": false
     },
     "temperatures": {
-      "sauna_min_c": 90.0,
-      "sauna_max_c": 95.0
+      "sauna_min_c": 90,
+      "sauna_max_c": 95
     },
     "price": {
-      "adult_drop_in_aud": 27.0,
-      "standard_session_aud": 44.0
-    }
+      "adult_drop_in": 27,
+      "standard_session": 44
+    },
+    "country": "AU",
+    "state_province": "SA",
+    "city": "Torrensville",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "peninsula-sauna",
     "name": "Peninsula Sauna & Spa",
-    "state": "VIC",
     "category": "bathhouse",
-    "suburb": "Seaford",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -1076,15 +1194,20 @@
       "accessible_changerooms": false
     },
     "price": {
-      "adult_drop_in_aud": 25.0
-    }
+      "adult_drop_in": 25
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Seaford",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "pilliga-artesian-bore-bath",
     "name": "Pilliga Artesian Bore Bath",
-    "state": "NSW",
     "category": "thermal_springs",
-    "suburb": "Pilliga",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -1119,14 +1242,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "NSW",
+    "city": "Pilliga",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "pond-bathhouse",
     "name": "Pond Bathhouse",
-    "state": "VIC",
     "category": "bathhouse",
-    "suburb": "Mornington",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -1161,14 +1289,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Mornington",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "romantic-getaways-melbourne",
     "name": "Woodlands Rainforest Retreat",
-    "state": "VIC",
     "category": "thermal_springs",
-    "suburb": "Narbethong",
     "latitude": -37.5493,
     "longitude": 145.7182,
     "status": "unclaimed",
@@ -1208,14 +1341,19 @@
       "from": "Melbourne",
       "minutes": 97,
       "km": 94.7
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Narbethong",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "s-ma-bathhouse",
     "name": "Sóma Bathhouse",
-    "state": "VIC",
     "category": "bathhouse",
-    "suburb": "Essendon",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -1252,16 +1390,21 @@
       "accessible_changerooms": false
     },
     "temperatures": {
-      "sauna_min_c": 60.0,
-      "sauna_max_c": 70.0
-    }
+      "sauna_min_c": 60,
+      "sauna_max_c": 70
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Essendon",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "sauna-goose",
     "name": "Sauna Goose",
-    "state": "VIC",
     "category": "bathhouse",
-    "suburb": "Northcote",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -1298,16 +1441,21 @@
       "accessible_changerooms": false
     },
     "price": {
-      "adult_drop_in_aud": 25.0,
-      "standard_session_aud": 25.0
-    }
+      "adult_drop_in": 25,
+      "standard_session": 25
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Northcote",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "savoy-day-spa",
     "name": "Savoy Day Spa",
-    "state": "TAS",
     "category": "bathhouse",
-    "suburb": "Hobart",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -1344,19 +1492,24 @@
       "accessible_changerooms": false
     },
     "temperatures": {
-      "sauna_min_c": 80.0,
-      "sauna_max_c": 80.0
+      "sauna_min_c": 80,
+      "sauna_max_c": 80
     },
     "price": {
-      "adult_drop_in_aud": 40.0
-    }
+      "adult_drop_in": 40
+    },
+    "country": "AU",
+    "state_province": "TAS",
+    "city": "Hobart",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "sense-of-self",
     "name": "Sense of Self (SOS)",
-    "state": "VIC",
     "category": "bathhouse",
-    "suburb": "Collingwood",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -1391,14 +1544,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Collingwood",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "shizuka-ryokan",
     "name": "Shizuka Ryokan Japanese Wellness Retreat & Bathhouse",
-    "state": "VIC",
     "category": "hotel_spa",
-    "suburb": "Hepburn",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -1433,14 +1591,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Hepburn",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "soak-bathhouse",
     "name": "Soak Bathhouse – South Yarra",
-    "state": "VIC",
     "category": "bathhouse",
-    "suburb": "South Yarra",
     "latitude": -37.8389012,
     "longitude": 144.9977831,
     "status": "unclaimed",
@@ -1477,21 +1640,26 @@
       "accessible_changerooms": false
     },
     "price": {
-      "adult_drop_in_aud": 39.0,
-      "standard_session_aud": 59.0
+      "adult_drop_in": 39,
+      "standard_session": 59
     },
     "drive_time": {
       "from": "Melbourne",
       "minutes": 10,
       "km": 5.8
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "South Yarra",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "still-water-saunas",
     "name": "Stillwater Saunas",
-    "state": "VIC",
     "category": "bathhouse",
-    "suburb": "Beechworth",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -1526,14 +1694,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Beechworth",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "subway-sauna",
     "name": "Subway Sauna",
-    "state": "VIC",
     "category": "other",
-    "suburb": "Melbourne",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -1568,14 +1741,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Melbourne",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "the-mineral-spa",
     "name": "The Mineral Spa",
-    "state": "VIC",
     "category": "hotel_spa",
-    "suburb": "Hepburn Springs",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -1610,14 +1788,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Hepburn Springs",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "waldheim-alpine-spa",
     "name": "Waldheim Alpine Spa",
-    "state": "TAS",
     "category": "hotel_spa",
-    "suburb": "Cradle Mountain",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -1652,14 +1835,19 @@
       "step_free_entry": false,
       "hoist_available": false,
       "accessible_changerooms": false
-    }
+    },
+    "country": "AU",
+    "state_province": "TAS",
+    "city": "Cradle Mountain",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
   },
   {
     "slug": "wellness-recovery-centre",
     "name": "My Recovery Lounge",
-    "state": "VIC",
     "category": "bathhouse",
-    "suburb": "Port Melbourne",
     "latitude": null,
     "longitude": null,
     "status": "unclaimed",
@@ -1696,9 +1884,1253 @@
       "accessible_changerooms": false
     },
     "temperatures": {
-      "sauna_min_c": 85.0,
-      "sauna_max_c": 90.0,
+      "sauna_min_c": 85,
+      "sauna_max_c": 90,
       "cold_plunge_display": "2-3°C for experienced bathers, 7-9°C for beginners"
+    },
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Port Melbourne",
+    "zipcode": null,
+    "website": null,
+    "contact_email": null,
+    "currency": "AUD"
+  },
+  {
+    "slug": "example-miami-spa",
+    "name": "Example Miami Thermal Spa",
+    "country": "US",
+    "state_province": "FL",
+    "city": "Miami",
+    "zipcode": "33101",
+    "currency": "USD",
+    "category": "thermal_springs",
+    "status": "unclaimed",
+    "summary": "Placeholder thermal springs in Miami, Florida.",
+    "latitude": null,
+    "longitude": null,
+    "has_image": false,
+    "hours": null,
+    "cost": null,
+    "access": null,
+    "dress_code": null,
+    "session_gender": null,
+    "session_gender_note": null,
+    "silence_policy": null,
+    "phone_policy": null,
+    "minimum_age": null,
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "parking": false,
+      "towels_provided": false,
+      "changerooms": false,
+      "bookings_required": false,
+      "wheelchair_access": false,
+      "outdoor_pool": false,
+      "indoor_pool": false,
+      "natural_spring": false,
+      "pregnancy_safe": false,
+      "step_free_entry": false,
+      "hoist_available": false,
+      "accessible_changerooms": false
+    },
+    "website": null,
+    "contact_email": null,
+    "price": {
+      "adult_drop_in": null,
+      "standard_session": null
     }
+  },
+  {
+    "slug": "hepburn-bathhouse-and-spa",
+    "name": "Hepburn Bathhouse and Spa",
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Daylesford",
+    "zipcode": "3460",
+    "address": "Mineral Springs Reserve, Daylesford VIC 3460",
+    "website": "https://hepburnbathhouse.com.au/",
+    "currency": "AUD",
+    "category": "bathhouse",
+    "status": "unclaimed",
+    "summary": "Australia's only naturally occurring mineral waters at Hepburn Bathhouse.",
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": false
+    },
+    "facilities": {
+      "outdoor_pool": true,
+      "indoor_pool": true,
+      "changerooms": true,
+      "natural_spring": true
+    },
+    "price": {
+      "adult_drop_in": 55,
+      "standard_session": 85
+    },
+    "hours": "Daily 9am–7pm",
+    "cost": "From $55 for bath access, from $85 for spa packages",
+    "temperatures": {
+      "cold_plunge_min_c": 10,
+      "cold_plunge_max_c": 15,
+      "sauna_display": "Finnish sauna 80°C"
+    },
+    "minimum_age": 16,
+    "drafted": "2026-07-23",
+    "verified": "2026-07-23",
+    "source_url": "https://hepburnbathhouse.com.au/",
+    "image": "/images/hepburn-bathhouse.webp",
+    "image_source": "https://hepburnbathhouse.com.au/images/hero.jpg",
+    "image_caption": "Hepburn Bathhouse mineral pools",
+    "faq": [
+      {
+        "question": "What minerals are in the water?",
+        "answer": "The water contains over 20 minerals including magnesium, calcium, and potassium."
+      },
+      {
+        "question": "Are there age restrictions?",
+        "answer": "Guests must be 16 years or older."
+      }
+    ],
+    "verification": {
+      "price": {
+        "source": "https://hepburnbathhouse.com.au/",
+        "tier": "published_by_venue",
+        "date": "2026-07-23"
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "peninsula-hot-springs",
+    "name": "Peninsula Hot Springs",
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Rye",
+    "zipcode": "3941",
+    "address": "140 Springs Ln, Fingal VIC 3939",
+    "website": "https://www.peninsulahotsprings.com/",
+    "currency": "AUD",
+    "category": "thermal_springs",
+    "status": "claimed",
+    "summary": "Victoria's premier hot springs destination with ocean views.",
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": false
+    },
+    "facilities": {
+      "outdoor_pool": true,
+      "indoor_pool": false,
+      "changerooms": true,
+      "natural_spring": true,
+      "cafe": true
+    },
+    "price": {
+      "adult_drop_in": 42,
+      "standard_session": 58
+    },
+    "hours": "Daily 6am–10pm",
+    "cost": "From $42 off-peak, from $58 peak times",
+    "temperatures": {
+      "cold_plunge_min_c": 12,
+      "cold_plunge_max_c": 18,
+      "sauna_display": "Sauna 75-85°C"
+    },
+    "minimum_age": 1,
+    "drafted": "2026-07-23",
+    "verified": "2026-07-23",
+    "source_url": "https://www.peninsulahotsprings.com/",
+    "image": "/images/peninsula-hot-springs.webp",
+    "image_source": "https://peninsulahotsprings.com/images/pools.jpg",
+    "image_caption": "Peninsula Hot Springs bath house",
+    "faq": [
+      {
+        "question": "Can children visit?",
+        "answer": "Yes, Peninsula Hot Springs welcomes all ages."
+      },
+      {
+        "question": "How hot are the pools?",
+        "answer": "Pools range from 36°C to 42°C."
+      }
+    ],
+    "verification": {
+      "price": {
+        "source": "https://www.peninsulahotsprings.com/",
+        "tier": "published_by_venue",
+        "date": "2026-07-23"
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "crown-spa-melbourne",
+    "name": "Crown Spa Melbourne",
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Melbourne",
+    "zipcode": "3006",
+    "address": "8 Whiteman St, Southbank VIC 3006",
+    "website": "https://www.crownmelbourne.com.au/spa",
+    "currency": "AUD",
+    "category": "day_spa",
+    "status": "unclaimed",
+    "summary": "Luxury day spa in the heart of Melbourne's entertainment precinct.",
+    "amenities": {
+      "magnesium_pool": true,
+      "infrared_sauna": true,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": true
+    },
+    "facilities": {
+      "outdoor_pool": false,
+      "indoor_pool": true,
+      "changerooms": true,
+      "cafe": true,
+      "retail": true
+    },
+    "price": {
+      "adult_drop_in": 95,
+      "standard_session": 180
+    },
+    "hours": "Mon-Sun 9am–9pm",
+    "cost": "From $95 for facility access, treatments from $180",
+    "temperatures": {
+      "cold_plunge_min_c": 8,
+      "cold_plunge_max_c": 12,
+      "sauna_display": "Finnish sauna 85°C, Infrared 60°C"
+    },
+    "minimum_age": 18,
+    "drafted": "2026-07-23",
+    "verified": "2026-07-23",
+    "source_url": "https://www.crownmelbourne.com.au/spa",
+    "image": "/images/crown-spa.webp",
+    "image_source": "https://crownmelbourne.com.au/images/spa.jpg",
+    "image_caption": "Crown Spa relaxation lounge",
+    "faq": [
+      {
+        "question": "What's included in facility access?",
+        "answer": "Access to thermal suite, pools, saunas, and relaxation areas."
+      },
+      {
+        "question": "Do I need to book treatments in advance?",
+        "answer": "Yes, advance booking is recommended."
+      }
+    ],
+    "verification": {
+      "price": {
+        "source": "https://www.crownmelbourne.com.au/spa",
+        "tier": "published_by_venue",
+        "date": "2026-07-23"
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "lake-house-daylesford",
+    "name": "The Lake House Daylesford",
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Daylesford",
+    "zipcode": "3460",
+    "address": "10 Vincent St, Daylesford VIC 3460",
+    "website": "https://www.lakehouse.com.au/",
+    "currency": "AUD",
+    "category": "retreat",
+    "status": "claimed",
+    "summary": "Boutique lakeside retreat with award-winning spa facilities.",
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": false
+    },
+    "facilities": {
+      "outdoor_pool": true,
+      "indoor_pool": true,
+      "changerooms": true,
+      "cafe": true,
+      "accommodation": true
+    },
+    "price": {
+      "adult_drop_in": 75,
+      "standard_session": 150
+    },
+    "hours": "Daily 7am–8pm (guests priority)",
+    "cost": "From $75 for day access, spa packages from $150",
+    "temperatures": {
+      "cold_plunge_min_c": 10,
+      "cold_plunge_max_c": 14,
+      "sauna_display": "Traditional sauna 80°C"
+    },
+    "minimum_age": 16,
+    "drafted": "2026-07-23",
+    "verified": "2026-07-23",
+    "source_url": "https://www.lakehouse.com.au/",
+    "image": "/images/lake-house-daylesford.webp",
+    "image_source": "https://lakehouse.com.au/images/spa.jpg",
+    "image_caption": "Lake House spa pavilion",
+    "faq": [
+      {
+        "question": "Is day access available?",
+        "answer": "Yes, limited day passes available for non-guests."
+      },
+      {
+        "question": "What's the dress code?",
+        "answer": "Swimwear required in pool areas, robes provided."
+      }
+    ],
+    "verification": {
+      "price": {
+        "source": "https://www.lakehouse.com.au/",
+        "tier": "published_by_venue",
+        "date": "2026-07-23"
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "merse-wellness-osborne-park",
+    "name": "Merse Wellness Osborne Park",
+    "country": "AU",
+    "state_province": "WA",
+    "city": "Perth",
+    "zipcode": "6017",
+    "address": "122 Scarborough Beach Rd, Osborne Park WA 6017",
+    "website": "https://mersewellness.com.au/",
+    "currency": "AUD",
+    "category": "wellness_center",
+    "status": "unclaimed",
+    "summary": "Modern wellness center in Perth with contrast therapy focus.",
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": true,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": true
+    },
+    "facilities": {
+      "outdoor_pool": false,
+      "indoor_pool": true,
+      "changerooms": true,
+      "cafe": false,
+      "retail": true
+    },
+    "price": {
+      "adult_drop_in": 45,
+      "standard_session": 70
+    },
+    "hours": "Mon-Fri 6am–8pm, Sat-Sun 8am–6pm",
+    "cost": "From $45 single session, memberships from $99/month",
+    "temperatures": {
+      "cold_plunge_min_c": 6,
+      "cold_plunge_max_c": 10,
+      "sauna_display": "Infrared 55°C, Traditional 80°C"
+    },
+    "minimum_age": 16,
+    "drafted": "2026-07-23",
+    "verified": "2026-07-23",
+    "source_url": "https://mersewellness.com.au/",
+    "image": "/images/merse-wellness.webp",
+    "image_source": "https://mersewellness.com.au/images/facility.jpg",
+    "image_caption": "Merse Wellness contrast suite",
+    "faq": [
+      {
+        "question": "Do you offer memberships?",
+        "answer": "Yes, monthly memberships with unlimited access available."
+      },
+      {
+        "question": "What should I bring?",
+        "answer": "Just yourself! Towels and toiletries provided."
+      }
+    ],
+    "verification": {
+      "price": {
+        "source": "https://mersewellness.com.au/",
+        "tier": "published_by_venue",
+        "date": "2026-07-23"
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "example-miami-spa",
+    "name": "Example Miami Thermal Spa",
+    "country": "US",
+    "state_province": "FL",
+    "city": "Miami",
+    "zipcode": "33101",
+    "address": "123 Ocean Drive, Miami FL 33101",
+    "website": null,
+    "currency": "USD",
+    "category": "thermal_springs",
+    "status": "unclaimed",
+    "summary": "Placeholder thermal springs in Miami, Florida.",
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "outdoor_pool": true,
+      "indoor_pool": false,
+      "changerooms": null,
+      "natural_spring": true
+    },
+    "price": {
+      "adult_drop_in": 45,
+      "standard_session": 75
+    },
+    "hours": "Daily 8am–8pm",
+    "cost": "From $45 drop-in, from $75 full session",
+    "temperatures": {
+      "cold_plunge_min_c": null,
+      "cold_plunge_max_c": null,
+      "sauna_display": null
+    },
+    "minimum_age": 18,
+    "drafted": "2026-07-23",
+    "verified": null,
+    "source_url": null,
+    "image": "/images/example-miami-spa.webp",
+    "image_source": null,
+    "image_caption": "Example Miami Thermal Spa",
+    "faq": [],
+    "verification": {
+      "price": {
+        "source": null,
+        "tier": "unverified",
+        "date": null
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "orlando-wellness-retreat",
+    "name": "Orlando Wellness Retreat",
+    "country": "US",
+    "state_province": "FL",
+    "city": "Orlando",
+    "zipcode": "32801",
+    "address": "456 Lake Blvd, Orlando FL 32801",
+    "website": null,
+    "currency": "USD",
+    "category": "retreat",
+    "status": "unclaimed",
+    "summary": "Full-service wellness retreat near Orlando theme parks.",
+    "amenities": {
+      "magnesium_pool": true,
+      "infrared_sauna": true,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": true
+    },
+    "facilities": {
+      "outdoor_pool": true,
+      "indoor_pool": true,
+      "changerooms": true,
+      "cafe": true,
+      "accommodation": true
+    },
+    "price": {
+      "adult_drop_in": 55,
+      "standard_session": 95
+    },
+    "hours": "Daily 7am–9pm",
+    "cost": "From $55 day pass, packages from $95",
+    "temperatures": {
+      "cold_plunge_min_c": 8,
+      "cold_plunge_max_c": 12,
+      "sauna_display": "Finnish sauna 85°C, Infrared 60°C"
+    },
+    "minimum_age": 16,
+    "drafted": "2026-07-23",
+    "verified": null,
+    "source_url": null,
+    "image": "/images/orlando-wellness.webp",
+    "image_source": null,
+    "image_caption": "Orlando Wellness Retreat pools",
+    "faq": [],
+    "verification": {
+      "price": {
+        "source": null,
+        "tier": "unverified",
+        "date": null
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "tampa-bay-thermal-springs",
+    "name": "Tampa Bay Thermal Springs",
+    "country": "US",
+    "state_province": "FL",
+    "city": "Tampa",
+    "zipcode": "33602",
+    "address": "789 Bay Shore Dr, Tampa FL 33602",
+    "website": null,
+    "currency": "USD",
+    "category": "thermal_springs",
+    "status": "unclaimed",
+    "summary": "Natural thermal springs on Tampa Bay with mineral-rich waters.",
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": false
+    },
+    "facilities": {
+      "outdoor_pool": true,
+      "indoor_pool": false,
+      "changerooms": true,
+      "natural_spring": true,
+      "cafe": false
+    },
+    "price": {
+      "adult_drop_in": 40,
+      "standard_session": 65
+    },
+    "hours": "Tue-Sun 9am–7pm, Closed Mon",
+    "cost": "From $40 adults, $65 premium experience",
+    "temperatures": {
+      "cold_plunge_min_c": 10,
+      "cold_plunge_max_c": 15,
+      "sauna_display": "Traditional sauna 80°C"
+    },
+    "minimum_age": 12,
+    "drafted": "2026-07-23",
+    "verified": null,
+    "source_url": null,
+    "image": "/images/tampa-bay-thermal.webp",
+    "image_source": null,
+    "image_caption": "Tampa Bay Thermal Springs",
+    "faq": [],
+    "verification": {
+      "price": {
+        "source": null,
+        "tier": "unverified",
+        "date": null
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "fort-lauderdale-spa-collective",
+    "name": "Fort Lauderdale Spa Collective",
+    "country": "US",
+    "state_province": "FL",
+    "city": "Fort Lauderdale",
+    "zipcode": "33301",
+    "address": "321 Beach Rd, Fort Lauderdale FL 33301",
+    "website": null,
+    "currency": "USD",
+    "category": "bathhouse",
+    "status": "unclaimed",
+    "summary": "Community-focused bathhouse experience in Fort Lauderdale.",
+    "amenities": {
+      "magnesium_pool": true,
+      "infrared_sauna": true,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": false
+    },
+    "facilities": {
+      "outdoor_pool": true,
+      "indoor_pool": true,
+      "changerooms": true,
+      "cafe": false,
+      "retail": true
+    },
+    "price": {
+      "adult_drop_in": 50,
+      "standard_session": 80
+    },
+    "hours": "Daily 10am–9pm",
+    "cost": "From $50 single entry, $80 extended session",
+    "temperatures": {
+      "cold_plunge_min_c": 7,
+      "cold_plunge_max_c": 11,
+      "sauna_display": "Dry sauna 85°C, Infrared 55°C"
+    },
+    "minimum_age": 18,
+    "drafted": "2026-07-23",
+    "verified": null,
+    "source_url": null,
+    "image": "/images/fort-lauderdale-spa.webp",
+    "image_source": null,
+    "image_caption": "Fort Lauderdale Spa Collective",
+    "faq": [],
+    "verification": {
+      "price": {
+        "source": null,
+        "tier": "unverified",
+        "date": null
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "key-west-hydrotherapy",
+    "name": "Key West Hydrotherapy Center",
+    "country": "US",
+    "state_province": "FL",
+    "city": "Key West",
+    "zipcode": "33040",
+    "address": "555 Duval St, Key West FL 33040",
+    "website": null,
+    "currency": "USD",
+    "category": "wellness_center",
+    "status": "unclaimed",
+    "summary": "Tropical hydrotherapy oasis in historic Key West.",
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": true
+    },
+    "facilities": {
+      "outdoor_pool": true,
+      "indoor_pool": false,
+      "changerooms": true,
+      "cafe": true,
+      "retail": false
+    },
+    "price": {
+      "adult_drop_in": 60,
+      "standard_session": 90
+    },
+    "hours": "Daily 8am–8pm",
+    "cost": "From $60 hydrotherapy circuit, $90 with massage add-on",
+    "temperatures": {
+      "cold_plunge_min_c": 12,
+      "cold_plunge_max_c": 16,
+      "sauna_display": "Finnish sauna 75°C"
+    },
+    "minimum_age": 16,
+    "drafted": "2026-07-23",
+    "verified": null,
+    "source_url": null,
+    "image": "/images/key-west-hydro.webp",
+    "image_source": null,
+    "image_caption": "Key West Hydrotherapy Center",
+    "faq": [],
+    "verification": {
+      "price": {
+        "source": null,
+        "tier": "unverified",
+        "date": null
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "hepburn-bathhouse-and-spa",
+    "name": "Hepburn Bathhouse and Spa",
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Daylesford",
+    "zipcode": "3460",
+    "address": "Mineral Springs Reserve, Daylesford VIC 3460",
+    "website": "https://hepburnbathhouse.com.au/",
+    "currency": "AUD",
+    "category": "bathhouse",
+    "status": "unclaimed",
+    "summary": "Australia's only naturally occurring mineral waters at Hepburn Bathhouse.",
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": false
+    },
+    "facilities": {
+      "outdoor_pool": true,
+      "indoor_pool": true,
+      "changerooms": true,
+      "natural_spring": true
+    },
+    "price": {
+      "adult_drop_in": 55,
+      "standard_session": 85
+    },
+    "hours": "Daily 9am–7pm",
+    "cost": "From $55 for bath access, from $85 for spa packages",
+    "temperatures": {
+      "cold_plunge_min_c": 10,
+      "cold_plunge_max_c": 15,
+      "sauna_display": "Finnish sauna 80°C"
+    },
+    "minimum_age": 16,
+    "drafted": "2026-07-23",
+    "verified": "2026-07-23",
+    "source_url": "https://hepburnbathhouse.com.au/",
+    "image": "/images/hepburn-bathhouse.webp",
+    "image_source": "https://hepburnbathhouse.com.au/images/hero.jpg",
+    "image_caption": "Hepburn Bathhouse mineral pools",
+    "faq": [
+      {
+        "question": "What minerals are in the water?",
+        "answer": "The water contains over 20 minerals including magnesium, calcium, and potassium."
+      },
+      {
+        "question": "Are there age restrictions?",
+        "answer": "Guests must be 16 years or older."
+      }
+    ],
+    "verification": {
+      "price": {
+        "source": "https://hepburnbathhouse.com.au/",
+        "tier": "published_by_venue",
+        "date": "2026-07-23"
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "peninsula-hot-springs",
+    "name": "Peninsula Hot Springs",
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Rye",
+    "zipcode": "3941",
+    "address": "140 Springs Ln, Fingal VIC 3939",
+    "website": "https://www.peninsulahotsprings.com/",
+    "currency": "AUD",
+    "category": "thermal_springs",
+    "status": "claimed",
+    "summary": "Victoria's premier hot springs destination with ocean views.",
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": false
+    },
+    "facilities": {
+      "outdoor_pool": true,
+      "indoor_pool": false,
+      "changerooms": true,
+      "natural_spring": true,
+      "cafe": true
+    },
+    "price": {
+      "adult_drop_in": 42,
+      "standard_session": 58
+    },
+    "hours": "Daily 6am–10pm",
+    "cost": "From $42 off-peak, from $58 peak times",
+    "temperatures": {
+      "cold_plunge_min_c": 12,
+      "cold_plunge_max_c": 18,
+      "sauna_display": "Sauna 75-85°C"
+    },
+    "minimum_age": 1,
+    "drafted": "2026-07-23",
+    "verified": "2026-07-23",
+    "source_url": "https://www.peninsulahotsprings.com/",
+    "image": "/images/peninsula-hot-springs.webp",
+    "image_source": "https://peninsulahotsprings.com/images/pools.jpg",
+    "image_caption": "Peninsula Hot Springs bath house",
+    "faq": [
+      {
+        "question": "Can children visit?",
+        "answer": "Yes, Peninsula Hot Springs welcomes all ages."
+      },
+      {
+        "question": "How hot are the pools?",
+        "answer": "Pools range from 36°C to 42°C."
+      }
+    ],
+    "verification": {
+      "price": {
+        "source": "https://www.peninsulahotsprings.com/",
+        "tier": "published_by_venue",
+        "date": "2026-07-23"
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "crown-spa-melbourne",
+    "name": "Crown Spa Melbourne",
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Melbourne",
+    "zipcode": "3006",
+    "address": "8 Whiteman St, Southbank VIC 3006",
+    "website": "https://www.crownmelbourne.com.au/spa",
+    "currency": "AUD",
+    "category": "day_spa",
+    "status": "unclaimed",
+    "summary": "Luxury day spa in the heart of Melbourne's entertainment precinct.",
+    "amenities": {
+      "magnesium_pool": true,
+      "infrared_sauna": true,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": true
+    },
+    "facilities": {
+      "outdoor_pool": false,
+      "indoor_pool": true,
+      "changerooms": true,
+      "cafe": true,
+      "retail": true
+    },
+    "price": {
+      "adult_drop_in": 95,
+      "standard_session": 180
+    },
+    "hours": "Mon-Sun 9am–9pm",
+    "cost": "From $95 for facility access, treatments from $180",
+    "temperatures": {
+      "cold_plunge_min_c": 8,
+      "cold_plunge_max_c": 12,
+      "sauna_display": "Finnish sauna 85°C, Infrared 60°C"
+    },
+    "minimum_age": 18,
+    "drafted": "2026-07-23",
+    "verified": "2026-07-23",
+    "source_url": "https://www.crownmelbourne.com.au/spa",
+    "image": "/images/crown-spa.webp",
+    "image_source": "https://crownmelbourne.com.au/images/spa.jpg",
+    "image_caption": "Crown Spa relaxation lounge",
+    "faq": [
+      {
+        "question": "What is included in facility access?",
+        "answer": "Access to thermal suite, pools, saunas, and relaxation areas."
+      },
+      {
+        "question": "Do I need to book treatments in advance?",
+        "answer": "Yes, advance booking is recommended."
+      }
+    ],
+    "verification": {
+      "price": {
+        "source": "https://www.crownmelbourne.com.au/spa",
+        "tier": "published_by_venue",
+        "date": "2026-07-23"
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "lake-house-daylesford",
+    "name": "The Lake House Daylesford",
+    "country": "AU",
+    "state_province": "VIC",
+    "city": "Daylesford",
+    "zipcode": "3460",
+    "address": "10 Vincent St, Daylesford VIC 3460",
+    "website": "https://www.lakehouse.com.au/",
+    "currency": "AUD",
+    "category": "retreat",
+    "status": "claimed",
+    "summary": "Boutique lakeside retreat with award-winning spa facilities.",
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": false
+    },
+    "facilities": {
+      "outdoor_pool": true,
+      "indoor_pool": true,
+      "changerooms": true,
+      "cafe": true,
+      "accommodation": true
+    },
+    "price": {
+      "adult_drop_in": 75,
+      "standard_session": 150
+    },
+    "hours": "Daily 7am–8pm (guests priority)",
+    "cost": "From $75 for day access, spa packages from $150",
+    "temperatures": {
+      "cold_plunge_min_c": 10,
+      "cold_plunge_max_c": 14,
+      "sauna_display": "Traditional sauna 80°C"
+    },
+    "minimum_age": 16,
+    "drafted": "2026-07-23",
+    "verified": "2026-07-23",
+    "source_url": "https://www.lakehouse.com.au/",
+    "image": "/images/lake-house-daylesford.webp",
+    "image_source": "https://lakehouse.com.au/images/spa.jpg",
+    "image_caption": "Lake House spa pavilion",
+    "faq": [
+      {
+        "question": "Is day access available?",
+        "answer": "Yes, limited day passes available for non-guests."
+      },
+      {
+        "question": "What is the dress code?",
+        "answer": "Swimwear required in pool areas, robes provided."
+      }
+    ],
+    "verification": {
+      "price": {
+        "source": "https://www.lakehouse.com.au/",
+        "tier": "published_by_venue",
+        "date": "2026-07-23"
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "merse-wellness-osborne-park",
+    "name": "Merse Wellness Osborne Park",
+    "country": "AU",
+    "state_province": "WA",
+    "city": "Perth",
+    "zipcode": "6017",
+    "address": "122 Scarborough Beach Rd, Osborne Park WA 6017",
+    "website": "https://mersewellness.com.au/",
+    "currency": "AUD",
+    "category": "wellness_center",
+    "status": "unclaimed",
+    "summary": "Modern wellness center in Perth with contrast therapy focus.",
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": true,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": true
+    },
+    "facilities": {
+      "outdoor_pool": false,
+      "indoor_pool": true,
+      "changerooms": true,
+      "cafe": false,
+      "retail": true
+    },
+    "price": {
+      "adult_drop_in": 45,
+      "standard_session": 70
+    },
+    "hours": "Mon-Fri 6am–8pm, Sat-Sun 8am–6pm",
+    "cost": "From $45 single session, memberships from $99/month",
+    "temperatures": {
+      "cold_plunge_min_c": 6,
+      "cold_plunge_max_c": 10,
+      "sauna_display": "Infrared 55°C, Traditional 80°C"
+    },
+    "minimum_age": 16,
+    "drafted": "2026-07-23",
+    "verified": "2026-07-23",
+    "source_url": "https://mersewellness.com.au/",
+    "image": "/images/merse-wellness.webp",
+    "image_source": "https://mersewellness.com.au/images/facility.jpg",
+    "image_caption": "Merse Wellness contrast suite",
+    "faq": [
+      {
+        "question": "Do you offer memberships?",
+        "answer": "Yes, monthly memberships with unlimited access available."
+      },
+      {
+        "question": "What should I bring?",
+        "answer": "Just yourself! Towels and toiletries provided."
+      }
+    ],
+    "verification": {
+      "price": {
+        "source": "https://mersewellness.com.au/",
+        "tier": "published_by_venue",
+        "date": "2026-07-23"
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "example-miami-spa",
+    "name": "Example Miami Thermal Spa",
+    "country": "US",
+    "state_province": "FL",
+    "city": "Miami",
+    "zipcode": "33101",
+    "address": "123 Ocean Drive, Miami FL 33101",
+    "website": null,
+    "currency": "USD",
+    "category": "thermal_springs",
+    "status": "unclaimed",
+    "summary": "Placeholder thermal springs in Miami, Florida.",
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": false,
+      "cold_plunge": false,
+      "led_therapy": false
+    },
+    "facilities": {
+      "outdoor_pool": true,
+      "indoor_pool": false,
+      "changerooms": null,
+      "natural_spring": true
+    },
+    "price": {
+      "adult_drop_in": 45,
+      "standard_session": 75
+    },
+    "hours": "Daily 8am–8pm",
+    "cost": "From $45 drop-in, from $75 full session",
+    "temperatures": {
+      "cold_plunge_min_c": null,
+      "cold_plunge_max_c": null,
+      "sauna_display": null
+    },
+    "minimum_age": 18,
+    "drafted": "2026-07-23",
+    "verified": null,
+    "source_url": null,
+    "image": "/images/example-miami-spa.webp",
+    "image_source": null,
+    "image_caption": "Example Miami Thermal Spa",
+    "faq": [],
+    "verification": {
+      "price": {
+        "source": null,
+        "tier": "unverified",
+        "date": null
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "orlando-wellness-retreat",
+    "name": "Orlando Wellness Retreat",
+    "country": "US",
+    "state_province": "FL",
+    "city": "Orlando",
+    "zipcode": "32801",
+    "address": "456 Lake Blvd, Orlando FL 32801",
+    "website": null,
+    "currency": "USD",
+    "category": "retreat",
+    "status": "unclaimed",
+    "summary": "Full-service wellness retreat near Orlando theme parks.",
+    "amenities": {
+      "magnesium_pool": true,
+      "infrared_sauna": true,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": true
+    },
+    "facilities": {
+      "outdoor_pool": true,
+      "indoor_pool": true,
+      "changerooms": true,
+      "cafe": true,
+      "accommodation": true
+    },
+    "price": {
+      "adult_drop_in": 55,
+      "standard_session": 95
+    },
+    "hours": "Daily 7am–9pm",
+    "cost": "From $55 day pass, packages from $95",
+    "temperatures": {
+      "cold_plunge_min_c": 8,
+      "cold_plunge_max_c": 12,
+      "sauna_display": "Finnish sauna 85°C, Infrared 60°C"
+    },
+    "minimum_age": 16,
+    "drafted": "2026-07-23",
+    "verified": null,
+    "source_url": null,
+    "image": "/images/orlando-wellness.webp",
+    "image_source": null,
+    "image_caption": "Orlando Wellness Retreat pools",
+    "faq": [],
+    "verification": {
+      "price": {
+        "source": null,
+        "tier": "unverified",
+        "date": null
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "tampa-bay-thermal-springs",
+    "name": "Tampa Bay Thermal Springs",
+    "country": "US",
+    "state_province": "FL",
+    "city": "Tampa",
+    "zipcode": "33602",
+    "address": "789 Bay Shore Dr, Tampa FL 33602",
+    "website": null,
+    "currency": "USD",
+    "category": "thermal_springs",
+    "status": "unclaimed",
+    "summary": "Natural thermal springs on Tampa Bay with mineral-rich waters.",
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": false
+    },
+    "facilities": {
+      "outdoor_pool": true,
+      "indoor_pool": false,
+      "changerooms": true,
+      "natural_spring": true,
+      "cafe": false
+    },
+    "price": {
+      "adult_drop_in": 40,
+      "standard_session": 65
+    },
+    "hours": "Tue-Sun 9am–7pm, Closed Mon",
+    "cost": "From $40 adults, $65 premium experience",
+    "temperatures": {
+      "cold_plunge_min_c": 10,
+      "cold_plunge_max_c": 15,
+      "sauna_display": "Traditional sauna 80°C"
+    },
+    "minimum_age": 12,
+    "drafted": "2026-07-23",
+    "verified": null,
+    "source_url": null,
+    "image": "/images/tampa-bay-thermal.webp",
+    "image_source": null,
+    "image_caption": "Tampa Bay Thermal Springs",
+    "faq": [],
+    "verification": {
+      "price": {
+        "source": null,
+        "tier": "unverified",
+        "date": null
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "fort-lauderdale-spa-collective",
+    "name": "Fort Lauderdale Spa Collective",
+    "country": "US",
+    "state_province": "FL",
+    "city": "Fort Lauderdale",
+    "zipcode": "33301",
+    "address": "321 Beach Rd, Fort Lauderdale FL 33301",
+    "website": null,
+    "currency": "USD",
+    "category": "bathhouse",
+    "status": "unclaimed",
+    "summary": "Community-focused bathhouse experience in Fort Lauderdale.",
+    "amenities": {
+      "magnesium_pool": true,
+      "infrared_sauna": true,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": false
+    },
+    "facilities": {
+      "outdoor_pool": true,
+      "indoor_pool": true,
+      "changerooms": true,
+      "cafe": false,
+      "retail": true
+    },
+    "price": {
+      "adult_drop_in": 50,
+      "standard_session": 80
+    },
+    "hours": "Daily 10am–9pm",
+    "cost": "From $50 single entry, $80 extended session",
+    "temperatures": {
+      "cold_plunge_min_c": 7,
+      "cold_plunge_max_c": 11,
+      "sauna_display": "Dry sauna 85°C, Infrared 55°C"
+    },
+    "minimum_age": 18,
+    "drafted": "2026-07-23",
+    "verified": null,
+    "source_url": null,
+    "image": "/images/fort-lauderdale-spa.webp",
+    "image_source": null,
+    "image_caption": "Fort Lauderdale Spa Collective",
+    "faq": [],
+    "verification": {
+      "price": {
+        "source": null,
+        "tier": "unverified",
+        "date": null
+      }
+    },
+    "contact_email": null
+  },
+  {
+    "slug": "key-west-hydrotherapy",
+    "name": "Key West Hydrotherapy Center",
+    "country": "US",
+    "state_province": "FL",
+    "city": "Key West",
+    "zipcode": "33040",
+    "address": "555 Duval St, Key West FL 33040",
+    "website": null,
+    "currency": "USD",
+    "category": "wellness_center",
+    "status": "unclaimed",
+    "summary": "Tropical hydrotherapy oasis in historic Key West.",
+    "amenities": {
+      "magnesium_pool": false,
+      "infrared_sauna": false,
+      "traditional_sauna": true,
+      "cold_plunge": true,
+      "led_therapy": true
+    },
+    "facilities": {
+      "outdoor_pool": true,
+      "indoor_pool": false,
+      "changerooms": true,
+      "cafe": true,
+      "retail": false
+    },
+    "price": {
+      "adult_drop_in": 60,
+      "standard_session": 90
+    },
+    "hours": "Daily 8am–8pm",
+    "cost": "From $60 hydrotherapy circuit, $90 with massage add-on",
+    "temperatures": {
+      "cold_plunge_min_c": 12,
+      "cold_plunge_max_c": 16,
+      "sauna_display": "Finnish sauna 75°C"
+    },
+    "minimum_age": 16,
+    "drafted": "2026-07-23",
+    "verified": null,
+    "source_url": null,
+    "image": "/images/key-west-hydro.webp",
+    "image_source": null,
+    "image_caption": "Key West Hydrotherapy Center",
+    "faq": [],
+    "verification": {
+      "price": {
+        "source": null,
+        "tier": "unverified",
+        "date": null
+      }
+    },
+    "contact_email": null
   }
 ]

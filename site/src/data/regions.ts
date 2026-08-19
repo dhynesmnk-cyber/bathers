@@ -79,7 +79,8 @@ export const REGIONS: Region[] = [
   { slug: "canberra", name: "Canberra", state: "ACT", suburbs: ["Canberra", "Barton", "Braddon", "City"] },
 ];
 
-export function regionForSuburb(state: (typeof STATES)[number], suburb: string): Region | undefined {
+export function regionForSuburb(state: (typeof STATES)[number], suburb: string | undefined): Region | undefined {
+  if (!suburb) return undefined;
   const needle = suburb.trim().toLowerCase();
   return REGIONS.find((r) => r.state === state && r.suburbs.some((s) => s.toLowerCase() === needle));
 }

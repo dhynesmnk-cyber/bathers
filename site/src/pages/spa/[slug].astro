@@ -55,6 +55,9 @@ const { venue, nearby } = Astro.props;
 const { data } = venue;
 const { Content } = await render(venue);
 
+// State/Province helper - used throughout the template
+const stateProvince = data.state_province || data.state;
+
 // Temperature appendix line (2026-07-26) — prefer the Architect's display
 // string, fall back to the structured min/max range; null when neither is set.
 const saunaLine = data.temperatures ? saunaTemperatureLine(data.temperatures) : null;
@@ -81,9 +84,9 @@ const localBusinessLd: Record<string, unknown> = {
   address: {
     "@type": "PostalAddress",
     streetAddress: data.address,
-    addressLocality: data.suburb,
-    addressRegion: STATE_NAMES[data.state],
-    addressCountry: "AU",
+    addressLocality: data.city || data.suburb,
+    addressRegion: STATE_NAMES[stateProvince],
+    addressCountry: data.country || "AU",
   },
 };
 if (data.image) localBusinessLd.image = new URL(data.image, Astro.site).toString();
@@ -112,13 +115,13 @@ if (featureNames.length > 0) {
   }));
 }
 
-// BreadcrumbList (Gate 11) — Home > State > Venue.
+// BreadcrumbList (Gate 11) — Home > State/Province > Venue.
 const breadcrumbLd = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
   itemListElement: [
     { "@type": "ListItem", position: 1, name: "Home", item: new URL("/", Astro.site).href },
-    { "@type": "ListItem", position: 2, name: STATE_NAMES[data.state], item: new URL(`/${data.state.toLowerCase()}/`, Astro.site).href },
+    { "@type": "ListItem", position: 2, name: STATE_NAMES[stateProvince], item: new URL(`/${stateProvince.toLowerCase()}/`, Astro.site).href },
     { "@type": "ListItem", position: 3, name: data.name, item: new URL(`/spa/${venue.id}/`, Astro.site).href },
   ],
 };
@@ -172,7 +175,7 @@ const faqLd = data.faq && data.faq.length > 0
         <Features
           latitude={data.latitude}
           longitude={data.longitude}
-          state={data.state}
+          state={stateProvince}
           amenities={data.amenities}
           facilities={data.facilities}
           hours={data.hours}
@@ -193,14 +196,17 @@ const faqLd = data.faq && data.faq.length > 0
             <span class="draw-line-on-view h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
           </div>
           <ul>
-            {nearby.map(({ item, distanceKm }) => (
+            {nearby.map(({ item, distanceKm }) => {
+              const nearbyStateProvince = item.data.state_province || item.data.state;
+              return (
               <li class="py-3" style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);">
                 <a href={`/spa/${item.id}/`} class="font-display text-xl font-light text-[var(--ink)]">{item.data.name}</a>
                 <span class="ml-2" style="color: var(--ink-faded);">
-                  {item.data.suburb}, {STATE_NAMES[item.data.state]} — {formatDistanceKm(distanceKm)}
+                  {item.data.city || item.data.suburb}, {STATE_NAMES[nearbyStateProvince]} — {formatDistanceKm(distanceKm)}
                 </span>
               </li>
-            ))}
+            );
+            })}
           </ul>
         </section>
       )}
@@ -229,7 +235,7 @@ const faqLd = data.faq && data.faq.length > 0
           </p>
         )}
         <p class="mt-4">
-          <a href={`/${data.state.toLowerCase()}/`}>More bathhouses in {STATE_NAMES[data.state]}</a>
+          <a href={`/${stateProvince.toLowerCase()}/`}>More bathhouses in {STATE_NAMES[stateProvince]}</a>
         </p>
         <p class="mt-4">
           <a href={`/category/${categoryUrlSlug(data.category)}/`}>More {CATEGORY_LABELS[data.category].toLowerCase()} venues</a>
