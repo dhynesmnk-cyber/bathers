@@ -387,3 +387,9 @@ MAX_PHOTO_BYTES = 4 * 1024 * 1024
 CLAIM_GLOBAL_MAX_PER_WINDOW = 30
 CLAIM_PER_CLIENT_MAX_PER_WINDOW = 5
 CLAIM_RATE_WINDOW_SECONDS = 3600
+
+# Automatic snapshots of claims.db + articles.db (admin/pipeline/backup.py).
+# In-process rather than a cron machine: fly.toml keeps one machine running
+# with auto_stop off, so the admin process is the thing that is always up.
+BACKUP_INTERVAL_HOURS = 12
+BACKUP_KEEP = 30

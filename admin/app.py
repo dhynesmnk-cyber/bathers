@@ -50,7 +50,7 @@ from admin.mdx_preview import (
     temperature_line,
     verification_summary,
 )
-from admin.pipeline import article_db, article_pipeline, article_store, articles, blog, claims, claims_store, deploy, discovery, goatcounter, gsc, images, notify, orchestrator, places, staging, stripe_client
+from admin.pipeline import article_db, article_pipeline, article_store, articles, backup, blog, claims, claims_store, deploy, discovery, goatcounter, gsc, images, notify, orchestrator, places, staging, stripe_client
 from admin.pipeline.articles import PublishBlocked
 from admin.pipeline.articles import ValidationFailed as ArticleValidationFailed
 from admin.pipeline.blog import ValidationFailed as BlogValidationFailed
@@ -92,6 +92,12 @@ AUTH_POSTURE = security.resolve_auth_posture()
 print(f"[admin] {AUTH_POSTURE.reason}")
 for _warning in security.password_warnings():
     print(f"[admin] WARNING: {_warning}")
+
+# claims.db and articles.db are the only state here that no rebuild can restore
+# (data_store.rebuild() recreates directory.db from _published), and they are
+# deliberately outside git — so the repository is not their backup and until
+# Gate 12 nothing was. See admin/pipeline/backup.py for the restore procedure.
+backup.start_scheduler()
 
 
 def _is_public(path: str) -> bool:
