@@ -15,6 +15,8 @@ import {
   FACILITY_LABELS,
   SESSION_GENDER_LABELS,
   STATE_NAMES,
+  VERIFIABLE_FIELDS,
+  VERIFIABLE_FIELD_LABELS,
   categoryUrlSlug,
   coldPlungeTemperatureLine,
   formatDistanceKm,
@@ -61,6 +63,38 @@ const { Content } = await render(venue);
 // State/Province helper - used throughout the template
 const stateProvince = data.state_province;
 const country = data.country;
+
+// Which details the venue's operator has confirmed directly (Gate 13,
+// 2026-09-08). Until now `verification` was schema-checked and stored but never
+// shown to a reader, so the strongest tier the fact model has was invisible —
+// and the outreach email tells operators their confirmation will appear on the
+// page, which has to be true. Ordered by VERIFIABLE_FIELDS rather than by object
+// key order so the sentence reads the same on every venue.
+const verificationRecords = data.verification ?? {};
+const operatorConfirmed = VERIFIABLE_FIELDS.filter(
+  (field) => verificationRecords[field]?.tier === "operator_confirmed",
+);
+// zod coerces every verification date to a Date (see content/config.ts), so
+// these are Date objects, never the "YYYY-MM-DD" strings the YAML holds.
+const operatorConfirmedDates = operatorConfirmed
+  .map((field) => verificationRecords[field]?.date)
+  .filter((d): d is Date => d instanceof Date && !Number.isNaN(d.getTime()))
+  .sort((a, b) => a.getTime() - b.getTime());
+// The most recent confirmation — a second round of outreach should not make the
+// line say something older than the newest thing the operator told us.
+const latestConfirmation = operatorConfirmedDates[operatorConfirmedDates.length - 1];
+const operatorConfirmedOn = latestConfirmation
+  ? latestConfirmation.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })
+  : null;
+// "Price and opening hours", not "Price, Opening hours" — this reads as a
+// sentence, so the labels are lowercased and the last one joined with "and".
+const confirmedNames = operatorConfirmed.map((f) =>
+  (VERIFIABLE_FIELD_LABELS[f] ?? f).toLowerCase(),
+);
+const confirmedPhrase =
+  confirmedNames.length > 1
+    ? `${confirmedNames.slice(0, -1).join(", ")} and ${confirmedNames[confirmedNames.length - 1]}`
+    : confirmedNames[0];
 
 // Temperature appendix line (2026-07-26) — prefer the Architect's display
 // string, fall back to the structured min/max range; null when neither is set.
@@ -258,6 +292,14 @@ const faqLd = data.faq && data.faq.length > 0
         <p class="mt-4 text-[var(--ink-faded)]">
           Information verified {data.verified.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
         </p>
+        {
+          operatorConfirmed.length > 0 && (
+            <p class="mt-2 text-[var(--ink-faded)]">
+              The {confirmedPhrase} {operatorConfirmed.length === 1 ? "was" : "were"} confirmed
+              by the operator{operatorConfirmedOn && ` on ${operatorConfirmedOn}`}.
+            </p>
+          )
+        }
       </div>
     </article>
   </main>
