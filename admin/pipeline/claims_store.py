@@ -195,6 +195,23 @@ def count_recent_for_slug(slug: str, since_seconds: int) -> int:
         conn.close()
 
 
+def count_recent_all(since_seconds: int) -> int:
+    """Submissions across every slug in the window (Gate 12, 2026-09-08). The
+    per-slug limit above bounds one venue; this bounds the app — one caller
+    working every published slug was previously worth 5 x len(slugs) rows and
+    the same number of owner notification emails per hour."""
+    cutoff = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=since_seconds)).isoformat()
+    conn = _connect()
+    try:
+        (count,) = conn.execute(
+            "SELECT COUNT(*) FROM claim_requests WHERE submitted_at >= ?",
+            (cutoff,),
+        ).fetchone()
+        return count
+    finally:
+        conn.close()
+
+
 def set_photo_path(request_id: int, path: str) -> None:
     conn = _connect()
     try:

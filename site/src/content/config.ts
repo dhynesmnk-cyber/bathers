@@ -2,14 +2,17 @@ import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
 import {
   AMENITY_KEYS,
-  AU_LATITUDE_BOUNDS,
-  AU_LONGITUDE_BOUNDS,
   CATEGORIES,
   CONFIDENCE_TIERS,
+  COUNTRIES,
+  COUNTRY_CURRENCY,
+  COUNTRY_LATITUDE_BOUNDS,
+  COUNTRY_LONGITUDE_BOUNDS,
+  DEFAULT_COUNTRY,
   DRESS_CODE_KEYS,
   FACILITY_KEYS,
   SESSION_GENDER_KEYS,
-  STATES,
+  SUBDIVISIONS,
   VERIFIABLE_FIELDS,
 } from "../config";
 
@@ -123,19 +126,24 @@ const spasCollection = defineCollection({
   schema: z
     .object({
       name: z.string(),
-      state: z.enum(STATES).optional(),
+      // Location (2026-09-08, international scope). `state` and `suburb` were
+      // the Australia-only pair these replaced; they are gone rather than kept
+      // optional, because two live spellings of one fact is the drift that
+      // broke the Python layer in the first place. Subdivision, currency and
+      // coordinate bounds are all country-dependent, so they are checked in the
+      // superRefine below rather than inline — a flat enum would accept a
+      // Washington venue as Western Australian.
+      country: z.enum(COUNTRIES).default(DEFAULT_COUNTRY),
       state_province: z.string(),
-      country: z.string().default("AU"),
       city: z.string(),
       zipcode: z.string().nullable().optional(),
+      currency: z.string().optional(),
       website: z.string().url().nullable().optional(),
       contact_email: z.string().email().nullable().optional(),
-      currency: z.enum(['AUD', 'USD']).or(z.string()).default("AUD"),
       category: z.enum(CATEGORIES),
-      suburb: z.string().optional(),
       address: z.string(),
-      latitude: z.number().min(AU_LATITUDE_BOUNDS.min).max(AU_LATITUDE_BOUNDS.max).nullable().optional(),
-      longitude: z.number().min(AU_LONGITUDE_BOUNDS.min).max(AU_LONGITUDE_BOUNDS.max).nullable().optional(),
+      latitude: z.number().nullable().optional(),
+      longitude: z.number().nullable().optional(),
       amenities: amenitiesSchema,
       facilities: facilitiesSchema,
       hours: z.string().nullable().optional(),
@@ -173,6 +181,43 @@ const spasCollection = defineCollection({
     .refine((data) => !data.image || !!data.image_caption, {
       message: "image_caption is required when image is present",
       path: ["image_caption"],
+    })
+    // Country-dependent location checks (2026-09-08). Mirrors
+    // admin/schema.py's validate_frontmatter exactly: same subdivision sets,
+    // same currency rule, same coordinate envelopes.
+    .superRefine((data, ctx) => {
+      const country = data.country;
+      const subdivisions = SUBDIVISIONS[country];
+      if (!subdivisions.includes(data.state_province)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["state_province"],
+          message: `state_province must be one of ${subdivisions.join(", ")} for ${country}`,
+        });
+      }
+      if (data.currency !== undefined && data.currency !== COUNTRY_CURRENCY[country]) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["currency"],
+          message: `currency for ${country} must be ${COUNTRY_CURRENCY[country]}`,
+        });
+      }
+      const lat = COUNTRY_LATITUDE_BOUNDS[country];
+      if (data.latitude != null && (data.latitude < lat.min || data.latitude > lat.max)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["latitude"],
+          message: `latitude out of range for ${country}`,
+        });
+      }
+      const lng = COUNTRY_LONGITUDE_BOUNDS[country];
+      if (data.longitude != null && (data.longitude < lng.min || data.longitude > lng.max)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["longitude"],
+          message: `longitude out of range for ${country}`,
+        });
+      }
     }),
 });
 

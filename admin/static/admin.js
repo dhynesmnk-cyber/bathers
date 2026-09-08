@@ -37,9 +37,10 @@
   const reviewContent = el("review-content");
   const previewFrame = el("preview-frame");
   const fieldName = el("field-name");
-  const fieldState = el("field-state");
+  const fieldStateProvince = el("field-state-province");
   const fieldCategory = el("field-category");
-  const fieldSuburb = el("field-suburb");
+  const fieldCity = el("field-city");
+  const fieldCountry = el("field-country");
   const fieldAddress = el("field-address");
   const fieldWebsite = el("field-website");
   const fieldSummary = el("field-summary");
@@ -166,7 +167,7 @@
       const meta = document.createElement("div");
       meta.className = "queue-item-meta";
       const state = document.createElement("span");
-      state.textContent = [entry.suburb, entry.state].filter(Boolean).join(", ") || "—";
+      state.textContent = [entry.city, entry.state_province].filter(Boolean).join(", ") || "—";
       meta.appendChild(state);
 
       const notation = document.createElement("span");
@@ -253,9 +254,10 @@
   function populateFields(entry) {
     const fm = entry.frontmatter || {};
     fieldName.value = fm.name || "";
-    fieldState.value = fm.state || "";
+    fieldStateProvince.value = fm.state_province || "";
     fieldCategory.value = fm.category || "";
-    fieldSuburb.value = fm.suburb || "";
+    fieldCity.value = fm.city || "";
+    fieldCountry.value = fm.country || "AU";
     fieldAddress.value = fm.address || "";
     fieldWebsite.value = fm.website || "";
     fieldSummary.value = fm.summary || "";
@@ -490,9 +492,10 @@
 
   const FIELD_INPUT_MAP = {
     name: fieldName,
-    state: fieldState,
+    state_province: fieldStateProvince,
     category: fieldCategory,
-    suburb: fieldSuburb,
+    city: fieldCity,
+    country: fieldCountry,
     address: fieldAddress,
     website: fieldWebsite,
     summary: fieldSummary,
@@ -563,7 +566,7 @@
     renderFieldErrors(currentEntry.errors || []);
     const idx = queue.findIndex((q) => q.slug === selectedSlug);
     if (idx !== -1) {
-      queue[idx] = { ...queue[idx], name: currentEntry.name, state: currentEntry.state, suburb: currentEntry.suburb, amenities: currentEntry.amenities, status: currentEntry.status, errors: currentEntry.errors };
+      queue[idx] = { ...queue[idx], name: currentEntry.name, state_province: currentEntry.state_province, city: currentEntry.city, amenities: currentEntry.amenities, status: currentEntry.status, errors: currentEntry.errors };
       renderQueue();
     }
     const now = new Date();
@@ -572,9 +575,10 @@
   }
 
   fieldName.addEventListener("input", () => queuePatch("name", fieldName.value));
-  fieldState.addEventListener("change", () => queuePatch("state", fieldState.value));
+  fieldStateProvince.addEventListener("change", () => queuePatch("state_province", fieldStateProvince.value));
   fieldCategory.addEventListener("change", () => queuePatch("category", fieldCategory.value));
-  fieldSuburb.addEventListener("input", () => queuePatch("suburb", fieldSuburb.value));
+  fieldCity.addEventListener("input", () => queuePatch("city", fieldCity.value));
+  fieldCountry.addEventListener("change", () => queuePatch("country", fieldCountry.value));
   fieldAddress.addEventListener("input", () => queuePatch("address", fieldAddress.value));
   fieldWebsite.addEventListener("input", () => queuePatch("website", fieldWebsite.value));
   fieldSummary.addEventListener("input", () => queuePatch("summary", fieldSummary.value));

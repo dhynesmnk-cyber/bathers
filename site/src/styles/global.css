@@ -330,6 +330,28 @@ svg {
   text-transform: uppercase;
 }
 
+/* Claim CTA on unclaimed venue rows. Mirrors .book-now-btn exactly rather than
+   inventing a second button vocabulary: hairline border, no radius, no fill, no
+   pure white — the Tailwind `rounded-md text-white bg-accent` version this
+   replaced broke three DESIGN.md hard rules at once. */
+.claim-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 1.25em;
+  border: 1px solid var(--ink-faded);
+  background: none;
+  color: var(--ink-faded);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.claim-cta:hover,
+.claim-cta:focus-visible {
+  color: var(--thermal);
+  border-color: var(--thermal);
+}
+
 .book-now-btn:hover,
 .book-now-btn:focus-visible {
   text-decoration: none;

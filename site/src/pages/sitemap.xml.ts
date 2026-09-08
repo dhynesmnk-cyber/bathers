@@ -12,9 +12,11 @@ import {
   FACILITY_KEYS,
   POOL_NATIONAL_FILTERS,
   POOL_TYPES,
-  STATES,
+  SUBDIVISION_NAMES,
+  WORLD_REGIONS,
   amenityUrlSlug,
   categoryUrlSlug,
+  placePath,
 } from "../config";
 
 interface UrlEntry {
@@ -40,19 +42,39 @@ export const GET: APIRoute = async ({ site }) => {
     entries.push({ path: `/blog/${post.id}/`, lastmod: post.data.dateline.toISOString().slice(0, 10) });
   }
 
-  for (const state of STATES) {
-    const stateVenues = venues.filter((v) => v.data.state === state);
-    if (stateVenues.length === 0) continue;
-    entries.push({ path: `/${state.toLowerCase()}/` });
+  // Geography lives under /places/ since 2026-09-08 (TRD.md §1). Emitted from
+  // the same WORLD_REGIONS/SUBDIVISION_NAMES tables the routes build from, so
+  // the sitemap cannot drift from what was actually generated.
+  entries.push({ path: "/places/" });
+  for (const region of WORLD_REGIONS) {
+    const regionCountries = region.countries.filter((c) => venues.some((v) => v.data.country === c));
+    if (regionCountries.length === 0) continue;
+    entries.push({ path: `/places/${region.slug}/` });
 
-    for (const amenityKey of AMENITY_KEYS) {
-      if (stateVenues.some((v) => v.data.amenities[amenityKey])) {
-        entries.push({ path: `/${state.toLowerCase()}/${amenityUrlSlug(amenityKey)}/` });
-      }
-    }
-    for (const poolType of POOL_TYPES) {
-      if (stateVenues.some((v) => poolType.match(v.data.facilities))) {
-        entries.push({ path: `/${state.toLowerCase()}/${poolType.slug}/` });
+    for (const country of regionCountries) {
+      entries.push({ path: placePath(country) });
+      for (const code of Object.keys(SUBDIVISION_NAMES[country])) {
+        const inState = venues.filter(
+          (v) => v.data.country === country && v.data.state_province === code,
+        );
+        if (inState.length === 0) continue;
+        entries.push({ path: placePath(country, code) });
+
+        for (const amenityKey of AMENITY_KEYS) {
+          if (inState.some((v) => v.data.amenities[amenityKey])) {
+            entries.push({ path: placePath(country, code, amenityUrlSlug(amenityKey)) });
+          }
+        }
+        for (const poolType of POOL_TYPES) {
+          if (inState.some((v) => poolType.match(v.data.facilities))) {
+            entries.push({ path: placePath(country, code, poolType.slug) });
+          }
+        }
+        for (const f of CROSS_CUTTING_FACILITY_FILTERS) {
+          if (inState.some((v) => v.data.facilities?.[f.key])) {
+            entries.push({ path: placePath(country, code, f.slug) });
+          }
+        }
       }
     }
   }
@@ -89,8 +111,8 @@ export const GET: APIRoute = async ({ site }) => {
 
   // Comparison + region roll-up pages (2026-07-31, Gate 10).
   const { resolveComparisons, comparePath } = await import("../data/comparisons");
-  const { REGIONS, regionForSuburb } = await import("../data/regions");
-  entries.push({ path: "/compare/" }, { path: "/region/" }, { path: "/methodology/" });
+  const { REGIONS, regionForCity } = await import("../data/regions");
+  entries.push({ path: "/compare/" }, { path: "/methodology/" });
   for (const c of resolveComparisons(venues).eligible) {
     entries.push({ path: comparePath(c.slug) });
   }
@@ -101,11 +123,12 @@ export const GET: APIRoute = async ({ site }) => {
   }
   const regionCounts = new Map<string, number>();
   for (const v of venues) {
-    const r = regionForSuburb(v.data.state, v.data.suburb);
+    const r = regionForCity(v.data.country, v.data.state_province, v.data.city);
     if (r) regionCounts.set(r.slug, (regionCounts.get(r.slug) ?? 0) + 1);
   }
+  // Area pages sit under their subdivision now, not at /region/<slug>/.
   for (const r of REGIONS) {
-    if ((regionCounts.get(r.slug) ?? 0) >= 2) entries.push({ path: `/region/${r.slug}/` });
+    if ((regionCounts.get(r.slug) ?? 0) >= 2) entries.push({ path: placePath("AU", r.state, r.slug) });
   }
 
   const urls = entries

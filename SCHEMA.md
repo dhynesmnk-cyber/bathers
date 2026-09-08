@@ -42,12 +42,16 @@ Practical/logistics info, distinct from the bathing-experience amenities above �
 | Field | Type | Req | Rules |
 |---|---|---|---|
 | `name` | string | ✓ | Venue's actual trading name. |
-| `state` | enum | ✓ | One of `VIC NSW QLD SA WA TAS NT ACT`. |
+| `country` | enum | – | *(2026-09-08, international scope)* ISO-3166-1 alpha-2, one of `AU`, `US`. Defaults to `AU` when omitted. Decides which subdivision list, currency and coordinate envelope every check below applies. |
+| `state_province` | string | ✓ | *(2026-09-08 — replaces `state`)* The subdivision code for this venue's `country`: `VIC NSW QLD SA WA TAS NT ACT` under `AU`, a two-letter postal code (`CA`, `FL`, `NY`, …) under `US`. Validated against `SUBDIVISIONS[country]`, never a flat list — `WA` is Western Australia under `AU` and Washington under `US`. |
+| `city` | string | ✓ | *(2026-09-08 — replaces `suburb`)* The suburb, town or city the venue sits in. |
+| `zipcode` | string | – | *(2026-09-08)* Postcode/ZIP as printed by the venue. Null when the page doesn't state one. |
+| `currency` | string | – | *(2026-09-08)* ISO-4217 code for every money figure on the venue, including `price`. Must equal `COUNTRY_CURRENCY[country]` (`AUD` for `AU`, `USD` for `US`); defaults from `country` when omitted. This is why `price`'s keys lost their `_aud` suffix — the currency is a field now, not a suffix. |
+| `contact_email` | string | – | *(2026-09-08)* The venue's own published contact address, when it publishes one. Never a guessed or pattern-built address. |
 | `category` | enum | ✓ | *(2026-07-22, `day_spa` retired/`hotel_spa` added 2026-07-26)* One of `thermal_springs`, `bathhouse`, `hotel_spa`, `other`. The directory is scoped to venues with a pool or a sauna as a central offering; `hotel_spa` is for hotel/lodge venues with a real bathing circuit, not a treatment-only spa. Set by the Architect from the Google Places block's `primaryType` or editorial judgement; reviewer-editable. |
-| `suburb` | string | ✓ | |
 | `address` | string | ✓ | Street address, single line. |
-| `latitude` | number | – | *(2026-07-22: no longer required)* −44.0 … −9.0 (AU bounds when present; build fails outside). Null when geocoding the address found no match — the venue simply doesn't appear on the map, it is not blocked from publishing. No manual entry UI; see §4. |
-| `longitude` | number | – | *(2026-07-22: no longer required)* 112.0 … 154.0 when present. Same null handling as `latitude`. |
+| `latitude` | number | – | *(2026-07-22: no longer required; bounds became country-scoped 2026-09-08)* Inside `COUNTRY_LATITUDE_BOUNDS[country]` when present — −44.0 … −9.0 for `AU`, 18.0 … 72.0 for `US`; build fails outside. Null when geocoding the address found no match — the venue simply doesn't appear on the map, it is not blocked from publishing. No manual entry UI; see §4. |
+| `longitude` | number | – | *(2026-07-22: no longer required; bounds became country-scoped 2026-09-08)* Inside `COUNTRY_LONGITUDE_BOUNDS[country]` when present — 112.0 … 154.0 for `AU`, −180.0 … −66.0 for `US`. Same null handling as `latitude`. |
 | `website` | string (url) | ✓ | The venue's own site. |
 | `amenities` | object | ✓ | Exactly the five boolean keys from §1, all required, no extras (zod `.strict()`). |
 | `facilities` | object | – | *(2026-07-21, extended 2026-07-23, extended 2026-07-26)* The nine boolean keys from §1a. Optional — omit entirely on venues where none are known; individual keys default `false`. |
@@ -61,7 +65,7 @@ Practical/logistics info, distinct from the bathing-experience amenities above �
 | `silence_policy` | string | – | *(2026-07-26)* Freeform, e.g. `"Quiet before midday"`. Not stored in SQLite. |
 | `phone_policy` | string | – | *(2026-07-26)* Freeform, e.g. `"No phones in the bathing area"`. Not stored in SQLite. |
 | `minimum_age` | number | – | *(2026-07-26)* Positive integer. *(2026-07-31: now promoted into SQLite, §2a/§3.)* |
-| `price` | object | – | *(2026-07-31, §2a)* Structured numeric pricing alongside the freeform `cost` string: `adult_drop_in_aud`/`standard_session_aud` (non-negative number, each optional/nullable). Omitted entirely on package- or treatment-led venues with no general-admission bathing price — never invented. Cross-validated against `cost` (§2a). |
+| `price` | object | – | *(2026-07-31, §2a)* Structured numeric pricing alongside the freeform `cost` string: `adult_drop_in`/`standard_session` (non-negative number, each optional/nullable), denominated in the venue's `currency` — the `_aud` suffixes these keys carried were dropped 2026-09-08 when currency became a field. Omitted entirely on package- or treatment-led venues with no general-admission bathing price — never invented. Cross-validated against `cost` (§2a). |
 | `drive_time` | object | – | *(2026-07-31, §2a)* OSRM-computed drive from the nearest capital: `from` (string, capital name), `minutes` (non-negative int), `km` (non-negative number). Present only where the venue has coordinates; cleanly absent otherwise. Not a venue claim — no verification entry. |
 | `verification` | object | – | *(2026-07-31, §2a)* Per-field `{source, tier, date}` provenance, keyed by field name (subset of the verifiable set, §2a). Rendered/metadata only; not stored in SQLite. |
 | `change_log` | array | – | *(2026-07-31, §2a)* Computed diff entries `{field, from, to, date, trigger}` appended on re-harvest/outreach update. Absent at first draft. Rendered/metadata only; not stored in SQLite. |
@@ -97,9 +101,12 @@ Added for the SEO/AI-citation engagement (Gate 7): the fact model a comparison p
 CREATE TABLE venues (
   slug TEXT PRIMARY KEY,          -- matches MDX filename; no separate UUID
   name TEXT NOT NULL,
-  state TEXT NOT NULL,
+  country TEXT NOT NULL DEFAULT 'AU',
+  state_province TEXT NOT NULL,
   category TEXT NOT NULL,         -- 2026-07-22
-  suburb TEXT NOT NULL,
+  city TEXT NOT NULL,
+  zipcode TEXT,
+  currency TEXT NOT NULL DEFAULT 'AUD',
   latitude REAL,                  -- 2026-07-22: nullable — null means "no map marker", not invalid
   longitude REAL,
   status TEXT NOT NULL DEFAULT 'unclaimed',
@@ -116,7 +123,7 @@ CREATE TABLE venues (
   silence_policy TEXT, phone_policy TEXT, minimum_age INTEGER,
   sauna_min_c REAL, sauna_max_c REAL, sauna_display TEXT,
   cold_plunge_min_c REAL, cold_plunge_max_c REAL, cold_plunge_display TEXT,
-  price_adult_drop_in_aud REAL, price_standard_session_aud REAL,
+  price_adult_drop_in REAL, price_standard_session REAL,
   drive_time_from TEXT, drive_time_minutes INTEGER, drive_time_km REAL
 );
 CREATE TABLE amenities (

@@ -20,24 +20,27 @@ _logger = logging.getLogger("admin.data_store")
 
 from admin.config import (
     AMENITY_KEYS,
+    COUNTRY_CURRENCY,
     DB_PATH,
+    DEFAULT_COUNTRY,
     FACILITY_KEYS,
     PUBLISHED_DIR,
     VENUES_GEOJSON_PATH,
     VENUES_JSON_PATH,
 )
 
-REQUIRED_FIELDS = ("name", "state", "category", "suburb", "summary", "amenities")
+REQUIRED_FIELDS = ("name", "state_province", "category", "city", "summary", "amenities")
 
 # Scalar columns on the venues table, in order (excluding the slug PK). Built
 # once so the INSERT/UPDATE SQL and the params dict can't drift apart.
 VENUE_SCALAR_COLUMNS = (
-    "name", "state", "category", "suburb", "latitude", "longitude", "status", "summary", "has_image",
+    "name", "country", "state_province", "category", "city", "zipcode", "currency",
+    "latitude", "longitude", "status", "summary", "has_image",
     "hours", "cost", "access",
     "dress_code", "session_gender", "session_gender_note", "silence_policy", "phone_policy", "minimum_age",
     "sauna_min_c", "sauna_max_c", "sauna_display",
     "cold_plunge_min_c", "cold_plunge_max_c", "cold_plunge_display",
-    "price_adult_drop_in_aud", "price_standard_session_aud",
+    "price_adult_drop_in", "price_standard_session",
     "drive_time_from", "drive_time_minutes", "drive_time_km",
 )
 
@@ -51,9 +54,12 @@ def _venue_params(slug: str, data: dict[str, Any]) -> dict[str, Any]:
     return {
         "slug": slug,
         "name": data["name"],
-        "state": data["state"],
+        "country": data.get("country", DEFAULT_COUNTRY),
+        "state_province": data["state_province"],
         "category": data["category"],
-        "suburb": data["suburb"],
+        "city": data["city"],
+        "zipcode": data.get("zipcode"),
+        "currency": data.get("currency", COUNTRY_CURRENCY.get(data.get("country", DEFAULT_COUNTRY))),
         "latitude": data.get("latitude"),
         "longitude": data.get("longitude"),
         "status": data.get("status", "unclaimed"),
@@ -74,8 +80,8 @@ def _venue_params(slug: str, data: dict[str, Any]) -> dict[str, Any]:
         "cold_plunge_min_c": temps.get("cold_plunge_min_c"),
         "cold_plunge_max_c": temps.get("cold_plunge_max_c"),
         "cold_plunge_display": temps.get("cold_plunge_display"),
-        "price_adult_drop_in_aud": price.get("adult_drop_in_aud"),
-        "price_standard_session_aud": price.get("standard_session_aud"),
+        "price_adult_drop_in": price.get("adult_drop_in"),
+        "price_standard_session": price.get("standard_session"),
         "drive_time_from": dt.get("from"),
         "drive_time_minutes": dt.get("minutes"),
         "drive_time_km": dt.get("km"),
@@ -85,9 +91,15 @@ SCHEMA_SQL = """
 CREATE TABLE venues (
   slug TEXT PRIMARY KEY,
   name TEXT NOT NULL,
-  state TEXT NOT NULL,
+  -- 2026-09-08, international scope: country/state_province/city/zipcode/
+  -- currency replace the Australia-only state/suburb pair. country and
+  -- currency carry defaults so an AU-only row set reads unchanged.
+  country TEXT NOT NULL DEFAULT 'AU',
+  state_province TEXT NOT NULL,
   category TEXT NOT NULL,
-  suburb TEXT NOT NULL,
+  city TEXT NOT NULL,
+  zipcode TEXT,
+  currency TEXT NOT NULL DEFAULT 'AUD',
   latitude REAL,
   longitude REAL,
   status TEXT NOT NULL DEFAULT 'unclaimed',
@@ -112,8 +124,8 @@ CREATE TABLE venues (
   cold_plunge_min_c REAL,
   cold_plunge_max_c REAL,
   cold_plunge_display TEXT,
-  price_adult_drop_in_aud REAL,
-  price_standard_session_aud REAL,
+  price_adult_drop_in REAL,
+  price_standard_session REAL,
   drive_time_from TEXT,
   drive_time_minutes INTEGER,
   drive_time_km REAL
@@ -248,9 +260,12 @@ def fetch_all_venues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         venue: dict[str, Any] = {
             "slug": r["slug"],
             "name": r["name"],
-            "state": r["state"],
+            "country": r["country"],
+            "state_province": r["state_province"],
             "category": r["category"],
-            "suburb": r["suburb"],
+            "city": r["city"],
+            "zipcode": r["zipcode"],
+            "currency": r["currency"],
             "latitude": r["latitude"],
             "longitude": r["longitude"],
             "status": r["status"],
@@ -276,8 +291,8 @@ def fetch_all_venues(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         if temperatures:
             venue["temperatures"] = temperatures
         price = _nonempty({
-            "adult_drop_in_aud": r["price_adult_drop_in_aud"],
-            "standard_session_aud": r["price_standard_session_aud"],
+            "adult_drop_in": r["price_adult_drop_in"],
+            "standard_session": r["price_standard_session"],
         })
         if price:
             venue["price"] = price
@@ -307,9 +322,10 @@ def write_venues_geojson(venues: list[dict[str, Any]], path: Path) -> None:
                 "properties": {
                     "slug": v["slug"],
                     "name": v["name"],
-                    "state": v["state"],
+                    "country": v["country"],
+                    "state_province": v["state_province"],
                     "category": v["category"],
-                    "suburb": v["suburb"],
+                    "city": v["city"],
                     "status": v["status"],
                     "summary": v["summary"],
                     "has_image": v["has_image"],

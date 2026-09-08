@@ -54,8 +54,8 @@ export const H2H_ROWS: H2HRow[] = [
   { 
     label: "Location", 
     value: (v) => {
-      const city = v.data.city || v.data.suburb;
-      const stateOrProvince = v.data.state_province || v.data.state;
+      const city = v.data.city;
+      const stateOrProvince = v.data.state_province;
       const countryDisplay = v.data.country && v.data.country !== 'AU' ? `, ${v.data.country}` : '';
       return `${city}, ${stateOrProvince}${countryDisplay}`;
     }
@@ -86,9 +86,9 @@ export function h2hTitle(a: Venue, b: Venue): string {
 
 export function h2hLead(a: Venue, b: Venue): string {
   const where =
-    a.data.state === b.data.state && a.data.suburb === b.data.suburb
-      ? `both in ${a.data.suburb}, ${STATE_NAMES[a.data.state]}`
-      : `both in ${STATE_NAMES[a.data.state]}`;
+    a.data.state_province === b.data.state_province && a.data.city === b.data.city
+      ? `both in ${a.data.city}, ${STATE_NAMES[a.data.state_province]}`
+      : `both in ${STATE_NAMES[a.data.state_province]}`;
   const kind = a.data.category === b.data.category ? CATEGORY_LABELS[a.data.category].toLowerCase() : "bathing";
   return `${a.data.name} and ${b.data.name} are ${where} — two ${kind} venues, side by side. Every figure below is drawn from each venue's own published materials.`;
 }

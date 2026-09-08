@@ -18,7 +18,7 @@ from __future__ import annotations
 import re
 
 from admin.config import ROOT
-from admin.pipeline import data_store
+from admin.pipeline import data_store, staging
 from admin.schema import KNOWN_FIELDS
 
 
@@ -43,6 +43,19 @@ def _ddl_columns() -> set[str]:
 
 def run() -> list[str]:
     failures: list[str] = []
+
+    # 2026-09-08: render_frontmatter() writes ONLY the keys listed in
+    # FRONTMATTER_FIELD_ORDER, so a known field missing from it is silently
+    # dropped on every admin re-save. That is exactly what happened to
+    # country/state_province/city in the international migration, and it is
+    # invisible until a rebuild or a build fails afterwards. Asserted here
+    # because this tuple is a schema surface like the other three.
+    missing_from_order = KNOWN_FIELDS - set(staging.FRONTMATTER_FIELD_ORDER)
+    if missing_from_order:
+        failures.append(
+            "fields in admin KNOWN_FIELDS but not staging.FRONTMATTER_FIELD_ORDER "
+            f"(render_frontmatter would DROP these on any re-save): {', '.join(sorted(missing_from_order))}"
+        )
 
     schema_md = _schema_md_fields()
     zod = _zod_fields()

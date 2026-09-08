@@ -9,7 +9,7 @@ import type { IconKey } from "../icons/paths";
 interface Props {
   latitude?: number | null;
   longitude?: number | null;
-  state: string;
+  state?: string;
   amenities: Record<(typeof AMENITY_KEYS)[number], boolean>;
   facilities?: Partial<Record<(typeof FACILITY_KEYS)[number], boolean>>;
   hours?: string;
@@ -71,7 +71,6 @@ const features: Feature[] = [
       <span class="mono text-[var(--ink-faded)]">{latLabel}, {lngLabel}</span>
     )
   }
-  <span class="mono text-[var(--ink-faded)]">{state}</span>
   {
     features.map((feature) =>
       feature.glossaryHref ? (

@@ -6,14 +6,14 @@ Where We Bathe documents Australian venues built around heat, cold and water. Ea
 
 ## Structure
 
-- Browse by state: `/vic/`, `/nsw/`, `/qld/`, `/sa/`, `/wa/`, `/tas/`, `/nt/`, `/act/` (only states with at least one listed venue exist)
-- Browse by setting within a state: indoor pools, outdoor pools, thermal springs, or other — e.g. `/vic/outdoor/`
-- Browse by amenity within a state — e.g. `/vic/cold-plunge/`
+- Browse by place: `/places/` — a hierarchy of world region, country, then state, e.g. `/places/oceania/australia/`, `/places/oceania/australia/victoria/` (only branches with at least one listed venue exist)
+- Browse by setting within a state: indoor pools, outdoor pools, thermal springs, or other — e.g. `/places/oceania/australia/victoria/outdoor/`
+- Browse by amenity within a state — e.g. `/places/oceania/australia/victoria/cold-plunge/`
 - Browse by amenity nationally — e.g. `/magnesium-pool/`, `/infrared-sauna/`, `/traditional-sauna/`, `/cold-plunge/`, `/led-therapy/`
 - Browse by pool setting nationally — `/indoor-pool/`, `/outdoor-pool/`, `/natural-spring/`
 - Browse by venue category nationally: `/category/bathhouse/`, `/category/thermal-springs/`, `/category/hotel-spa/`
 - Compare venues side by side: `/compare/` — a hub of ranked comparison tables built from structured, source-verified data, linking through to the in-depth comparison articles under `/blog/`
-- Browse by region: `/region/` — regional roundups (e.g. Mornington Peninsula, Daylesford & Hepburn)
+- Browse by area within a state — regional roundups, e.g. `/places/oceania/australia/victoria/mornington-peninsula/`
 - Individual venue pages: `/spa/{venue-slug}/` — name, location, amenities, hours, cost, temperatures, FAQ, and source-verified detail
 - Glossary of amenity/facility terms: `/glossary/`
 

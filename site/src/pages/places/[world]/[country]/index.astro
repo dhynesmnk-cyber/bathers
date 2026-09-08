@@ -1,0 +1,102 @@
+---
+// Country page (2026-09-08) — every subdivision of one country that has a
+// published venue, plus the venues themselves so the page is a real list and
+// not just a menu. Only subdivisions with venues are linked.
+import { getCollection } from "astro:content";
+import BaseLayout from "../../../../layouts/BaseLayout.astro";
+import VenueEntry from "../../../../components/VenueEntry.astro";
+import {
+  COUNTRY_NAMES,
+  COUNTRY_SLUGS,
+  SUBDIVISION_NAMES,
+  WORLD_REGIONS,
+  placePath,
+  type Country,
+} from "../../../../config";
+
+export async function getStaticPaths() {
+  const venues = await getCollection("spas");
+  const paths = [];
+  for (const region of WORLD_REGIONS) {
+    for (const country of region.countries) {
+      const countryVenues = venues.filter((v) => v.data.country === country);
+      if (countryVenues.length === 0) continue;
+      paths.push({
+        params: { world: region.slug, country: COUNTRY_SLUGS[country] },
+        props: { region, country, venues: countryVenues },
+      });
+    }
+  }
+  return paths;
+}
+
+const { region, country, venues } = Astro.props;
+const name = COUNTRY_NAMES[country as Country];
+const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+
+const codes = Object.keys(SUBDIVISION_NAMES[country as Country])
+  .filter((code) => venues.some((v: any) => v.data.state_province === code))
+  .sort((a, b) =>
+    SUBDIVISION_NAMES[country as Country][a].localeCompare(SUBDIVISION_NAMES[country as Country][b]),
+  );
+
+const sorted = [...venues].sort((a: any, b: any) => a.data.name.localeCompare(b.data.name));
+---
+
+<BaseLayout
+  title={`Bathhouses & Hot Springs in ${name} — ${venues.length} ${plural(venues.length, "venue", "venues")}`}
+  description={`Every bathhouse, sauna and hot spring we have written up in ${name} — ${venues.length} ${plural(venues.length, "venue", "venues")} across ${codes.length} ${codes.length === 1 ? "state" : "states"}, no sponsored listings.`}
+  canonicalPath={placePath(country as Country)}
+>
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <nav class="mono mb-8 text-[var(--ink-faded)]">
+      <a href="/places/">Places</a>
+      <span class="mx-2">/</span>
+      <a href={`/places/${region.slug}/`}>{region.name}</a>
+    </nav>
+
+    <header class="mb-12">
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
+        Bathing in {name}
+      </h1>
+      <p class="mt-6 max-w-[65ch]">
+        {venues.length} {plural(venues.length, "venue", "venues")} across {codes.length}
+        {codes.length === 1 ? "state" : "states and territories"}.
+      </p>
+      <ul class="mono mt-6 flex flex-wrap gap-x-6 gap-y-2">
+        {codes.map((code) => (
+          <li>
+            <a href={placePath(country as Country, code)}>
+              {SUBDIVISION_NAMES[country as Country][code]}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </header>
+
+    <section aria-labelledby="contents-heading">
+      <div class="mono mb-8 flex items-center gap-4 text-[var(--ink-faded)]">
+        <span id="contents-heading">CONTENTS</span>
+        <span
+          class="draw-line-on-view h-px flex-1"
+          style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"
+        ></span>
+      </div>
+      {
+        sorted.map((venue: any) => (
+          <VenueEntry
+            name={venue.data.name}
+            slug={venue.id}
+            city={venue.data.city}
+            state_province={venue.data.state_province}
+            country={venue.data.country}
+            summary={venue.data.summary}
+            amenities={venue.data.amenities}
+            facilities={venue.data.facilities}
+            image={venue.data.image}
+          />
+        ))
+      }
+    </section>
+  </main>
+</BaseLayout>

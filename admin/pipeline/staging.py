@@ -42,7 +42,14 @@ def _rebuild_derived() -> int:
     return count
 
 FRONTMATTER_FIELD_ORDER = (
-    "name", "state", "category", "suburb", "address", "latitude", "longitude", "website",
+    # 2026-09-08: country/state_province/city/zipcode/currency/contact_email
+    # arrived with the international content migration but were never added
+    # here, so every admin re-save of a published venue silently stripped a
+    # venue's location — leaving a file the build then rejects. The
+    # six-surface diff now asserts this tuple covers KNOWN_FIELDS so the next
+    # field cannot go missing the same way.
+    "name", "country", "state_province", "city", "zipcode", "currency", "contact_email",
+    "category", "address", "latitude", "longitude", "website",
     "amenities", "facilities", "hours", "cost", "access",
     "temperatures", "dress_code", "session_gender", "session_gender_note", "silence_policy", "phone_policy", "minimum_age",
     # Gate 7 (2026-07-31) — must be listed here or render_frontmatter drops

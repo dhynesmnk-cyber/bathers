@@ -81,7 +81,7 @@ def _generate_one(
         "state": STATE_NAMES[state] if state else None,
         "amenity": AMENITY_FULL_NAMES[amenity_key] if amenity_key else None,
         "category": CATEGORY_LABELS[category_key] if category_key else None,
-        "venues": [{"name": v["name"], "suburb": v["suburb"]} for v in venues],
+        "venues": [{"name": v["name"], "city": v["city"]} for v in venues],
     }
     text, usage = agents.call_agent(
         model=MODEL_ARCHITECT,

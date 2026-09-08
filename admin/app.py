@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import base64
 import json
-import secrets
 import threading
 from dataclasses import asdict
 from pathlib import Path
@@ -23,8 +22,11 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 
 from admin.config import (
-    ADMIN_PASSWORD,
-    ADMIN_USERNAME,
+    CLAIM_PER_CLIENT_MAX_PER_WINDOW,
+    COUNTRY_NAMES,
+    DEFAULT_COUNTRY,
+    SUBDIVISIONS,
+    CLAIM_RATE_WINDOW_SECONDS,
     AMENITY_KEYS,
     CATEGORY_LABELS,
     DRESS_CODE_LABELS,
@@ -40,6 +42,7 @@ from admin.config import (
     STRIPE_WEBHOOK_SECRET,
     VENUES_JSON_PATH,
 )
+from admin import security
 from admin.mdx_preview import (
     AMENITY_LABELS,
     ICON_PATHS,
@@ -50,7 +53,7 @@ from admin.mdx_preview import (
     temperature_line,
     verification_summary,
 )
-from admin.pipeline import article_db, article_pipeline, article_store, articles, blog, claims, claims_store, deploy, discovery, goatcounter, gsc, images, notify, orchestrator, places, staging, stripe_client
+from admin.pipeline import article_db, article_pipeline, article_store, articles, backup, blog, claims, claims_store, deploy, discovery, goatcounter, gsc, images, notify, orchestrator, places, staging, stripe_client
 from admin.pipeline.articles import PublishBlocked
 from admin.pipeline.articles import ValidationFailed as ArticleValidationFailed
 from admin.pipeline.blog import ValidationFailed as BlogValidationFailed
@@ -83,26 +86,76 @@ SITE_BLOG_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/blog-images", StaticFiles(directory=str(SITE_BLOG_IMAGES_DIR)), name="blog-images")
 
 
-def _basic_auth_ok(header: str | None) -> bool:
-    if not header or not header.startswith("Basic "):
-        return False
-    try:
-        username, _, password = base64.b64decode(header[6:]).decode("utf-8").partition(":")
-    except (ValueError, UnicodeDecodeError):
-        return False
-    return secrets.compare_digest(username, ADMIN_USERNAME) and secrets.compare_digest(password, ADMIN_PASSWORD)
+# Gate 12 (2026-09-08): auth used to fail OPEN — blank ADMIN_USERNAME and
+# ADMIN_PASSWORD waved every request through, so one unset Fly secret silently
+# exposed all of this app's routes, deploy and the pipeline runners included.
+# It now fails closed at import unless an unauthenticated run is asked for
+# explicitly. See admin/security.py for the full posture.
+AUTH_POSTURE = security.resolve_auth_posture()
+print(f"[admin] {AUTH_POSTURE.reason}")
+for _warning in security.password_warnings():
+    print(f"[admin] WARNING: {_warning}")
+
+# claims.db and articles.db are the only state here that no rebuild can restore
+# (data_store.rebuild() recreates directory.db from _published), and they are
+# deliberately outside git — so the repository is not their backup and until
+# Gate 12 nothing was. See admin/pipeline/backup.py for the restore procedure.
+backup.start_scheduler()
+
+
+def _is_public(path: str) -> bool:
+    return path in PUBLIC_PATHS or path.startswith(PUBLIC_PATH_PREFIXES)
 
 
 @app.middleware("http")
-async def require_basic_auth(request: Request, call_next):
-    if request.url.path in PUBLIC_PATHS or request.url.path.startswith(PUBLIC_PATH_PREFIXES):
-        return await call_next(request)
-    # No credentials configured (local dev's .env leaves these blank) — auth stays off.
-    if not ADMIN_USERNAME and not ADMIN_PASSWORD:
-        return await call_next(request)
-    if not _basic_auth_ok(request.headers.get("authorization")):
-        return Response(status_code=401, headers={"WWW-Authenticate": 'Basic realm="Where We Bathe Admin"'})
-    return await call_next(request)
+async def security_middleware(request: Request, call_next):
+    """Body cap -> auth (throttled) -> handler -> audit, in one pass.
+
+    Deliberately one middleware rather than three: it keeps the ordering
+    contract with CORSMiddleware below readable (that comment explains why CORS
+    must stay outermost) and makes the request lifecycle obvious in one read.
+    """
+    path = request.url.path
+    public = _is_public(path)
+    client = security.client_key(request.headers, request.client.host if request.client else None)
+
+    reason = security.oversize_reason(
+        request.headers.get("content-length"),
+        security.request_byte_cap(path, public),
+        public=public,
+    )
+    if reason is not None:
+        security.audit(method=request.method, path=path, status=413, client=client,
+                       authenticated=False, note=reason)
+        return Response(status_code=413, content=reason, media_type="text/plain")
+
+    authenticated = not AUTH_POSTURE.enforced
+    if AUTH_POSTURE.enforced and not public:
+        locked_for = security.auth_throttle.locked(client)
+        if locked_for > 0:
+            security.audit(method=request.method, path=path, status=429, client=client,
+                           authenticated=False, note="auth locked out")
+            return Response(
+                status_code=429,
+                headers={"Retry-After": str(int(locked_for) + 1)},
+                content="too many failed sign-in attempts",
+                media_type="text/plain",
+            )
+        if not security.credentials_ok(request.headers.get("authorization")):
+            locked_now = security.auth_throttle.record(client)
+            security.audit(method=request.method, path=path, status=401, client=client,
+                           authenticated=False,
+                           note="lockout triggered" if locked_now else "bad credentials")
+            return Response(status_code=401, headers={"WWW-Authenticate": 'Basic realm="Where We Bathe Admin"'})
+        security.auth_throttle.clear(client)
+        authenticated = True
+
+    response = await call_next(request)
+
+    if request.method in security.AUDIT_METHODS:
+        security.audit(method=request.method, path=path, status=response.status_code,
+                       client=client, authenticated=authenticated)
+    return response
 
 
 # Starlette applies the most-recently-added middleware outermost, so adding
@@ -130,8 +183,9 @@ def _entry_summary(entry: staging.StagingEntry) -> dict[str, Any]:
     return {
         "slug": entry.slug,
         "name": data.get("name"),
-        "state": data.get("state"),
-        "suburb": data.get("suburb"),
+        "country": data.get("country", DEFAULT_COUNTRY),
+        "state_province": data.get("state_province"),
+        "city": data.get("city"),
         "amenities": data.get("amenities"),
         "status": entry.status,
         "word_count": entry.word_count,
@@ -176,6 +230,9 @@ def index(request: Request):
         "index.html",
         {
             "states": STATES,
+            "country_names": COUNTRY_NAMES,
+            "subdivisions": SUBDIVISIONS,
+            "default_country": DEFAULT_COUNTRY,
             "categories": CATEGORY_LABELS,
             "dress_codes": DRESS_CODE_LABELS,
             "session_genders": SESSION_GENDER_LABELS,
@@ -971,16 +1028,31 @@ class ClaimSubmitBody(BaseModel):
     website: str = ""  # honeypot — real visitors never see or fill this field
 
 
+# Gate 12 (2026-09-08): the per-client half of the claim rate limit. In-process
+# and keyed on the Fly-set peer address, paired with the DB-backed global limit
+# in claims.py that no spoofed header can dodge. See admin/security.py.
+_claim_throttle = security.Throttle(
+    CLAIM_PER_CLIENT_MAX_PER_WINDOW, CLAIM_RATE_WINDOW_SECONDS, CLAIM_RATE_WINDOW_SECONDS
+)
+
+
 @app.post("/api/claims/submit")
-def api_submit_claim(body: ClaimSubmitBody):
+def api_submit_claim(body: ClaimSubmitBody, request: Request):
+    client = security.client_key(request.headers, request.client.host if request.client else None)
+    if _claim_throttle.locked(client) > 0:
+        raise HTTPException(429, "too many requests — try again later")
+
     photo_bytes = None
+    photo_extension = None
     if body.photo is not None:
         if not body.photo_caption or not body.photo_caption.strip():
             raise HTTPException(400, "a caption is required when a photo is attached")
         try:
-            photo_bytes = base64.b64decode(body.photo.data)
-        except (ValueError, base64.binascii.Error):
-            raise HTTPException(400, "photo data must be valid base64")
+            photo_bytes, _sniffed_type, photo_extension = security.decode_photo(
+                body.photo.data, body.photo.content_type
+            )
+        except security.PhotoRejected as exc:
+            raise HTTPException(400, str(exc))
     try:
         claims.submit_request(
             slug=body.slug,
@@ -989,18 +1061,22 @@ def api_submit_claim(body: ClaimSubmitBody):
             plan_type=body.plan_type,
             patch=body.patch,
             photo_bytes=photo_bytes,
-            photo_content_type=body.photo.content_type if body.photo else None,
+            photo_extension=photo_extension,
             photo_caption=body.photo_caption,
             honeypot_value=body.website,
         )
+    except claims.RateLimitExceeded:
+        _claim_throttle.record(client)
+        raise HTTPException(429, "too many requests — try again later")
     except FileNotFoundError:
         raise HTTPException(404, f"no published venue '{body.slug}'")
     except claims.InvalidPatch as exc:
         raise HTTPException(400, str(exc))
-    except claims.RateLimitExceeded:
-        raise HTTPException(429, "too many requests for this venue — try again later")
+    _claim_throttle.record(client)
     # Always the same shape, honeypot hit or not — nothing here should tell
-    # an automated caller it was filtered.
+    # an automated caller it was filtered. A rate-limited caller gets the same
+    # 429 whether it tripped the per-client or the global limit, for the same
+    # reason.
     return {"ok": True}
 
 

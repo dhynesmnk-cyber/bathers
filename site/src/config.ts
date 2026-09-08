@@ -231,6 +231,153 @@ export const STATE_NAMES: Record<(typeof STATES)[number], string> = {
 export const AU_LATITUDE_BOUNDS = { min: -44.0, max: -9.0 } as const;
 export const AU_LONGITUDE_BOUNDS = { min: 112.0, max: 154.0 } as const;
 
+// Country registry (2026-09-08, international scope — TRD.md §1).
+// Mirrors admin/config.py's COUNTRIES / SUBDIVISIONS / COUNTRY_CURRENCY /
+// COUNTRY_*_BOUNDS EXACTLY, per SCHEMA.md's "one contract" rule — the same
+// two-mirrors posture as the amenity/facility/confidence constants above.
+export const COUNTRIES = ["AU", "US"] as const;
+export type Country = (typeof COUNTRIES)[number];
+
+export const COUNTRY_NAMES: Record<Country, string> = {
+  AU: "Australia",
+  US: "United States",
+};
+
+export const SUBDIVISIONS: Record<Country, readonly string[]> = {
+  AU: STATES,
+  US: [
+    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI",
+    "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN",
+    "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH",
+    "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA",
+    "WV", "WI", "WY",
+  ],
+};
+
+export const COUNTRY_CURRENCY: Record<Country, string> = { AU: "AUD", US: "USD" };
+
+export const COUNTRY_LATITUDE_BOUNDS: Record<Country, { min: number; max: number }> = {
+  AU: AU_LATITUDE_BOUNDS,
+  US: { min: 18.0, max: 72.0 },
+};
+export const COUNTRY_LONGITUDE_BOUNDS: Record<Country, { min: number; max: number }> = {
+  AU: AU_LONGITUDE_BOUNDS,
+  US: { min: -180.0, max: -66.0 },
+};
+
+export const DEFAULT_COUNTRY: Country = "AU";
+
+export function isCountry(value: unknown): value is Country {
+  return typeof value === "string" && (COUNTRIES as readonly string[]).includes(value);
+}
+
+// Place hierarchy (2026-09-08) — world region / country / subdivision / area.
+// Mirrors admin/config.py's PLACES_ROOT / WORLD_REGIONS / COUNTRY_SLUGS /
+// SUBDIVISION_NAMES and its slug helpers EXACTLY. See that file for why the
+// /places/ prefix and full-name slugs are load-bearing rather than cosmetic.
+export const PLACES_ROOT = "/places";
+
+export interface WorldRegion {
+  slug: string;
+  name: string;
+  countries: readonly Country[];
+}
+
+export const WORLD_REGIONS: readonly WorldRegion[] = [
+  { slug: "oceania", name: "Oceania", countries: ["AU"] },
+  { slug: "north-america", name: "North America", countries: ["US"] },
+];
+
+export const COUNTRY_SLUGS: Record<Country, string> = {
+  AU: "australia",
+  US: "united-states",
+};
+
+export const SUBDIVISION_NAMES: Record<Country, Record<string, string>> = {
+  AU: STATE_NAMES,
+  US: {
+    AL: "Alabama",
+    AK: "Alaska",
+    AZ: "Arizona",
+    AR: "Arkansas",
+    CA: "California",
+    CO: "Colorado",
+    CT: "Connecticut",
+    DE: "Delaware",
+    DC: "District of Columbia",
+    FL: "Florida",
+    GA: "Georgia",
+    HI: "Hawaii",
+    ID: "Idaho",
+    IL: "Illinois",
+    IN: "Indiana",
+    IA: "Iowa",
+    KS: "Kansas",
+    KY: "Kentucky",
+    LA: "Louisiana",
+    ME: "Maine",
+    MD: "Maryland",
+    MA: "Massachusetts",
+    MI: "Michigan",
+    MN: "Minnesota",
+    MS: "Mississippi",
+    MO: "Missouri",
+    MT: "Montana",
+    NE: "Nebraska",
+    NV: "Nevada",
+    NH: "New Hampshire",
+    NJ: "New Jersey",
+    NM: "New Mexico",
+    NY: "New York",
+    NC: "North Carolina",
+    ND: "North Dakota",
+    OH: "Ohio",
+    OK: "Oklahoma",
+    OR: "Oregon",
+    PA: "Pennsylvania",
+    RI: "Rhode Island",
+    SC: "South Carolina",
+    SD: "South Dakota",
+    TN: "Tennessee",
+    TX: "Texas",
+    UT: "Utah",
+    VT: "Vermont",
+    VA: "Virginia",
+    WA: "Washington",
+    WV: "West Virginia",
+    WI: "Wisconsin",
+    WY: "Wyoming",
+  },
+};
+
+export function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export function subdivisionSlug(country: Country, code: string): string {
+  return slugify(SUBDIVISION_NAMES[country][code] ?? code);
+}
+
+export function worldRegionForCountry(country: Country): WorldRegion | undefined {
+  return WORLD_REGIONS.find((r) => r.countries.includes(country));
+}
+
+/** Canonical URL for a place. `leaf` is an area slug or a filter slug — the two
+ *  share that level and are kept disjoint by a /validate check. */
+export function placePath(country: Country, subdivision?: string, leaf?: string): string {
+  const region = worldRegionForCountry(country);
+  if (!region) throw new Error("no world region declares country " + country);
+  const parts: string[] = [PLACES_ROOT, region.slug, COUNTRY_SLUGS[country]];
+  if (subdivision) {
+    parts.push(subdivisionSlug(country, subdivision));
+    if (leaf) parts.push(leaf);
+  }
+  return parts.join("/") + "/";
+}
+
 export interface GeoPoint {
   latitude: number;
   longitude: number;

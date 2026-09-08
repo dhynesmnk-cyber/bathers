@@ -21,24 +21,44 @@ import {
   CATEGORIES,
   CATEGORY_LABELS,
   POOL_TYPES,
-  STATE_NAMES,
-  STATES,
+  COUNTRY_NAMES,
+  SUBDIVISION_NAMES,
+  WORLD_REGIONS,
   amenityUrlSlug,
   categoryUrlSlug,
+  placePath,
 } from "../config";
 
 const venues = await getCollection("spas");
 
-// Each present state, with the pool-type settings that actually have a venue
-// there, so the menu can offer "indoor / outdoor / springs / other by state"
-// (2026-07-24) without linking to empty pages.
-const stateMenu = STATES.filter((state) => venues.some((v) => v.data.state === state)).map((state) => {
-  const stateVenues = venues.filter((v) => v.data.state === state);
-  return {
-    state,
-    poolTypes: POOL_TYPES.filter((t) => stateVenues.some((v) => t.match(v.data.facilities))),
-  };
-});
+// The place hierarchy, one country at a time (2026-09-08). Each subdivision
+// keeps the pool-type shortcuts it has always offered (2026-07-24), now pointing
+// at its /places/ path. Only countries and subdivisions with a venue appear, so
+// the menu never links somewhere empty — and with one country it reads exactly
+// as the old state list did, gaining a tier only when a second country arrives.
+const placeMenu = WORLD_REGIONS.flatMap((region) =>
+  region.countries
+    .filter((country) => venues.some((v) => v.data.country === country))
+    .map((country) => {
+      const countryVenues = venues.filter((v) => v.data.country === country);
+      return {
+        country,
+        subdivisions: Object.keys(SUBDIVISION_NAMES[country])
+          .filter((code) => countryVenues.some((v) => v.data.state_province === code))
+          .sort((a, b) =>
+            SUBDIVISION_NAMES[country][a].localeCompare(SUBDIVISION_NAMES[country][b]),
+          )
+          .map((code) => {
+            const inState = countryVenues.filter((v) => v.data.state_province === code);
+            return {
+              code,
+              poolTypes: POOL_TYPES.filter((t) => inState.some((v) => t.match(v.data.facilities))),
+            };
+          }),
+      };
+    }),
+);
+const multiCountry = placeMenu.length > 1;
 const presentCategories = CATEGORIES.filter((category) => venues.some((v) => v.data.category === category));
 const presentAmenities = AMENITY_KEYS.filter((key) => venues.some((v) => v.data.amenities?.[key]));
 ---
@@ -59,19 +79,31 @@ const presentAmenities = AMENITY_KEYS.filter((key) => venues.some((v) => v.data.
     <a href="/">Home</a>
     <ThemeToggle />
 
-    <span class="corner-menu-heading corner-menu-heading-primary">Find a bath by state</span>
+    <span class="corner-menu-heading corner-menu-heading-primary">Find a bath by place</span>
+    <a class="corner-menu-state-link" href="/places/">All places</a>
     {
-      stateMenu.map(({ state, poolTypes }) => (
-        <div class="corner-menu-state">
-          <a class="corner-menu-state-link" href={`/${state.toLowerCase()}/`}>{STATE_NAMES[state]}</a>
-          {poolTypes.length > 0 && (
-            <div class="corner-menu-subrow">
-              {poolTypes.map((t) => (
-                <a href={`/${state.toLowerCase()}/${t.slug}/`}>{t.short}</a>
-              ))}
-            </div>
+      placeMenu.map(({ country, subdivisions }) => (
+        <>
+          {multiCountry && (
+            <span class="corner-menu-subheading">
+              <a href={placePath(country)}>{COUNTRY_NAMES[country]}</a>
+            </span>
           )}
-        </div>
+          {subdivisions.map(({ code, poolTypes }) => (
+            <div class="corner-menu-state">
+              <a class="corner-menu-state-link" href={placePath(country, code)}>
+                {SUBDIVISION_NAMES[country][code]}
+              </a>
+              {poolTypes.length > 0 && (
+                <div class="corner-menu-subrow">
+                  {poolTypes.map((t) => (
+                    <a href={placePath(country, code, t.slug)}>{t.short}</a>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </>
       ))
     }
 
@@ -97,7 +129,6 @@ const presentAmenities = AMENITY_KEYS.filter((key) => venues.some((v) => v.data.
       }
 
       <a href="/compare/">Compare venues</a>
-      <a href="/region/">Regions</a>
       <a href="/glossary/">Glossary</a>
       <a href="/blog/">Blog</a>
       <a href="/methodology/">How this is made</a>

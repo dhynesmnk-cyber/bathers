@@ -6,13 +6,35 @@ import Icon from "../components/Icon.astro";
 import MarginAnimal from "../components/MarginAnimal.astro";
 import SearchBox from "../components/SearchBox.astro";
 import PromoClaimModal from "../components/PromoClaimModal.astro";
-import { AMENITY_KEYS, AMENITY_NOTATION, POOL_NATIONAL_FILTERS, SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES, amenityUrlSlug } from "../config";
+import { AMENITY_KEYS, AMENITY_NOTATION, COUNTRY_NAMES, POOL_NATIONAL_FILTERS, SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES, SUBDIVISION_NAMES, WORLD_REGIONS, amenityUrlSlug, placePath } from "../config";
 
 const venues = await getCollection("spas");
 
+// Homepage place chooser (2026-09-08) — walks the same world-region/country/
+// subdivision tables the /places/ routes build from. With one country it renders
+// exactly as the old "By state" list did; a second country adds a country line
+// above its states rather than changing the shape of the chooser.
+const byCountry = WORLD_REGIONS.flatMap((region) =>
+  region.countries
+    .filter((country) => venues.some((v) => v.data.country === country))
+    .map((country) => {
+      const countryVenues = venues.filter((v) => v.data.country === country);
+      return {
+        country,
+        subdivisions: Object.keys(SUBDIVISION_NAMES[country])
+          .filter((code) => countryVenues.some((v) => v.data.state_province === code))
+          .sort((a, b) =>
+            SUBDIVISION_NAMES[country][a].localeCompare(SUBDIVISION_NAMES[country][b]),
+          ),
+      };
+    }),
+);
+const multiCountry = byCountry.length > 1;
+
+// The homepage list still groups venues by subdivision for the results area.
 const byState = STATES.map((state) => ({
   state,
-  venues: venues.filter((v) => v.data.state === state),
+  venues: venues.filter((v) => v.data.state_province === state),
 })).filter((group) => group.venues.length > 0);
 
 // Homepage chooser (DESIGN.md §5/§6/§7, 2026-07-23 exception) — features
@@ -36,9 +58,11 @@ const presentPoolNational = POOL_NATIONAL_FILTERS.filter((f) => venues.some((v) 
 const allVenues = venues.map((v) => ({
   slug: v.id,
   name: v.data.name,
-  suburb: v.data.suburb,
   city: v.data.city,
-  state_province: v.data.state_province || v.data.state,
+  state_province: v.data.state_province,
+  country: v.data.country,
+  city: v.data.city,
+  state_province: v.data.state_province,
   country: v.data.country || 'AU',
   summary: v.data.summary,
   amenities: v.data.amenities,
@@ -75,7 +99,7 @@ const allVenues = venues.map((v) => ({
       <p>
         There are no ads here and no sponsored listings. Nothing ranks
         because a venue paid for it. Search by name or suburb, tell us where
-        you are, or browse by state or by the feature you are after — a
+        you are, or browse by place or by the feature you are after — a
         proper sweat, magnesium water, a cold shock — and choose by vibes.
       </p>
     </section>
@@ -88,7 +112,7 @@ const allVenues = venues.map((v) => ({
       </div>
       <p class="reading-spine mb-10">
         Search by name or suburb, tell us where you are, or browse below —
-        start with a state if you know where you're headed, or a pool setting
+        start with a place if you know where you're headed, or a pool setting
         if you know what kind of soak you're after: indoor, outdoor, a
         natural spring, or something else. Picking either filters the
         results below.
@@ -115,7 +139,7 @@ const allVenues = venues.map((v) => ({
           <p id="near-me-message" class="near-me-message" role="status" hidden></p>
           <noscript>
             <p class="mono" style="color: var(--ink-faded); margin-top: 0.5rem;">
-              Finding venues near you requires JavaScript — browse by state below.
+              Finding venues near you requires JavaScript — browse by place below.
             </p>
           </noscript>
         </div>
@@ -123,16 +147,26 @@ const allVenues = venues.map((v) => ({
 
       <div class="chooser-groups">
         <div class="chooser-group">
-          <span class="mono chooser-group-label">By state</span>
-          <ul class="chooser-states">
-            {byState.map((group) => (
-              <li>
-                <a class="mono chooser-state-link" href={`/${group.state.toLowerCase()}/`}>
-                  {STATE_NAMES[group.state]}
+          <span class="mono chooser-group-label">By place</span>
+          {byCountry.map(({ country, subdivisions }) => (
+            <Fragment>
+              {multiCountry && (
+                <a class="mono chooser-state-link" href={placePath(country)}>
+                  {COUNTRY_NAMES[country]}
                 </a>
-              </li>
-            ))}
-          </ul>
+              )}
+              <ul class="chooser-states">
+                {subdivisions.map((code) => (
+                  <li>
+                    <a class="mono chooser-state-link" href={placePath(country, code)}>
+                      {SUBDIVISION_NAMES[country][code]}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </Fragment>
+          ))}
+          <a class="mono chooser-state-link" href="/places/">All places</a>
         </div>
         <div class="chooser-group">
           <span class="mono chooser-group-label">By pool setting</span>
@@ -177,7 +211,7 @@ const allVenues = venues.map((v) => ({
 
       <noscript>
         <p class="mono" style="color: var(--ink-faded);">
-          Results require JavaScript — browse by state or feature above.
+          Results require JavaScript — browse by place or feature above.
         </p>
       </noscript>
 
@@ -187,7 +221,7 @@ const allVenues = venues.map((v) => ({
             <VenueEntry
               name={venue.name}
               slug={venue.slug}
-              suburb={venue.suburb}
+              city={venue.city}
               city={venue.city}
               state_province={venue.state_province}
               country={venue.country}

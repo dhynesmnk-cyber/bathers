@@ -1,0 +1,190 @@
+---
+// Leaf page under a subdivision (2026-09-08). Two kinds share this slot,
+// discriminated in props exactly as [scope]/index.astro already does:
+//
+//   - "area"   — the region taxonomy (/places/oceania/australia/victoria/mornington-peninsula/),
+//                replacing the old flat /region/<slug>/ route
+//   - "filter" — amenity, pool setting or cross-cutting facility within the
+//                subdivision, replacing the old /<code>/<filter>/ route
+//
+// Sharing one slot keeps URLs short, and is safe because /validate asserts the
+// area and filter slug sets never intersect within a subdivision. Area names are
+// places ("Mornington Peninsula") and filter slugs are features
+// ("magnesium-pool"), so the two cannot collide in practice — the check is there
+// so "cannot in practice" does not quietly become "did".
+import { getCollection } from "astro:content";
+import BaseLayout from "../../../../../layouts/BaseLayout.astro";
+import VenueEntry from "../../../../../components/VenueEntry.astro";
+import {
+  AMENITY_KEYS,
+  AMENITY_NOTATION,
+  COUNTRY_NAMES,
+  COUNTRY_SLUGS,
+  CROSS_CUTTING_FACILITY_FILTERS,
+  POOL_TYPES,
+  SUBDIVISION_NAMES,
+  WORLD_REGIONS,
+  amenityUrlSlug,
+  placePath,
+  subdivisionSlug,
+  type Country,
+} from "../../../../../config";
+import { REGIONS, regionForCity } from "../../../../../data/regions";
+import forewords from "../../../../../data/forewords.json";
+
+type Forewords = { [state: string]: { amenity_meta_descriptions?: Record<string, string> } | undefined };
+const FOREWORDS = forewords as Forewords;
+
+export async function getStaticPaths() {
+  const venues = await getCollection("spas");
+  const paths = [];
+
+  for (const region of WORLD_REGIONS) {
+    for (const country of region.countries) {
+      for (const code of Object.keys(SUBDIVISION_NAMES[country])) {
+        const inState = venues.filter(
+          (v) => v.data.country === country && v.data.state_province === code,
+        );
+        if (inState.length === 0) continue;
+        const base = {
+          world: region.slug,
+          country: COUNTRY_SLUGS[country],
+          state: subdivisionSlug(country, code),
+        };
+        const shared = { region, country, code };
+
+        for (const area of REGIONS) {
+          const matching = inState.filter(
+            (v) => regionForCity(v.data.country, v.data.state_province, v.data.city)?.slug === area.slug,
+          );
+          if (matching.length < 2) continue; // same >=2 threshold the old region hub used
+          paths.push({
+            params: { ...base, leaf: area.slug },
+            props: { ...shared, kind: "area", label: area.name, venues: matching },
+          });
+        }
+
+        for (const key of AMENITY_KEYS) {
+          const matching = inState.filter((v) => v.data.amenities?.[key]);
+          if (matching.length === 0) continue;
+          paths.push({
+            params: { ...base, leaf: amenityUrlSlug(key) },
+            props: {
+              ...shared,
+              kind: "filter",
+              label: AMENITY_NOTATION[key].full,
+              glossaryKey: key,
+              amenityKey: key,
+              venues: matching,
+            },
+          });
+        }
+
+        for (const t of POOL_TYPES) {
+          const matching = inState.filter((v) => t.match(v.data.facilities));
+          if (matching.length === 0) continue;
+          paths.push({
+            params: { ...base, leaf: t.slug },
+            props: { ...shared, kind: "filter", label: t.label, venues: matching },
+          });
+        }
+
+        for (const f of CROSS_CUTTING_FACILITY_FILTERS) {
+          const matching = inState.filter((v) => v.data.facilities?.[f.key]);
+          if (matching.length === 0) continue;
+          paths.push({
+            params: { ...base, leaf: f.slug },
+            props: {
+              ...shared,
+              kind: "filter",
+              label: f.label,
+              glossaryKey: f.key,
+              venues: matching,
+            },
+          });
+        }
+      }
+    }
+  }
+  return paths;
+}
+
+const { region, country, code, kind, label, glossaryKey, amenityKey, venues } = Astro.props;
+const countryName = COUNTRY_NAMES[country as Country];
+const stateName = SUBDIVISION_NAMES[country as Country][code];
+const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+const noun = plural(venues.length, "venue", "venues");
+const leafSlug = Astro.params.leaf!;
+
+const heading = kind === "area" ? label : `${label} in ${stateName}`;
+const pageTitle =
+  kind === "area"
+    ? `Bathhouses & Hot Springs on the ${label} — ${venues.length} ${noun}`
+    : `${label} in ${stateName} — ${venues.length} ${noun}`;
+const description =
+  kind === "filter" && amenityKey
+    ? FOREWORDS[code]?.amenity_meta_descriptions?.[amenityKey] ||
+      `${label} at ${venues.length} ${noun} in ${stateName}, compared side by side.`
+    : kind === "area"
+      ? `Bathhouses, saunas and hot springs in ${label}, ${stateName} — ${venues.length} ${noun}.`
+      : `${label} at ${venues.length} ${noun} in ${stateName}.`;
+
+const sorted = [...venues].sort((a: any, b: any) => a.data.name.localeCompare(b.data.name));
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={description}
+  canonicalPath={placePath(country as Country, code, leafSlug)}
+>
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <nav class="mono mb-8 text-[var(--ink-faded)]">
+      <a href="/places/">Places</a>
+      <span class="mx-2">/</span>
+      <a href={`/places/${region.slug}/`}>{region.name}</a>
+      <span class="mx-2">/</span>
+      <a href={placePath(country as Country)}>{countryName}</a>
+      <span class="mx-2">/</span>
+      <a href={placePath(country as Country, code)}>{stateName}</a>
+    </nav>
+
+    <header class="mb-12">
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">{heading}</h1>
+      <p class="mt-6 max-w-[65ch]">
+        {venues.length} {noun}{kind === "area" ? ` in ${stateName}` : ""}.
+      </p>
+      {
+        glossaryKey && (
+          <p class="mono mt-6 text-[var(--ink-faded)]">
+            <a href={`/glossary/${String(glossaryKey).replace(/_/g, "-")}/`}>What is this?</a>
+          </p>
+        )
+      }
+    </header>
+
+    <section aria-labelledby="contents-heading">
+      <div class="mono mb-8 flex items-center gap-4 text-[var(--ink-faded)]">
+        <span id="contents-heading">CONTENTS</span>
+        <span
+          class="draw-line-on-view h-px flex-1"
+          style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"
+        ></span>
+      </div>
+      {
+        sorted.map((venue: any) => (
+          <VenueEntry
+            name={venue.data.name}
+            slug={venue.id}
+            city={venue.data.city}
+            state_province={venue.data.state_province}
+            country={venue.data.country}
+            summary={venue.data.summary}
+            amenities={venue.data.amenities}
+            facilities={venue.data.facilities}
+            image={venue.data.image}
+          />
+        ))
+      }
+    </section>
+  </main>
+</BaseLayout>

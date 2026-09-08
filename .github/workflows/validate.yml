@@ -1,0 +1,151 @@
+# Gate 12 (2026-09-08) — /validate on every push.
+#
+# Until now the gate-exit suite ran only when someone remembered to run it, and
+# `main` drifted red without anything saying so (see the three failing checks
+# this workflow surfaces on its first run).
+#
+# This runs the mechanisable subset of .claude/commands/validate.md: every check
+# that is a script with an exit code. The checks that need a human judgement
+# (check 6's register lint, which is advisory by design) or a live browser
+# (og_cards' Playwright render — validate_og reads the built HTML, which CI does
+# cover) stay manual, and are listed at the bottom of this file so the gap is
+# written down rather than assumed.
+name: validate
+
+on:
+  # Push only. A pull_request trigger as well would double-run every check on
+  # every PR branch, and the concurrency group below cannot dedupe them because
+  # push and pull_request carry different github.ref values. Every PR here comes
+  # from a branch in this repository, so push covers them; a fork PR would need
+  # the pull_request trigger added back.
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          # 22, not 20: site/scripts/refresh-articles.ts is run directly by node
+          # (check 18) and relies on native TypeScript type-stripping, which
+          # landed in Node 22. ts-register.mjs only teaches Node to resolve the
+          # project's extensionless relative imports — it does not transpile, so
+          # on Node 20 that check dies with ERR_UNKNOWN_FILE_EXTENSION.
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Install Python dependencies
+        # Playwright's browser binaries are deliberately not downloaded: nothing
+        # in this suite renders a page, and the OG-card render is a deploy-time
+        # step, not a validation one.
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+        run: pip install -r admin/requirements.txt
+
+      - name: Install site dependencies
+        run: npm ci --no-audit --no-fund
+        working-directory: site
+
+      # --- Checks that do not need a build -------------------------------
+      # Run before the build so a schema break is reported as a schema break
+      # rather than as a build failure downstream of one.
+
+      - name: "Check 7 — repo hygiene (no tracked files under guarded paths)"
+        run: |
+          tracked=$(git ls-files -- temp_data content-staging .env '.env.*' data/claims.db data/articles.db \
+            | grep -v '^\.env\.example$' || true)
+          if [ -n "$tracked" ]; then
+            echo "tracked files under a gitignored path:"; echo "$tracked"; exit 1
+          fi
+          echo "no tracked files under guarded paths"
+
+      - name: "Gate 12 — admin/security.py self-test"
+        run: python3 -m admin.security
+
+      - name: "Gate 12 — admin/pipeline/backup.py self-test"
+        run: python3 -m admin.pipeline.backup --self-test
+
+      - name: "Check 13 — six-surface schema diff"
+        run: python3 -m admin.pipeline.schema_surfaces
+
+      - name: "Check 12 — fact plausibility"
+        run: python3 -m admin.pipeline.validate_facts
+
+      - name: "Check 15 — comparison-copy audit"
+        run: python3 -m admin.pipeline.comparison_copy
+
+      - name: "Check 21 — article intent-uniqueness"
+        run: python3 -m admin.pipeline.validate_intents
+
+      # --- Build, then the checks that read built output -----------------
+
+      - name: "Check 4 — Astro build"
+        run: npm run build
+        working-directory: site
+
+      - name: "Check 18 — article-metadata freshness"
+        run: node --import ./scripts/ts-register.mjs scripts/refresh-articles.ts --check
+        working-directory: site
+
+      - name: "Check 19 — article data-binding integrity"
+        run: python3 -m admin.pipeline.validate_articles
+
+      - name: "Check 20 — routing hygiene"
+        run: python3 -m admin.pipeline.validate_routing
+
+      - name: "Check 22 — OG image integrity"
+        run: python3 -m admin.pipeline.validate_og
+
+      - name: "Check 16 — JSON-LD structural validation"
+        run: python3 -m admin.pipeline.jsonld_validator
+
+      - name: "Check 14 — internal-linking graph"
+        run: python3 -m admin.pipeline.link_graph
+
+      - name: "Check 26 — place hierarchy"
+        run: |
+          python3 -m admin.pipeline.validate_places
+          python3 -m admin.pipeline.validate_places --self-test
+
+      # --- Check 3: derived-data freshness -------------------------------
+      # Rebuilds into the working tree and asserts nothing moved. This is the
+      # check that catches a published venue edited without a rebuild — and, as
+      # of 2026-08-19's schema migration, the one that catches the rebuild
+      # dropping every venue on the floor.
+
+      - name: "Check 3 — derived-data freshness"
+        run: |
+          python3 -m admin.pipeline.data_store --rebuild
+          if ! git diff --quiet -- data/directory.db site/src/data/venues.json site/public/venues.geojson; then
+            echo "derived data is stale or the rebuild changed it:"
+            git diff --stat -- data/directory.db site/src/data/venues.json site/public/venues.geojson
+            exit 1
+          fi
+          echo "derived data matches a fresh rebuild"
+
+# Not covered here, deliberately:
+#   Check 1/2  — schema + slug integrity: asserted by the Astro build (check 4),
+#                which fails on any frontmatter that does not match the zod schema.
+#   Check 5    — link check across built output: overlaps check 14; a standalone
+#                crawler is not yet written.
+#   Check 6    — register lint: advisory by design ("warnings, not failures — a
+#                human judges them"), so it has no exit code to gate on.
+#   Checks 8-11 — Gate 6's noindex/national-route/region/abbreviation greps: they
+#                live in the /validate prose, not yet in a module with an exit
+#                code. Folding them in is the obvious next tightening.

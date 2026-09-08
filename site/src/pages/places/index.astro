@@ -1,0 +1,89 @@
+---
+// Places hub (2026-09-08) — the root of the geographic hierarchy that replaced
+// the flat /<subdivision>/ space (TRD.md §1). Lists every world region that has
+// a published venue, drilling down through country to subdivision so a reader
+// can reach any state in two clicks without a menu.
+//
+// Empty branches are never rendered: a world region, country or subdivision
+// with no published venue simply does not appear, the same rule the old state
+// pages used. That keeps the hierarchy honest as coverage grows rather than
+// promising pages that hold nothing.
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import {
+  COUNTRY_NAMES,
+  SUBDIVISION_NAMES,
+  WORLD_REGIONS,
+  placePath,
+  type Country,
+} from "../../config";
+
+const venues = await getCollection("spas");
+
+const tree = WORLD_REGIONS.map((region) => ({
+  region,
+  countries: region.countries
+    .map((country) => {
+      const countryVenues = venues.filter((v) => v.data.country === country);
+      const codes = Object.keys(SUBDIVISION_NAMES[country])
+        .filter((code) => countryVenues.some((v) => v.data.state_province === code))
+        .sort((a, b) => SUBDIVISION_NAMES[country][a].localeCompare(SUBDIVISION_NAMES[country][b]));
+      return { country, count: countryVenues.length, codes };
+    })
+    .filter((c) => c.count > 0),
+})).filter((r) => r.countries.length > 0);
+
+const total = venues.length;
+const countryCount = tree.reduce((n, r) => n + r.countries.length, 0);
+const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+---
+
+<BaseLayout
+  title="Browse by place — Where We Bathe"
+  description={`Every bathhouse, sauna and hot spring in the directory, arranged by country and state — ${total} ${plural(total, "venue", "venues")} across ${countryCount} ${plural(countryCount, "country", "countries")}.`}
+  canonicalPath="/places/"
+>
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <header class="mb-10">
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">Places</h1>
+      <p class="mt-6 max-w-[65ch]">
+        Everywhere we have written up, arranged by country and state. {total}
+        {plural(total, "venue", "venues")}, no sponsored listings.
+      </p>
+    </header>
+
+    {
+      tree.map(({ region, countries }) => (
+        <section class="mb-16" aria-labelledby={`region-${region.slug}`}>
+          <div class="mono mb-8 flex items-center gap-4 text-[var(--ink-faded)]">
+            <span id={`region-${region.slug}`}>{region.name.toUpperCase()}</span>
+            <span
+              class="draw-line-on-view h-px flex-1"
+              style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"
+            />
+          </div>
+
+          {countries.map(({ country, count, codes }) => (
+            <div class="mb-10">
+              <a class="font-display text-2xl font-light" href={placePath(country as Country)}>
+                {COUNTRY_NAMES[country as Country]}
+              </a>
+              <span class="mono ml-3 text-[var(--ink-faded)]">
+                {count} {plural(count, "venue", "venues")}
+              </span>
+              <ul class="mono mt-3 flex flex-wrap gap-x-6 gap-y-2">
+                {codes.map((code) => (
+                  <li>
+                    <a href={placePath(country as Country, code)}>
+                      {SUBDIVISION_NAMES[country as Country][code]}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      ))
+    }
+  </main>
+</BaseLayout>

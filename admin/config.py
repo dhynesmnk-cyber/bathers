@@ -96,6 +96,15 @@ CLAIMS_TEMP_DIR = TEMP_DATA_DIR / "claims"  # uploaded claim photos, pending pub
 
 PROMPTS_DIR = ROOT / "PROMPTS"
 
+# Append-only record of every state-changing admin request (Gate 12,
+# 2026-09-08). Gitignored — it records requester IPs — and volume-resident, so
+# it survives a `fly deploy` the same way claims.db does.
+AUDIT_LOG_PATH = ROOT / "data" / "audit.log"
+
+# Consistent snapshots of the two databases that cannot be rebuilt from
+# published content (Gate 12, 2026-09-08). Gitignored; see admin/pipeline/backup.py.
+BACKUPS_DIR = ROOT / "data" / "backups"
+
 
 def _load_dotenv(path: Path) -> dict[str, str]:
     """Minimal KEY=VALUE parser for .env (TRD.md §7 — API key from .env only;
@@ -143,6 +152,13 @@ MODEL_ESSAY_CHECK = _ENV.get("MODEL_ESSAY_CHECK", MODEL_FACTCHECK)
 ADMIN_PORT = int(_ENV.get("ADMIN_PORT", "8787"))
 ADMIN_USERNAME = _ENV.get("ADMIN_USERNAME", "")
 ADMIN_PASSWORD = _ENV.get("ADMIN_PASSWORD", "")
+# Gate 12 (2026-09-08) — the admin app runs on a public host (Fly.io), not on
+# localhost as TRD.md §2's original stack table said; see that file's dated
+# entry. Blank credentials therefore fail closed at startup (admin/security.py)
+# rather than silently disabling auth. This escape hatch is the deliberate
+# local-dev opt-in, and docker-entrypoint.sh does NOT materialise it into .env,
+# so it cannot be switched on in production by accident.
+ADMIN_ALLOW_INSECURE_AUTH = _ENV.get("ADMIN_ALLOW_INSECURE_AUTH", "").strip().lower() in ("1", "true", "yes")
 GEOCODER = _ENV.get("GEOCODER", "")
 GEOCODER_USER_AGENT = _ENV.get("GEOCODER_USER_AGENT", "")
 GOOGLE_PLACES_API_KEY = _ENV.get("GOOGLE_PLACES_API_KEY", "")
@@ -197,7 +213,201 @@ CATEGORY_LABELS = {
     "other": "Other",
 }
 
-STATES = ("VIC", "NSW", "QLD", "SA", "WA", "TAS", "NT", "ACT")
+# ---------------------------------------------------------------------------
+# Country registry (2026-09-08 — international scope, TRD.md §1)
+# ---------------------------------------------------------------------------
+# The directory carried an Australia-only location model until 2026-08-19,
+# when the content moved to `country` / `state_province` / `city` / `zipcode` /
+# `currency` without the Python layer, SCHEMA.md or the validators following.
+# This registry is the single place a country's subdivisions, currency and
+# coordinate envelope are declared, so adding one is a data change here (and in
+# site/src/config.ts, its mirror) rather than an edit scattered across
+# validators.
+#
+# Mirrored EXACTLY in site/src/config.ts — SCHEMA.md's "one contract" rule, the
+# same two-mirrors posture as the amenity/facility/confidence constants.
+
+COUNTRIES = ("AU", "US")
+
+COUNTRY_NAMES = {
+    "AU": "Australia",
+    "US": "United States",
+}
+
+# Subdivision codes per country. AU's are the states and territories the site
+# has always used; US's are the postal codes for the 50 states plus DC.
+SUBDIVISIONS = {
+    "AU": ("VIC", "NSW", "QLD", "SA", "WA", "TAS", "NT", "ACT"),
+    "US": (
+        "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI",
+        "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN",
+        "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH",
+        "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA",
+        "WV", "WI", "WY",
+    ),
+}
+
+COUNTRY_CURRENCY = {"AU": "AUD", "US": "USD"}
+
+# Coordinate envelopes, used to catch a geocoder returning a plausible-looking
+# point on the wrong continent. Generous by design: these reject a mistake, not
+# a borderline island.
+COUNTRY_LATITUDE_BOUNDS = {"AU": (-44.0, -9.0), "US": (18.0, 72.0)}
+COUNTRY_LONGITUDE_BOUNDS = {"AU": (112.0, 154.0), "US": (-180.0, -66.0)}
+
+DEFAULT_COUNTRY = "AU"
+
+# Australia's subdivisions keep their own name because the AU-only routing,
+# forewords and region taxonomy all still key on them, and every published
+# venue is Australian today. `SUBDIVISIONS[country]` is the general form; this
+# is the AU shorthand those call sites already use.
+#
+# NOTE (2026-09-08): "WA" means Western Australia in SUBDIVISIONS["AU"] and
+# Washington in SUBDIVISIONS["US"]. The public routes are currently
+# subdivision-slug-only (/wa/), so the first US venue in a colliding
+# subdivision needs a country-namespaced URL decision FIRST — see TRD.md §1's
+# dated entry. Nothing here decides it; validation is already country-scoped so
+# the data model is not the blocker.
+STATES = SUBDIVISIONS["AU"]
+
+# ---------------------------------------------------------------------------
+# Place hierarchy (2026-09-08) — world region / country / subdivision / area
+# ---------------------------------------------------------------------------
+# Resolves TRD.md §1's open URL decision. Geography lives under /places/ as a
+# real hierarchy rather than the old flat /<subdivision>/ space, which could not
+# survive a second country: AU's Western Australia and US's Washington are both
+# "WA" and collided on /wa/.
+#
+# Slugs are full names, not codes — /places/oceania/australia/western-australia/
+# and /places/north-america/united-states/washington/ can never collide, and a
+# reader can tell what a URL means without a lookup table.
+#
+# The /places/ prefix is load-bearing, not decoration: without it a country page
+# (/oceania/australia/) would sit at the same route depth as a state filter page
+# (/vic/magnesium-pool/), and Astro cannot disambiguate two dynamic routes at
+# one depth.
+#
+# Mirrored EXACTLY in site/src/config.ts.
+
+PLACES_ROOT = "/places"
+
+WORLD_REGIONS = (
+    {"slug": "oceania", "name": "Oceania", "countries": ("AU",)},
+    {"slug": "north-america", "name": "North America", "countries": ("US",)},
+)
+
+COUNTRY_SLUGS = {"AU": "australia", "US": "united-states"}
+
+SUBDIVISION_NAMES = {
+    "AU": {
+        "VIC": "Victoria",
+        "NSW": "New South Wales",
+        "QLD": "Queensland",
+        "SA": "South Australia",
+        "WA": "Western Australia",
+        "TAS": "Tasmania",
+        "NT": "Northern Territory",
+        "ACT": "Australian Capital Territory",
+    },
+    "US": {
+        "AL": "Alabama",
+        "AK": "Alaska",
+        "AZ": "Arizona",
+        "AR": "Arkansas",
+        "CA": "California",
+        "CO": "Colorado",
+        "CT": "Connecticut",
+        "DE": "Delaware",
+        "DC": "District of Columbia",
+        "FL": "Florida",
+        "GA": "Georgia",
+        "HI": "Hawaii",
+        "ID": "Idaho",
+        "IL": "Illinois",
+        "IN": "Indiana",
+        "IA": "Iowa",
+        "KS": "Kansas",
+        "KY": "Kentucky",
+        "LA": "Louisiana",
+        "ME": "Maine",
+        "MD": "Maryland",
+        "MA": "Massachusetts",
+        "MI": "Michigan",
+        "MN": "Minnesota",
+        "MS": "Mississippi",
+        "MO": "Missouri",
+        "MT": "Montana",
+        "NE": "Nebraska",
+        "NV": "Nevada",
+        "NH": "New Hampshire",
+        "NJ": "New Jersey",
+        "NM": "New Mexico",
+        "NY": "New York",
+        "NC": "North Carolina",
+        "ND": "North Dakota",
+        "OH": "Ohio",
+        "OK": "Oklahoma",
+        "OR": "Oregon",
+        "PA": "Pennsylvania",
+        "RI": "Rhode Island",
+        "SC": "South Carolina",
+        "SD": "South Dakota",
+        "TN": "Tennessee",
+        "TX": "Texas",
+        "UT": "Utah",
+        "VT": "Vermont",
+        "VA": "Virginia",
+        "WA": "Washington",
+        "WV": "West Virginia",
+        "WI": "Wisconsin",
+        "WY": "Wyoming",
+    },
+}
+
+# Australia's names under their long-standing alias — several call sites read it.
+STATE_NAMES = SUBDIVISION_NAMES["AU"]
+
+
+def slugify(value: str) -> str:
+    """Lowercase; every run of non-alphanumerics becomes one hyphen.
+    Deliberately tiny: every input is a hand-written place name from the tables
+    above, never arbitrary user text."""
+    parts = []
+    current = ""
+    for ch in value.lower():
+        if ch.isalnum():
+            current += ch
+        elif current:
+            parts.append(current)
+            current = ""
+    if current:
+        parts.append(current)
+    return "-".join(parts)
+
+
+def subdivision_slug(country: str, code: str) -> str:
+    return slugify(SUBDIVISION_NAMES[country].get(code, code))
+
+
+def world_region_for_country(country: str):
+    for region in WORLD_REGIONS:
+        if country in region["countries"]:
+            return region
+    return None
+
+
+def place_path(country: str, subdivision: str | None = None, leaf: str | None = None) -> str:
+    """Canonical URL for a place. `leaf` is an area slug or a filter slug — the
+    two share that level and are kept disjoint by a /validate check."""
+    region = world_region_for_country(country)
+    if region is None:
+        raise KeyError("no world region declares country " + repr(country))
+    parts = [PLACES_ROOT, region["slug"], COUNTRY_SLUGS[country]]
+    if subdivision:
+        parts.append(subdivision_slug(country, subdivision))
+        if leaf:
+            parts.append(leaf)
+    return "/".join(parts) + "/"
 
 STATE_NAMES = {
     "VIC": "Victoria",
@@ -332,13 +542,60 @@ CAPITAL_CITIES = {
 # quality guard on auto-geocoded coordinates (Gate 7 validator). Deliberately
 # generous: catches a geocode that landed in the wrong state or ocean, not the
 # odd near-border venue.
-STATE_BBOX = {
-    "VIC": (-39.3, -33.9, 140.8, 150.1),
-    "NSW": (-37.6, -28.1, 140.9, 153.7),
-    "QLD": (-29.3, -9.0, 137.9, 153.6),
-    "SA": (-38.2, -25.9, 128.9, 141.1),
-    "WA": (-35.2, -13.5, 112.8, 129.1),
-    "TAS": (-43.8, -39.4, 143.7, 148.6),
-    "NT": (-26.1, -10.9, 128.9, 138.1),
-    "ACT": (-36.0, -35.1, 148.7, 149.5),
+# Keyed by country then subdivision (2026-09-08). It has to be two levels now
+# that "WA" is Western Australia in AU and Washington in US — a single flat map
+# would silently bbox-check a Seattle venue against Western Australia. Countries
+# with no boxes yet simply skip the check (see validate_facts), which is the
+# same "absence is not a failure" posture the rest of that module takes; US
+# boxes get hand-authored when the first US venue is harvested, not speculatively.
+SUBDIVISION_BBOX = {
+    "AU": {
+        "VIC": (-39.3, -33.9, 140.8, 150.1),
+        "NSW": (-37.6, -28.1, 140.9, 153.7),
+        "QLD": (-29.3, -9.0, 137.9, 153.6),
+        "SA": (-38.2, -25.9, 128.9, 141.1),
+        "WA": (-35.2, -13.5, 112.8, 129.1),
+        "TAS": (-43.8, -39.4, 143.7, 148.6),
+        "NT": (-26.1, -10.9, 128.9, 138.1),
+        "ACT": (-36.0, -35.1, 148.7, 149.5),
+    },
+    "US": {},
 }
+
+# Retained name for the AU boxes — several call sites still read it directly.
+STATE_BBOX = SUBDIVISION_BBOX["AU"]
+
+# ---------------------------------------------------------------------------
+# Security limits (Gate 12, 2026-09-08)
+# ---------------------------------------------------------------------------
+# Enforced in admin/security.py and admin/app.py's single security middleware.
+
+# Warned about, never fatal — refusing to boot over password length would take
+# a running deployment down on upgrade.
+ADMIN_MIN_PASSWORD_LENGTH = 16
+
+# Basic Auth attempt throttling, per client bucket.
+AUTH_MAX_FAILURES = 10
+AUTH_WINDOW_SECONDS = 900
+AUTH_LOCKOUT_SECONDS = 900
+
+# Request body caps. The public cap covers the one unauthenticated write that
+# carries a payload (the claim form's optional photo, base64-inflated by 4/3);
+# the admin cap is generous because the operator is trusted and blog/article
+# uploads pass through it.
+MAX_PUBLIC_REQUEST_BYTES = 6 * 1024 * 1024
+MAX_ADMIN_REQUEST_BYTES = 64 * 1024 * 1024
+MAX_PHOTO_BYTES = 4 * 1024 * 1024
+
+# Claim-submission limiters. RATE_LIMIT_MAX_PER_WINDOW in claims.py is the
+# per-slug limit that already existed; these two close the gap it left — one
+# caller could work 36 slugs for 180 rows and 180 owner emails an hour.
+CLAIM_GLOBAL_MAX_PER_WINDOW = 30
+CLAIM_PER_CLIENT_MAX_PER_WINDOW = 5
+CLAIM_RATE_WINDOW_SECONDS = 3600
+
+# Automatic snapshots of claims.db + articles.db (admin/pipeline/backup.py).
+# In-process rather than a cron machine: fly.toml keeps one machine running
+# with auto_stop off, so the admin process is the thing that is always up.
+BACKUP_INTERVAL_HOURS = 12
+BACKUP_KEEP = 30

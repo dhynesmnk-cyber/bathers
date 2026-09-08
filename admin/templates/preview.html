@@ -39,7 +39,7 @@
             {% if data.get("latitude") is not none and data.get("longitude") is not none %}
             <span>{{ "%.4f"|format(data.get("latitude")|abs) }}° S, {{ "%.4f"|format(data.get("longitude")) }}° E</span>
             {% endif %}
-            <span>{{ data.get("state") or "(state)" }}</span>
+            <span>{{ data.get("state_province") or "(state)" }}</span>
             {% for key in amenity_keys %}
               {% if data.get("amenities", {}).get(key) %}
               <span class="feature-chip inline-flex items-center gap-1 text-[var(--ink)]" title="{{ amenity_labels[key] }}">

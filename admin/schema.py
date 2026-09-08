@@ -21,13 +21,15 @@ from admin.config import (
     CONFIDENCE_TIERS,
     DRESS_CODE_KEYS,
     FACILITY_KEYS,
+    COUNTRIES,
+    COUNTRY_CURRENCY,
+    COUNTRY_LATITUDE_BOUNDS,
+    COUNTRY_LONGITUDE_BOUNDS,
+    DEFAULT_COUNTRY,
     SESSION_GENDER_KEYS,
-    STATES,
+    SUBDIVISIONS,
     VERIFIABLE_FIELDS,
 )
-
-AU_LATITUDE_BOUNDS = (-44.0, -9.0)
-AU_LONGITUDE_BOUNDS = (112.0, 154.0)
 SUMMARY_MAX_CHARS = 160
 MIN_PROSE_WORDS = 300
 FAQ_MAX_ITEMS = 8
@@ -40,8 +42,9 @@ TEMPERATURE_KEYS = (
 
 _URL_RE = re.compile(r"^https?://[^\s/$.?#].[^\s]*$", re.IGNORECASE)
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s.]+\.[^@\s]+$")
 
-REQUIRED_STRING_FIELDS = ("name", "suburb", "address")
+REQUIRED_STRING_FIELDS = ("name", "city", "address")
 URL_FIELDS = ("website", "source_url")
 
 # The complete set of allowed frontmatter fields (SCHEMA.md §2/§2a). Exposed
@@ -49,7 +52,8 @@ URL_FIELDS = ("website", "source_url")
 # can compare it against the zod schema and the SCHEMA.md table — the concrete
 # guard against a field drifting between the validation layers.
 KNOWN_FIELDS = {
-    "name", "state", "category", "suburb", "address", "latitude", "longitude", "website",
+    "name", "country", "state_province", "city", "zipcode", "currency", "contact_email",
+    "category", "address", "latitude", "longitude", "website",
     "amenities", "facilities", "hours", "cost", "access", "status", "summary", "drafted", "verified", "source_url",
     "image", "image_source", "image_caption", "faq",
     "temperatures", "dress_code", "session_gender", "session_gender_note",
@@ -68,6 +72,10 @@ def _is_url(value: Any) -> bool:
     return isinstance(value, str) and bool(_URL_RE.match(value))
 
 
+def _is_email(value: Any) -> bool:
+    return isinstance(value, str) and bool(_EMAIL_RE.match(value))
+
+
 def _is_number(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
@@ -82,9 +90,35 @@ def validate_frontmatter(data: dict[str, Any]) -> list[FieldError]:
         if not isinstance(value, str) or not value.strip():
             errors.append(FieldError(field, f"'{field}' is required"))
 
-    state = data.get("state")
-    if state not in STATES:
-        errors.append(FieldError("state", f"state must be one of {', '.join(STATES)}"))
+    # Location is validated per country (2026-09-08, international scope). The
+    # subdivision set, the currency and the coordinate envelope all depend on
+    # `country`, so an unknown country is reported once and the checks that
+    # depend on it are skipped rather than reported against the wrong list.
+    country = data.get("country", DEFAULT_COUNTRY)
+    if country not in COUNTRIES:
+        errors.append(FieldError("country", f"country must be one of {', '.join(COUNTRIES)}"))
+        country = None
+    else:
+        subdivisions = SUBDIVISIONS[country]
+        state_province = data.get("state_province")
+        if state_province not in subdivisions:
+            errors.append(FieldError(
+                "state_province",
+                f"state_province must be one of {', '.join(subdivisions)} for {country}",
+            ))
+        currency = data.get("currency", COUNTRY_CURRENCY[country])
+        if currency != COUNTRY_CURRENCY[country]:
+            errors.append(FieldError(
+                "currency", f"currency for {country} must be {COUNTRY_CURRENCY[country]}"
+            ))
+
+    zipcode = data.get("zipcode")
+    if zipcode is not None and (not isinstance(zipcode, str) or not zipcode.strip()):
+        errors.append(FieldError("zipcode", "zipcode must be a non-empty string or null"))
+
+    contact_email = data.get("contact_email")
+    if contact_email is not None and not _is_email(contact_email):
+        errors.append(FieldError("contact_email", "contact_email must be a valid email address or null"))
 
     category = data.get("category")
     if category not in CATEGORY_KEYS:
@@ -97,15 +131,19 @@ def validate_frontmatter(data: dict[str, Any]) -> list[FieldError]:
     if latitude is not None:
         if not _is_number(latitude):
             errors.append(FieldError("latitude", "latitude must be a number"))
-        elif not (AU_LATITUDE_BOUNDS[0] <= latitude <= AU_LATITUDE_BOUNDS[1]):
-            errors.append(FieldError("latitude", "latitude out of range for AU"))
+        elif country is not None:
+            low, high = COUNTRY_LATITUDE_BOUNDS[country]
+            if not (low <= latitude <= high):
+                errors.append(FieldError("latitude", f"latitude out of range for {country}"))
 
     longitude = data.get("longitude")
     if longitude is not None:
         if not _is_number(longitude):
             errors.append(FieldError("longitude", "longitude must be a number"))
-        elif not (AU_LONGITUDE_BOUNDS[0] <= longitude <= AU_LONGITUDE_BOUNDS[1]):
-            errors.append(FieldError("longitude", "longitude out of range for AU"))
+        elif country is not None:
+            low, high = COUNTRY_LONGITUDE_BOUNDS[country]
+            if not (low <= longitude <= high):
+                errors.append(FieldError("longitude", f"longitude out of range for {country}"))
 
     for field in URL_FIELDS:
         value = data.get(field)
@@ -195,10 +233,10 @@ def validate_frontmatter(data: dict[str, Any]) -> list[FieldError]:
         if not isinstance(price, dict):
             errors.append(FieldError("price", "price must be an object"))
         else:
-            extra = [k for k in price if k not in ("adult_drop_in_aud", "standard_session_aud")]
+            extra = [k for k in price if k not in ("adult_drop_in", "standard_session")]
             if extra:
                 errors.append(FieldError("price", f"price has unexpected keys: {', '.join(extra)}"))
-            for key in ("adult_drop_in_aud", "standard_session_aud"):
+            for key in ("adult_drop_in", "standard_session"):
                 value = price.get(key)
                 if value is not None and (not _is_number(value) or value < 0):
                     errors.append(FieldError("price", f"price.{key} must be a non-negative number"))
