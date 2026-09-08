@@ -33,7 +33,14 @@ def _links_in(page: Path) -> set[str]:
 def _aggregation_pages(dist: Path) -> dict[str, Path]:
     """label -> index.html for every venue-listing aggregation page."""
     pages: dict[str, Path] = {}
-    for kind in ("compare", "region"):
+    # `category` joined compare/region 2026-09-08. /category/<x>/ pages have the
+    # identical shape and purpose — a listing of venues, reachable from the
+    # methodology page, the national lists and each other — but were never
+    # collected, so a venue whose only lists were its state, its region and its
+    # category counted as two. They are excluded from the `national/` glob below
+    # (via `reserved`) because /category/ is a section prefix, not a list; that
+    # exclusion was never meant to drop the listings underneath it.
+    for kind in ("compare", "region", "category"):
         for d in sorted((dist / kind).glob("*/")):
             pages[f"{kind}/{d.name}"] = d / "index.html"
     for state in STATES:
