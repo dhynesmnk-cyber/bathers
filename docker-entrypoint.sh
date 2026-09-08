@@ -13,6 +13,16 @@ if [ -z "${GITHUB_PAT:-}" ]; then
   exit 1
 fi
 
+# Gate 12 (2026-09-08): this app is reachable from the internet and holds the
+# Anthropic, Stripe, Netlify and SMTP credentials, and can push to git. It used
+# to disable auth entirely when these were unset. admin/security.py now refuses
+# to start in that state; this is the same refusal one layer earlier, so the
+# failure is a boot message rather than a stack trace.
+if [ -z "${ADMIN_USERNAME:-}" ] || [ -z "${ADMIN_PASSWORD:-}" ]; then
+  echo "ADMIN_USERNAME and ADMIN_PASSWORD must both be set — 'fly secrets set ADMIN_USERNAME=... ADMIN_PASSWORD=...'" >&2
+  exit 1
+fi
+
 git config --global user.name "David"
 git config --global user.email "d.hynes.mnk@gmail.com"
 # Reads the token from the environment per-invocation — never written to
@@ -55,6 +65,8 @@ GOATCOUNTER_API_TOKEN=${GOATCOUNTER_API_TOKEN:-}
 GOATCOUNTER_SITE=${GOATCOUNTER_SITE:-}
 ADMIN_USERNAME=${ADMIN_USERNAME:-}
 ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+# ADMIN_ALLOW_INSECURE_AUTH is deliberately absent — the local-dev escape
+# hatch in admin/security.py must not be settable from a Fly secret.
 SITE_URL=${SITE_URL:-}
 NETLIFY_AUTH_TOKEN=${NETLIFY_AUTH_TOKEN:-}
 NETLIFY_SITE_ID=${NETLIFY_SITE_ID:-}

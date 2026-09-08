@@ -32,3 +32,35 @@
   from = "/compare/natural-thermal-springs/"
   to = "/blog/natural-thermal-springs-in-australia/"
   status = 301
+
+# Gate 12 (2026-09-08) — security headers. The public site is static with no
+# runtime backend, so this is defence in depth rather than a fix for anything
+# exploitable today. The CSP is written against what the site actually loads:
+# its own assets, inline styles/scripts that Astro emits at build time, and
+# GoatCounter for the Book-now click counter (TRD.md §8, 2026-07-20 exception),
+# the claim form's cross-origin POST to the admin app (CLAIM_API_BASE_URL in
+# site/src/config.ts), and the two video hosts blog embeds resolve to
+# (youtube-nocookie / player.vimeo — site/src/config.ts's videoEmbedUrl never
+# emits any other). There is no other third-party origin, so everything else
+# is denied outright. Adding an origin to the site means adding it here too.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), camera=(), microphone=(), payment=(), interest-cohort=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Content-Security-Policy = """\
+      default-src 'self'; \
+      base-uri 'self'; \
+      form-action 'self'; \
+      frame-ancestors 'none'; \
+      object-src 'none'; \
+      img-src 'self' data: https://*.goatcounter.com; \
+      font-src 'self'; \
+      style-src 'self' 'unsafe-inline'; \
+      script-src 'self' 'unsafe-inline' https://gc.zgo.at; \
+      connect-src 'self' https://*.goatcounter.com https://bathers-admin.fly.dev; \
+      frame-src https://www.youtube-nocookie.com https://player.vimeo.com"""
