@@ -19,10 +19,11 @@ from typing import Any
 from admin.config import (
     AMENITY_KEYS,
     CAPITAL_CITIES,
+    DEFAULT_COUNTRY,
     FACILITY_KEYS,
     PUBLISHED_DIR,
     ROOT,
-    STATE_BBOX,
+    SUBDIVISION_BBOX,
 )
 from admin.pipeline.data_store import parse_frontmatter
 from admin.pipeline.verification import populated_verifiable_fields
@@ -57,7 +58,7 @@ def check_price_cross_validation(venues: list[Venue]) -> list[str]:
     for slug, fm in venues:
         price = fm.get("price") or {}
         amounts = _cost_amounts(fm.get("cost"))
-        for key in ("adult_drop_in_aud", "standard_session_aud"):
+        for key in ("adult_drop_in", "standard_session"):
             value = price.get(key)
             if value is None:
                 continue
@@ -85,14 +86,25 @@ def check_drive_time_sanity(venues: list[Venue]) -> list[str]:
 
 
 def check_coords_state_bbox(venues: list[Venue]) -> list[str]:
+    """Coordinates must sit inside their own subdivision's box.
+
+    Looked up by country first (2026-09-08): "WA" is Western Australia in AU and
+    Washington in US, so a flat map would check a Seattle venue against Western
+    Australia and fail it. A country with no boxes declared yet skips the check
+    rather than failing — absence is never a failure in this module.
+    """
     out = []
     for slug, fm in venues:
         lat, lng = fm.get("latitude"), fm.get("longitude")
         if lat is None or lng is None:
             continue  # absence is fine — no map marker, not a failure
-        box = STATE_BBOX.get(fm["state"])
+        country = fm.get("country", DEFAULT_COUNTRY)
+        subdivision = fm.get("state_province")
+        box = SUBDIVISION_BBOX.get(country, {}).get(subdivision)
         if box and not (box[0] <= lat <= box[1] and box[2] <= lng <= box[3]):
-            out.append(f"{slug}: coords {lat},{lng} fall outside the {fm['state']} bounding box")
+            out.append(
+                f"{slug}: coords {lat},{lng} fall outside the {country}/{subdivision} bounding box"
+            )
     return out
 
 
