@@ -36,6 +36,10 @@ data/audit.log
 temp_data/
 content-staging/
 
+# Python bytecode
+__pycache__/
+*.py[cod]
+
 # Logs
 *.log
 
