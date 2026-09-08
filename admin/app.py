@@ -23,6 +23,9 @@ from starlette.requests import Request
 
 from admin.config import (
     CLAIM_PER_CLIENT_MAX_PER_WINDOW,
+    OUTREACH_CHANNELS,
+    OUTREACH_FOLLOW_UP_DAYS,
+    OUTREACH_STATE_LABELS,
     COUNTRY_NAMES,
     DEFAULT_COUNTRY,
     SUBDIVISIONS,
@@ -53,7 +56,7 @@ from admin.mdx_preview import (
     temperature_line,
     verification_summary,
 )
-from admin.pipeline import article_db, article_pipeline, article_store, articles, backup, blog, claims, claims_store, deploy, discovery, goatcounter, gsc, images, notify, orchestrator, places, staging, stripe_client
+from admin.pipeline import article_db, article_pipeline, article_store, articles, backup, blog, claims, claims_store, deploy, discovery, goatcounter, gsc, images, notify, orchestrator, outreach, outreach_store, places, staging, stripe_client
 from admin.pipeline.articles import PublishBlocked
 from admin.pipeline.articles import ValidationFailed as ArticleValidationFailed
 from admin.pipeline.blog import ValidationFailed as BlogValidationFailed
@@ -254,6 +257,121 @@ def blog_page(request: Request):
 @app.get("/claims", response_class=HTMLResponse)
 def claims_page(request: Request):
     return templates.TemplateResponse(request, "claims.html", {})
+
+
+# ---------------------------------------------------------------------------
+# Operator outreach (Gate 13, 2026-09-08 — the deferred Gate 8)
+# ---------------------------------------------------------------------------
+# This screen is the single source of truth for outreach outcomes whatever the
+# channel: an emailed reply and a phone call are recorded the same way, because
+# the confidence tier they produce has to mean the same thing either way.
+
+
+@app.get("/outreach", response_class=HTMLResponse)
+def outreach_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "outreach.html",
+        {
+            "states": OUTREACH_STATE_LABELS,
+            "channels": OUTREACH_CHANNELS,
+            "follow_up_days": OUTREACH_FOLLOW_UP_DAYS,
+        },
+    )
+
+
+@app.get("/api/outreach")
+def api_outreach_list():
+    return {"venues": outreach.overview(), "counts": outreach_store.counts_by_state()}
+
+
+@app.get("/api/outreach/{slug}")
+def api_outreach_detail(slug: str):
+    try:
+        return outreach.detail(slug)
+    except FileNotFoundError:
+        raise HTTPException(404, f"no published venue '{slug}'")
+
+
+class OutreachContactBody(BaseModel):
+    operator_email: str = ""
+    operator_name: str = ""
+    channel: str = "email"
+    note: str = ""
+
+
+@app.post("/api/outreach/{slug}/contact")
+def api_outreach_contact(slug: str, body: OutreachContactBody):
+    """One route for both ways of making contact. `channel: email` sends the
+    outreach email and only records the contact if it actually went out; any
+    other channel records a contact the operator made or took elsewhere."""
+    try:
+        if body.channel == "email":
+            if not body.operator_email.strip():
+                raise HTTPException(400, "an operator email address is required to send an email")
+            row = outreach.send_outreach(
+                slug,
+                operator_email=body.operator_email.strip(),
+                operator_name=body.operator_name.strip(),
+                note=body.note,
+            )
+        else:
+            row = outreach.record_contact(
+                slug,
+                channel=body.channel,
+                note=body.note,
+                operator_name=body.operator_name.strip(),
+                operator_email=body.operator_email.strip(),
+            )
+    except FileNotFoundError:
+        raise HTTPException(404, f"no published venue '{slug}'")
+    except (outreach.OutreachError, outreach_store.IllegalTransition) as exc:
+        raise HTTPException(400, str(exc))
+    return outreach.detail(row.slug)
+
+
+class OutreachConfirmBody(BaseModel):
+    fields: list[str]
+    note: str = ""
+
+
+@app.post("/api/outreach/{slug}/confirm")
+def api_outreach_confirm(slug: str, body: OutreachConfirmBody):
+    """Records what an operator confirmed and upgrades exactly those fields to
+    operator_confirmed in the published MDX. `verification` is rendered-only and
+    not in SQLite (SCHEMA.md §3), so no rebuild is needed — but the change is
+    only visible publicly after the usual manual deploy."""
+    try:
+        _row, upgraded = outreach.confirm_fields(slug, body.fields, note=body.note)
+    except FileNotFoundError:
+        raise HTTPException(404, f"no published venue '{slug}'")
+    except (outreach.OutreachError, outreach_store.IllegalTransition) as exc:
+        raise HTTPException(400, str(exc))
+    return {**outreach.detail(slug), "upgraded": upgraded}
+
+
+# Declared AFTER /confirm deliberately: FastAPI matches in definition order, and
+# this path shape would otherwise swallow /confirm and reject it against the
+# Literal below.
+class OutreachOutcomeBody(BaseModel):
+    channel: str = "email"
+    note: str = ""
+
+
+@app.post("/api/outreach/{slug}/{outcome}")
+def api_outreach_outcome(slug: str, outcome: Literal["response", "no-response", "declined"], body: OutreachOutcomeBody):
+    handlers = {
+        "response": lambda: outreach.record_response(slug, channel=body.channel, note=body.note),
+        "no-response": lambda: outreach.record_no_response(slug, note=body.note),
+        "declined": lambda: outreach.record_declined(slug, note=body.note),
+    }
+    try:
+        handlers[outcome]()
+    except (outreach.OutreachError, outreach_store.IllegalTransition) as exc:
+        raise HTTPException(400, str(exc))
+    return outreach.detail(slug)
+
+
 
 
 @app.get("/articles", response_class=HTMLResponse)
