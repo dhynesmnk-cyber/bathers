@@ -13,9 +13,13 @@
 name: validate
 
 on:
+  # Push only. A pull_request trigger as well would double-run every check on
+  # every PR branch, and the concurrency group below cannot dedupe them because
+  # push and pull_request carry different github.ref values. Every PR here comes
+  # from a branch in this repository, so push covers them; a fork PR would need
+  # the pull_request trigger added back.
   push:
     branches: ["**"]
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -37,7 +41,12 @@ jobs:
           python-version: "3.11"
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # 22, not 20: site/scripts/refresh-articles.ts is run directly by node
+          # (check 18) and relies on native TypeScript type-stripping, which
+          # landed in Node 22. ts-register.mjs only teaches Node to resolve the
+          # project's extensionless relative imports — it does not transpile, so
+          # on Node 20 that check dies with ERR_UNKNOWN_FILE_EXTENSION.
+          node-version: "22"
           cache: npm
           cache-dependency-path: site/package-lock.json
 
