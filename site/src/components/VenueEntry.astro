@@ -98,14 +98,14 @@ const priceString = formatPrice();
       From {priceString}
     </div>
   )}
-  <Features state={state_province} amenities={amenities} facilities={facilities} compact />
+  <Features amenities={amenities} facilities={facilities} compact />
   <p data-reveal-lines class="mt-2 max-w-[65ch] italic text-[var(--ink-faded)]">{summary}</p>
   
   {status === 'unclaimed' && (
     <button
       data-open-promo-modal
       data-venue-slug={slug}
-      class="mt-3 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[var(--accent)] rounded-md hover:bg-opacity-90 transition-colors"
+      class="claim-cta mono mt-3"
     >
       Claim this venue
     </button>
