@@ -93,6 +93,11 @@ jobs:
       - name: "Check 21 — article intent-uniqueness"
         run: python3 -m admin.pipeline.validate_intents
 
+      - name: "Check 27 — outreach & provenance integrity"
+        run: |
+          python3 -m admin.pipeline.validate_outreach
+          python3 -m admin.pipeline.validate_outreach --self-test
+
       # --- Build, then the checks that read built output -----------------
 
       - name: "Check 4 — Astro build"
