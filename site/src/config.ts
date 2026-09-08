@@ -271,6 +271,113 @@ export function isCountry(value: unknown): value is Country {
   return typeof value === "string" && (COUNTRIES as readonly string[]).includes(value);
 }
 
+// Place hierarchy (2026-09-08) — world region / country / subdivision / area.
+// Mirrors admin/config.py's PLACES_ROOT / WORLD_REGIONS / COUNTRY_SLUGS /
+// SUBDIVISION_NAMES and its slug helpers EXACTLY. See that file for why the
+// /places/ prefix and full-name slugs are load-bearing rather than cosmetic.
+export const PLACES_ROOT = "/places";
+
+export interface WorldRegion {
+  slug: string;
+  name: string;
+  countries: readonly Country[];
+}
+
+export const WORLD_REGIONS: readonly WorldRegion[] = [
+  { slug: "oceania", name: "Oceania", countries: ["AU"] },
+  { slug: "north-america", name: "North America", countries: ["US"] },
+];
+
+export const COUNTRY_SLUGS: Record<Country, string> = {
+  AU: "australia",
+  US: "united-states",
+};
+
+export const SUBDIVISION_NAMES: Record<Country, Record<string, string>> = {
+  AU: STATE_NAMES,
+  US: {
+    AL: "Alabama",
+    AK: "Alaska",
+    AZ: "Arizona",
+    AR: "Arkansas",
+    CA: "California",
+    CO: "Colorado",
+    CT: "Connecticut",
+    DE: "Delaware",
+    DC: "District of Columbia",
+    FL: "Florida",
+    GA: "Georgia",
+    HI: "Hawaii",
+    ID: "Idaho",
+    IL: "Illinois",
+    IN: "Indiana",
+    IA: "Iowa",
+    KS: "Kansas",
+    KY: "Kentucky",
+    LA: "Louisiana",
+    ME: "Maine",
+    MD: "Maryland",
+    MA: "Massachusetts",
+    MI: "Michigan",
+    MN: "Minnesota",
+    MS: "Mississippi",
+    MO: "Missouri",
+    MT: "Montana",
+    NE: "Nebraska",
+    NV: "Nevada",
+    NH: "New Hampshire",
+    NJ: "New Jersey",
+    NM: "New Mexico",
+    NY: "New York",
+    NC: "North Carolina",
+    ND: "North Dakota",
+    OH: "Ohio",
+    OK: "Oklahoma",
+    OR: "Oregon",
+    PA: "Pennsylvania",
+    RI: "Rhode Island",
+    SC: "South Carolina",
+    SD: "South Dakota",
+    TN: "Tennessee",
+    TX: "Texas",
+    UT: "Utah",
+    VT: "Vermont",
+    VA: "Virginia",
+    WA: "Washington",
+    WV: "West Virginia",
+    WI: "Wisconsin",
+    WY: "Wyoming",
+  },
+};
+
+export function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export function subdivisionSlug(country: Country, code: string): string {
+  return slugify(SUBDIVISION_NAMES[country][code] ?? code);
+}
+
+export function worldRegionForCountry(country: Country): WorldRegion | undefined {
+  return WORLD_REGIONS.find((r) => r.countries.includes(country));
+}
+
+/** Canonical URL for a place. `leaf` is an area slug or a filter slug — the two
+ *  share that level and are kept disjoint by a /validate check. */
+export function placePath(country: Country, subdivision?: string, leaf?: string): string {
+  const region = worldRegionForCountry(country);
+  if (!region) throw new Error("no world region declares country " + country);
+  const parts: string[] = [PLACES_ROOT, region.slug, COUNTRY_SLUGS[country]];
+  if (subdivision) {
+    parts.push(subdivisionSlug(country, subdivision));
+    if (leaf) parts.push(leaf);
+  }
+  return parts.join("/") + "/";
+}
+
 export interface GeoPoint {
   latitude: number;
   longitude: number;

@@ -270,6 +270,145 @@ DEFAULT_COUNTRY = "AU"
 # the data model is not the blocker.
 STATES = SUBDIVISIONS["AU"]
 
+# ---------------------------------------------------------------------------
+# Place hierarchy (2026-09-08) — world region / country / subdivision / area
+# ---------------------------------------------------------------------------
+# Resolves TRD.md §1's open URL decision. Geography lives under /places/ as a
+# real hierarchy rather than the old flat /<subdivision>/ space, which could not
+# survive a second country: AU's Western Australia and US's Washington are both
+# "WA" and collided on /wa/.
+#
+# Slugs are full names, not codes — /places/oceania/australia/western-australia/
+# and /places/north-america/united-states/washington/ can never collide, and a
+# reader can tell what a URL means without a lookup table.
+#
+# The /places/ prefix is load-bearing, not decoration: without it a country page
+# (/oceania/australia/) would sit at the same route depth as a state filter page
+# (/vic/magnesium-pool/), and Astro cannot disambiguate two dynamic routes at
+# one depth.
+#
+# Mirrored EXACTLY in site/src/config.ts.
+
+PLACES_ROOT = "/places"
+
+WORLD_REGIONS = (
+    {"slug": "oceania", "name": "Oceania", "countries": ("AU",)},
+    {"slug": "north-america", "name": "North America", "countries": ("US",)},
+)
+
+COUNTRY_SLUGS = {"AU": "australia", "US": "united-states"}
+
+SUBDIVISION_NAMES = {
+    "AU": {
+        "VIC": "Victoria",
+        "NSW": "New South Wales",
+        "QLD": "Queensland",
+        "SA": "South Australia",
+        "WA": "Western Australia",
+        "TAS": "Tasmania",
+        "NT": "Northern Territory",
+        "ACT": "Australian Capital Territory",
+    },
+    "US": {
+        "AL": "Alabama",
+        "AK": "Alaska",
+        "AZ": "Arizona",
+        "AR": "Arkansas",
+        "CA": "California",
+        "CO": "Colorado",
+        "CT": "Connecticut",
+        "DE": "Delaware",
+        "DC": "District of Columbia",
+        "FL": "Florida",
+        "GA": "Georgia",
+        "HI": "Hawaii",
+        "ID": "Idaho",
+        "IL": "Illinois",
+        "IN": "Indiana",
+        "IA": "Iowa",
+        "KS": "Kansas",
+        "KY": "Kentucky",
+        "LA": "Louisiana",
+        "ME": "Maine",
+        "MD": "Maryland",
+        "MA": "Massachusetts",
+        "MI": "Michigan",
+        "MN": "Minnesota",
+        "MS": "Mississippi",
+        "MO": "Missouri",
+        "MT": "Montana",
+        "NE": "Nebraska",
+        "NV": "Nevada",
+        "NH": "New Hampshire",
+        "NJ": "New Jersey",
+        "NM": "New Mexico",
+        "NY": "New York",
+        "NC": "North Carolina",
+        "ND": "North Dakota",
+        "OH": "Ohio",
+        "OK": "Oklahoma",
+        "OR": "Oregon",
+        "PA": "Pennsylvania",
+        "RI": "Rhode Island",
+        "SC": "South Carolina",
+        "SD": "South Dakota",
+        "TN": "Tennessee",
+        "TX": "Texas",
+        "UT": "Utah",
+        "VT": "Vermont",
+        "VA": "Virginia",
+        "WA": "Washington",
+        "WV": "West Virginia",
+        "WI": "Wisconsin",
+        "WY": "Wyoming",
+    },
+}
+
+# Australia's names under their long-standing alias — several call sites read it.
+STATE_NAMES = SUBDIVISION_NAMES["AU"]
+
+
+def slugify(value: str) -> str:
+    """Lowercase; every run of non-alphanumerics becomes one hyphen.
+    Deliberately tiny: every input is a hand-written place name from the tables
+    above, never arbitrary user text."""
+    parts = []
+    current = ""
+    for ch in value.lower():
+        if ch.isalnum():
+            current += ch
+        elif current:
+            parts.append(current)
+            current = ""
+    if current:
+        parts.append(current)
+    return "-".join(parts)
+
+
+def subdivision_slug(country: str, code: str) -> str:
+    return slugify(SUBDIVISION_NAMES[country].get(code, code))
+
+
+def world_region_for_country(country: str):
+    for region in WORLD_REGIONS:
+        if country in region["countries"]:
+            return region
+    return None
+
+
+def place_path(country: str, subdivision: str | None = None, leaf: str | None = None) -> str:
+    """Canonical URL for a place. `leaf` is an area slug or a filter slug — the
+    two share that level and are kept disjoint by a /validate check."""
+    region = world_region_for_country(country)
+    if region is None:
+        raise KeyError("no world region declares country " + repr(country))
+    parts = [PLACES_ROOT, region["slug"], COUNTRY_SLUGS[country]]
+    if subdivision:
+        parts.append(subdivision_slug(country, subdivision))
+        if leaf:
+            parts.append(leaf)
+    return "/".join(parts) + "/"
+
 STATE_NAMES = {
     "VIC": "Victoria",
     "NSW": "New South Wales",
