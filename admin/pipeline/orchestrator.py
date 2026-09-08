@@ -17,7 +17,7 @@ from admin.pipeline import agents, drivetime, geocode, harvest, images, places, 
 from admin.pipeline.staging import render_mdx, split_frontmatter
 
 HARVESTER_REQUIRED_KEYS = (
-    "name", "state", "suburb", "address", "latitude", "longitude",
+    "name", "country", "state_province", "city", "address", "latitude", "longitude",
     "website", "amenities", "facts", "confidence_notes",
 )
 
@@ -259,7 +259,7 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False, allow_existing_
             log(f"geocoded address → {coords[0]:.4f}, {coords[1]:.4f}")
         yield from drain()
 
-    places_result = places.check_listing(name, harvester_data.get("suburb"), harvester_data.get("state"))
+    places_result = places.check_listing(name, harvester_data.get("city"), harvester_data.get("state_province"))
     # Google's Place ID is stable across harvest runs even when the Harvester
     # extracts a different display name (and therefore a different slug) for
     # the same physical venue — key temp_data storage on it when available so

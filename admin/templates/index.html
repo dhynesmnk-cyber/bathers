@@ -80,10 +80,18 @@
               </label>
               <div class="field-row">
                 <label class="field">
-                  <span class="mono field-label">State</span>
-                  <select id="field-state" class="text-input" data-field="state">
-                    {% for state in states %}
-                    <option value="{{ state }}">{{ state }}</option>
+                  <span class="mono field-label">Country</span>
+                  <select id="field-country" class="text-input" data-field="country">
+                    {% for code, label in country_names.items() %}
+                    <option value="{{ code }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label class="field">
+                  <span class="mono field-label">State / province</span>
+                  <select id="field-state-province" class="text-input" data-field="state_province">
+                    {% for code in subdivisions[default_country] %}
+                    <option value="{{ code }}">{{ code }}</option>
                     {% endfor %}
                   </select>
                 </label>
@@ -98,8 +106,8 @@
               </div>
               <div class="field-row">
                 <label class="field">
-                  <span class="mono field-label">Suburb</span>
-                  <input id="field-suburb" class="text-input" type="text" data-field="suburb" />
+                  <span class="mono field-label">City / suburb</span>
+                  <input id="field-city" class="text-input" type="text" data-field="city" />
                 </label>
                 <label class="field">
                   <span class="mono field-label">Address</span>

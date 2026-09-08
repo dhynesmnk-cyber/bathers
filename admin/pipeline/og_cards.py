@@ -111,7 +111,7 @@ def _category_label(slug: str | None) -> str:
 # ---- Card specs (what each page's card says) --------------------------------
 
 def _venue_card_spec(v: dict[str, Any]) -> dict[str, str]:
-    where = " · ".join(x for x in (v.get("suburb"), (v.get("state") or "").upper()) if x)
+    where = " · ".join(x for x in (v.get("city"), (v.get("state_province") or "").upper()) if x)
     return {
         "eyebrow": "WHERE WE BATHE",
         "title": v.get("name") or v.get("slug", ""),

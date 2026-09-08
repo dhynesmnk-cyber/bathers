@@ -6,10 +6,20 @@ You are a fact-extraction engine. You receive the scraped text of an Australian 
 
 Emit exactly the JSON structure defined below. It matches SCHEMA.md §4 of the project and is validated by machine; any deviation is a failure.
 
+`country` is the ISO-3166-1 alpha-2 code for the country the venue is in — `AU`
+or `US`. `state_province` is that country's own subdivision code: an Australian
+state or territory (`VIC`, `NSW`, `QLD`, `SA`, `WA`, `TAS`, `NT`, `ACT`) or a US
+state's two-letter postal code (`CA`, `FL`, `NY`, …). Never guess it from the
+name alone — `WA` means Western Australia under `AU` and Washington under `US`,
+so the country decides which list applies. `city` is the suburb, town or city
+the venue sits in. Leave `zipcode` null unless the page states a postcode.
+
 {
   "name": "string",
-  "state": "VIC|NSW|QLD|SA|WA|TAS|NT|ACT|null",
-  "suburb": "string|null",
+  "country": "AU|US",
+  "state_province": "string|null",
+  "city": "string|null",
+  "zipcode": "string|null",
   "address": "string|null",
   "latitude": null,
   "longitude": null,

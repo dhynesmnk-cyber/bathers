@@ -23,7 +23,7 @@ from admin.pipeline import claims_store
 from admin.pipeline.claims_store import ClaimRequest
 
 ALLOWED_PATCH_FIELDS = {
-    "name", "address", "suburb", "hours", "cost", "access",
+    "name", "address", "city", "hours", "cost", "access",
     "amenities", "facilities", "summary",
 }
 

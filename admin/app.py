@@ -23,6 +23,9 @@ from starlette.requests import Request
 
 from admin.config import (
     CLAIM_PER_CLIENT_MAX_PER_WINDOW,
+    COUNTRY_NAMES,
+    DEFAULT_COUNTRY,
+    SUBDIVISIONS,
     CLAIM_RATE_WINDOW_SECONDS,
     AMENITY_KEYS,
     CATEGORY_LABELS,
@@ -180,8 +183,9 @@ def _entry_summary(entry: staging.StagingEntry) -> dict[str, Any]:
     return {
         "slug": entry.slug,
         "name": data.get("name"),
-        "state": data.get("state"),
-        "suburb": data.get("suburb"),
+        "country": data.get("country", DEFAULT_COUNTRY),
+        "state_province": data.get("state_province"),
+        "city": data.get("city"),
         "amenities": data.get("amenities"),
         "status": entry.status,
         "word_count": entry.word_count,
@@ -226,6 +230,9 @@ def index(request: Request):
         "index.html",
         {
             "states": STATES,
+            "country_names": COUNTRY_NAMES,
+            "subdivisions": SUBDIVISIONS,
+            "default_country": DEFAULT_COUNTRY,
             "categories": CATEGORY_LABELS,
             "dress_codes": DRESS_CODE_LABELS,
             "session_genders": SESSION_GENDER_LABELS,

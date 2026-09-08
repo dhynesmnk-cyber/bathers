@@ -48,7 +48,7 @@ from admin.pipeline.validate_articles import find_hardcoded_numbers, register_is
 # The venue-record fields the agents may reason from (everything a comparison can
 # surface). Kept explicit so the drafting/fact-check context is stable.
 _RECORD_FIELDS = (
-    "slug", "name", "suburb", "state", "category", "price", "temperatures",
+    "slug", "name", "city", "state_province", "country", "category", "price", "temperatures",
     "amenities", "facilities", "hours", "cost", "dress_code", "session_gender",
     "session_gender_note", "silence_policy", "phone_policy", "minimum_age",
 )
@@ -56,7 +56,7 @@ _RECORD_FIELDS = (
 # The lighter roster an essay is grounded on: the only real venues it may name, and
 # the only facts about them it may state. Deliberately narrow — an essay is prose,
 # not a data table, so it gets identity + location + kind, nothing to recite.
-_ROSTER_FIELDS = ("name", "suburb", "state", "category")
+_ROSTER_FIELDS = ("name", "city", "state_province", "category")
 
 _FENCE_RE = re.compile(r"^```[a-zA-Z]*\n(.*)\n```$", re.DOTALL)
 
