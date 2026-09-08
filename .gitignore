@@ -1,5 +1,13 @@
-# Astro/Node.js build artifacts
+# Astro/Node.js build artifacts. site/dist/ and site/.astro/ were tracked
+# (207 files) despite this rule — committed before it existed, and tracked
+# files ignore .gitignore. That broke the deploy strip: `npm run build` is not
+# byte-reproducible (the embedded search index reorders), the entrypoint builds
+# on every boot, and deploy.py treats any changed tracked file outside
+# ALLOWED_PREFIXES as `unexpected`, which sets DeployPreview.blocked. Netlify
+# builds from source (netlify.toml: base = "site", command = "npm run build"),
+# so nothing needed them committed. Untracked 2026-09-08, Gate 12.
 dist/
+.astro/
 .build/
 .output/
 
