@@ -84,6 +84,14 @@ CLAIMS_DB_PATH = ROOT / "data" / "claims.db"
 # published content.
 ARTICLES_DB_PATH = ROOT / "data" / "articles.db"
 
+# Operator-outreach state (Gate 13, 2026-09-08 — the deferred Gate 8). Its own
+# file for the same reason claims.db is: data_store.rebuild() deletes and
+# recreates directory.db on every venue write, and an outreach history — who was
+# contacted, when, what they said — cannot be reconstructed from published
+# frontmatter. Gitignored: it holds operator names, email addresses and private
+# correspondence notes, none of which belong in a public repository.
+OUTREACH_DB_PATH = ROOT / "data" / "outreach.db"
+
 TEMP_DATA_DIR = ROOT / "temp_data"
 IMAGES_DIR = TEMP_DATA_DIR / "images"
 FAILED_DIR = TEMP_DATA_DIR / "failed"
@@ -525,6 +533,22 @@ VERIFIABLE_FIELDS = (
     "minimum_age",
 )
 
+# Reader-facing names for the verifiable fields. One place, because these now
+# appear in three surfaces: the outreach email that quotes a venue's details
+# back to its operator, the /outreach admin screen, and the confirmed-by-operator
+# line on the public venue page (Gate 13, 2026-09-08). Mirrored in
+# site/src/config.ts.
+VERIFIABLE_FIELD_LABELS = {
+    "price": "Price",
+    "hours": "Opening hours",
+    "temperatures": "Temperatures",
+    "dress_code": "Dress code",
+    "session_gender": "Session type",
+    "silence_policy": "Silence policy",
+    "phone_policy": "Phone policy",
+    "minimum_age": "Minimum age",
+}
+
 # State capital CBDs — drive-time reference origins (Gate 7, user sign-off
 # 2026-07-31: "from nearest capital"). Also usable as a display anchor.
 CAPITAL_CITIES = {
@@ -599,3 +623,49 @@ CLAIM_RATE_WINDOW_SECONDS = 3600
 # with auto_stop off, so the admin process is the thing that is always up.
 BACKUP_INTERVAL_HOURS = 12
 BACKUP_KEEP = 30
+
+
+# ---------------------------------------------------------------------------
+# Operator outreach (Gate 13, 2026-09-08)
+# ---------------------------------------------------------------------------
+
+# The state machine from CLAUDE.md's Gate 8 contract. `not_contacted` is the
+# implicit starting state every published venue holds.
+OUTREACH_STATES = (
+    "not_contacted",
+    "contacted",
+    "responded",
+    "operator_confirmed",
+    "no_response",
+    "declined",
+)
+
+OUTREACH_STATE_LABELS = {
+    "not_contacted": "Not contacted",
+    "contacted": "Contacted",
+    "responded": "Responded",
+    "operator_confirmed": "Operator confirmed",
+    "no_response": "No response",
+    "declined": "Declined",
+}
+
+# Legal transitions. Deliberately narrow: an outcome is only reachable from the
+# state that can actually produce it, so a mis-click cannot record a venue as
+# operator-confirmed without anyone having been contacted. `no_response` returns
+# to `contacted` because a follow-up is a normal second attempt, not a new venue.
+OUTREACH_TRANSITIONS = {
+    "not_contacted": ("contacted",),
+    "contacted": ("responded", "no_response"),
+    "responded": ("operator_confirmed", "declined"),
+    "no_response": ("contacted",),
+    "operator_confirmed": ("responded",),
+    "declined": ("responded",),
+}
+
+# How the outcome was obtained. The admin screen is the single source of truth
+# whatever the channel — a phone call is recorded the same way an email reply is.
+OUTREACH_CHANNELS = ("email", "phone", "in_person", "other")
+
+# Days after `contacted` before the screen suggests chasing. Advisory only:
+# nothing auto-transitions, because "they never replied" is a judgement.
+OUTREACH_FOLLOW_UP_DAYS = 14
