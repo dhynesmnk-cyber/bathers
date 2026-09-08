@@ -9,6 +9,16 @@
 
 A textured, editorial directory of Australian bathhouses, thermal springs, and hotel spas — anywhere with a pool or a sauna as a central offering (2026-07-26: narrowed from "day spas and bathhouses"; see §8's scope note). A local Python admin app orchestrates an AI pipeline (scrape → extract → draft → polish) into a staging queue; a human approves drafts; approved MDX files and a derived data file are committed and pushed, triggering a static Netlify build. No cloud database, no CMS, no runtime backend for the public site.
 
+**International scope (2026-09-08).** §1 above describes an Australian directory, and until 2026-08-19 the data model matched: a `state` enum of the eight AU states/territories and a `suburb` string. On that date the published content was migrated to a country-aware model — `country`, `state_province`, `city`, `zipcode`, `currency`, `contact_email` — but only the content and the zod schema moved. SCHEMA.md, `admin/schema.py`, `data_store.py`, `validate_facts.py`, the admin editor, the harvester contract and every page filter were left on the old field names.
+
+That was not a cosmetic gap. `data_store --rebuild` skipped all 36 venues and wrote an empty `directory.db`/`venues.json`/`venues.geojson`, and `render_frontmatter` silently dropped a venue's location on any admin re-save. Both are fixed; the six-surface diff now also asserts `FRONTMATTER_FIELD_ORDER` covers `KNOWN_FIELDS` so a field cannot go missing that way again.
+
+The supported countries are declared once in `admin/config.py` (`COUNTRIES`, `SUBDIVISIONS`, `COUNTRY_CURRENCY`, `COUNTRY_*_BOUNDS`) and mirrored exactly in `site/src/config.ts`: **AU** and **US**. Every location check — subdivision, currency, coordinate envelope — is scoped by country rather than assumed.
+
+**Open decision, due before the first non-AU venue is published: country-namespaced URLs.** Subdivision pages are currently `/<subdivision>/` (`/vic/`, `/nsw/`), which is unambiguous while every venue is Australian and breaks the moment one is not — `WA` is Western Australia under AU and Washington under US, and they would collide on `/wa/`. The region taxonomy (`site/src/data/regions.ts`) is Australian-only for the same reason and its lookup now refuses non-AU venues outright rather than mismatching them. Resolving this means changing live, indexed URLs, which is why it is not being decided incidentally here: Gates 6–11 were an SEO engagement and every one of those routes is in `sitemap.xml`. Publishing a US venue before this is settled would produce a wrong or colliding page.
+
+*Also outstanding from the same migration:* three published venues were deleted by it — `crown-spa-melbourne`, `lake-house-daylesford` and `merse-wellness-osborne-park`, the last being the directory's only Western Australian venue — without the `content-staging/_deleted/` parking the 2026-07-26 scope note established. They remain recoverable from git history and are not restored here.
+
 ## 2. Core Stack (fixed — do not substitute)
 
 | Layer | Choice | Notes |
