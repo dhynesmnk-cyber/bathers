@@ -1,0 +1,173 @@
+---
+// Subdivision page (2026-09-08) — the state/province tier, and the direct
+// replacement for the old flat /<code>/ route (301'd in netlify.toml). Carries
+// the venues, plus the two kinds of page that live one level below it: areas
+// (the region taxonomy) and amenity/facility/pool filters. Those two share the
+// leaf slot, which is safe because /validate asserts the slug sets are disjoint.
+import { getCollection } from "astro:content";
+import BaseLayout from "../../../../../layouts/BaseLayout.astro";
+import VenueEntry from "../../../../../components/VenueEntry.astro";
+import {
+  AMENITY_KEYS,
+  AMENITY_NOTATION,
+  COUNTRY_NAMES,
+  COUNTRY_SLUGS,
+  CROSS_CUTTING_FACILITY_FILTERS,
+  POOL_TYPES,
+  SUBDIVISION_NAMES,
+  WORLD_REGIONS,
+  amenityUrlSlug,
+  placePath,
+  subdivisionSlug,
+  type Country,
+} from "../../../../../config";
+import { REGIONS, regionForCity } from "../../../../../data/regions";
+import forewords from "../../../../../data/forewords.json";
+
+type Forewords = { [state: string]: { meta_description?: string } | undefined };
+const FOREWORDS = forewords as Forewords;
+
+export async function getStaticPaths() {
+  const venues = await getCollection("spas");
+  const paths = [];
+  for (const region of WORLD_REGIONS) {
+    for (const country of region.countries) {
+      for (const code of Object.keys(SUBDIVISION_NAMES[country])) {
+        const matching = venues.filter(
+          (v) => v.data.country === country && v.data.state_province === code,
+        );
+        if (matching.length === 0) continue;
+        paths.push({
+          params: {
+            world: region.slug,
+            country: COUNTRY_SLUGS[country],
+            state: subdivisionSlug(country, code),
+          },
+          props: { region, country, code, venues: matching },
+        });
+      }
+    }
+  }
+  return paths;
+}
+
+const { region, country, code, venues } = Astro.props;
+const countryName = COUNTRY_NAMES[country as Country];
+const stateName = SUBDIVISION_NAMES[country as Country][code];
+const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+const noun = plural(venues.length, "venue", "venues");
+
+const presentAmenities = AMENITY_KEYS.filter((key) =>
+  venues.some((v: any) => v.data.amenities?.[key]),
+);
+const presentPoolTypes = POOL_TYPES.filter((t) =>
+  venues.some((v: any) => t.match(v.data.facilities)),
+);
+const presentFacilities = CROSS_CUTTING_FACILITY_FILTERS.filter((f) =>
+  venues.some((v: any) => v.data.facilities?.[f.key]),
+);
+
+// Areas are only offered where the taxonomy actually places two or more venues
+// — the same >=2 threshold the old region hub used, so a one-venue "area" never
+// becomes a page that repeats its parent.
+const areaCounts = new Map<string, number>();
+for (const v of venues as any[]) {
+  const r = regionForCity(v.data.country, v.data.state_province, v.data.city);
+  if (r) areaCounts.set(r.slug, (areaCounts.get(r.slug) ?? 0) + 1);
+}
+const areas = REGIONS.filter((r) => (areaCounts.get(r.slug) ?? 0) >= 2);
+
+const sorted = [...venues].sort((a: any, b: any) => a.data.name.localeCompare(b.data.name));
+const path = (leaf?: string) => placePath(country as Country, code, leaf);
+---
+
+<BaseLayout
+  title={`Bathhouses & Hot Springs in ${stateName} — ${venues.length} ${noun}`}
+  description={
+    FOREWORDS[code]?.meta_description ||
+    `Find bathhouses, hot springs and saunas in ${stateName} — ${venues.length} ${noun}, no sponsored listings.`
+  }
+  canonicalPath={path()}
+>
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <nav class="mono mb-8 text-[var(--ink-faded)]">
+      <a href="/places/">Places</a>
+      <span class="mx-2">/</span>
+      <a href={`/places/${region.slug}/`}>{region.name}</a>
+      <span class="mx-2">/</span>
+      <a href={placePath(country as Country)}>{countryName}</a>
+    </nav>
+
+    <header class="mb-12">
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
+        Bathhouses of {stateName}
+      </h1>
+      <p class="mt-6 max-w-[65ch]">{venues.length} {noun}.</p>
+
+      {
+        areas.length > 0 && (
+          <div class="mt-8">
+            <span class="mono text-[var(--ink-faded)]">By area</span>
+            <ul class="mono mt-2 flex flex-wrap gap-x-6 gap-y-2">
+              {areas.map((a) => (
+                <li>
+                  <a href={path(a.slug)}>{a.name}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+
+      {
+        (presentAmenities.length > 0 || presentPoolTypes.length > 0 || presentFacilities.length > 0) && (
+          <div class="mt-6">
+            <span class="mono text-[var(--ink-faded)]">By feature</span>
+            <ul class="mono mt-2 flex flex-wrap gap-x-6 gap-y-2">
+              {presentAmenities.map((key) => (
+                <li>
+                  <a href={path(amenityUrlSlug(key))}>{AMENITY_NOTATION[key].full}</a>
+                </li>
+              ))}
+              {presentPoolTypes.map((t) => (
+                <li>
+                  <a href={path(t.slug)}>{t.label}</a>
+                </li>
+              ))}
+              {presentFacilities.map((f) => (
+                <li>
+                  <a href={path(f.slug)}>{f.label}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+    </header>
+
+    <section aria-labelledby="contents-heading">
+      <div class="mono mb-8 flex items-center gap-4 text-[var(--ink-faded)]">
+        <span id="contents-heading">CONTENTS</span>
+        <span
+          class="draw-line-on-view h-px flex-1"
+          style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"
+        ></span>
+      </div>
+      {
+        sorted.map((venue: any) => (
+          <VenueEntry
+            name={venue.data.name}
+            slug={venue.id}
+            city={venue.data.city}
+            state_province={venue.data.state_province}
+            country={venue.data.country}
+            summary={venue.data.summary}
+            amenities={venue.data.amenities}
+            facilities={venue.data.facilities}
+            image={venue.data.image}
+          />
+        ))
+      }
+    </section>
+  </main>
+</BaseLayout>

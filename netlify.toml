@@ -33,6 +33,175 @@
   to = "/blog/natural-thermal-springs-in-australia/"
   status = 301
 
+# ---------------------------------------------------------------------------
+# Geography moved under /places/ (2026-09-08 — TRD.md §1)
+# ---------------------------------------------------------------------------
+# The flat /<state-code>/ space could not survive a second country: AU's Western
+# Australia and US's Washington are both "WA". Every old geographic URL 301s to
+# its place in the new hierarchy so nothing indexed by Gates 6-11 is lost.
+# Splats cover a state's index and its filter pages in one rule
+# (/vic/ and /vic/magnesium-pool/ both match /vic/*).
+
+[[redirects]]
+  from = "/vic/*"
+  to = "/places/oceania/australia/victoria/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/nsw/*"
+  to = "/places/oceania/australia/new-south-wales/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/qld/*"
+  to = "/places/oceania/australia/queensland/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/sa/*"
+  to = "/places/oceania/australia/south-australia/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/wa/*"
+  to = "/places/oceania/australia/western-australia/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/tas/*"
+  to = "/places/oceania/australia/tasmania/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/nt/*"
+  to = "/places/oceania/australia/northern-territory/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/act/*"
+  to = "/places/oceania/australia/australian-capital-territory/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/region/"
+  to = "/places/"
+  status = 301
+
+[[redirects]]
+  from = "/region/melbourne/"
+  to = "/places/oceania/australia/victoria/melbourne/"
+  status = 301
+
+[[redirects]]
+  from = "/region/mornington-peninsula/"
+  to = "/places/oceania/australia/victoria/mornington-peninsula/"
+  status = 301
+
+[[redirects]]
+  from = "/region/daylesford-hepburn/"
+  to = "/places/oceania/australia/victoria/daylesford-hepburn/"
+  status = 301
+
+[[redirects]]
+  from = "/region/geelong-surf-coast/"
+  to = "/places/oceania/australia/victoria/geelong-surf-coast/"
+  status = 301
+
+[[redirects]]
+  from = "/region/great-ocean-road/"
+  to = "/places/oceania/australia/victoria/great-ocean-road/"
+  status = 301
+
+[[redirects]]
+  from = "/region/gippsland/"
+  to = "/places/oceania/australia/victoria/gippsland/"
+  status = 301
+
+[[redirects]]
+  from = "/region/yarra-ranges/"
+  to = "/places/oceania/australia/victoria/yarra-ranges/"
+  status = 301
+
+[[redirects]]
+  from = "/region/hobart/"
+  to = "/places/oceania/australia/tasmania/hobart/"
+  status = 301
+
+[[redirects]]
+  from = "/region/cradle-mountain/"
+  to = "/places/oceania/australia/tasmania/cradle-mountain/"
+  status = 301
+
+[[redirects]]
+  from = "/region/sydney/"
+  to = "/places/oceania/australia/new-south-wales/sydney/"
+  status = 301
+
+[[redirects]]
+  from = "/region/north-west-nsw/"
+  to = "/places/oceania/australia/new-south-wales/north-west-nsw/"
+  status = 301
+
+[[redirects]]
+  from = "/region/snowy-mountains/"
+  to = "/places/oceania/australia/new-south-wales/snowy-mountains/"
+  status = 301
+
+[[redirects]]
+  from = "/region/brisbane-gold-coast/"
+  to = "/places/oceania/australia/queensland/brisbane-gold-coast/"
+  status = 301
+
+[[redirects]]
+  from = "/region/outback-queensland/"
+  to = "/places/oceania/australia/queensland/outback-queensland/"
+  status = 301
+
+[[redirects]]
+  from = "/region/far-north-queensland/"
+  to = "/places/oceania/australia/queensland/far-north-queensland/"
+  status = 301
+
+[[redirects]]
+  from = "/region/adelaide/"
+  to = "/places/oceania/australia/south-australia/adelaide/"
+  status = 301
+
+[[redirects]]
+  from = "/region/far-north-sa/"
+  to = "/places/oceania/australia/south-australia/far-north-sa/"
+  status = 301
+
+[[redirects]]
+  from = "/region/perth/"
+  to = "/places/oceania/australia/western-australia/perth/"
+  status = 301
+
+[[redirects]]
+  from = "/region/the-kimberley/"
+  to = "/places/oceania/australia/western-australia/the-kimberley/"
+  status = 301
+
+[[redirects]]
+  from = "/region/darwin/"
+  to = "/places/oceania/australia/northern-territory/darwin/"
+  status = 301
+
+[[redirects]]
+  from = "/region/katherine-mataranka/"
+  to = "/places/oceania/australia/northern-territory/katherine-mataranka/"
+  status = 301
+
+[[redirects]]
+  from = "/region/canberra/"
+  to = "/places/oceania/australia/australian-capital-territory/canberra/"
+  status = 301
+
+[[redirects]]
+  from = "/region/*"
+  to = "/places/"
+  status = 301
+
 # Gate 12 (2026-09-08) — security headers. The public site is static with no
 # runtime backend, so this is defence in depth rather than a fix for anything
 # exploitable today. The CSP is written against what the site actually loads:

@@ -1,0 +1,75 @@
+---
+// World-region page (2026-09-08) — the tier between /places/ and a country.
+// Generated only for world regions with at least one published venue, so the
+// hierarchy never advertises an empty branch.
+import { getCollection } from "astro:content";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import {
+  COUNTRY_NAMES,
+  SUBDIVISION_NAMES,
+  WORLD_REGIONS,
+  placePath,
+  type Country,
+} from "../../../config";
+
+export async function getStaticPaths() {
+  const venues = await getCollection("spas");
+  return WORLD_REGIONS.map((region) => {
+    const countries = region.countries.filter((c) => venues.some((v) => v.data.country === c));
+    return { region, countries };
+  })
+    .filter(({ countries }) => countries.length > 0)
+    .map(({ region, countries }) => ({
+      params: { world: region.slug },
+      props: { region, countries, venues: venues.filter((v) => countries.includes(v.data.country)) },
+    }));
+}
+
+const { region, countries, venues } = Astro.props;
+const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+
+const rows = countries.map((country: Country) => {
+  const countryVenues = venues.filter((v: any) => v.data.country === country);
+  const codes = Object.keys(SUBDIVISION_NAMES[country])
+    .filter((code) => countryVenues.some((v: any) => v.data.state_province === code))
+    .sort((a, b) => SUBDIVISION_NAMES[country][a].localeCompare(SUBDIVISION_NAMES[country][b]));
+  return { country, count: countryVenues.length, codes };
+});
+---
+
+<BaseLayout
+  title={`Bathing in ${region.name} — Where We Bathe`}
+  description={`Bathhouses, saunas and hot springs across ${region.name} — ${venues.length} ${plural(venues.length, "venue", "venues")}, by country and state.`}
+  canonicalPath={`/places/${region.slug}/`}
+>
+  <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+    <nav class="mono mb-8 text-[var(--ink-faded)]"><a href="/places/">Places</a></nav>
+    <header class="mb-12">
+      <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">{region.name}</h1>
+      <p class="mt-6 max-w-[65ch]">
+        {venues.length} {plural(venues.length, "venue", "venues")} across {rows.length}
+        {plural(rows.length, "country", "countries")}.
+      </p>
+    </header>
+
+    {
+      rows.map(({ country, count, codes }) => (
+        <section class="mb-12">
+          <a class="font-display text-2xl font-light" href={placePath(country)}>
+            {COUNTRY_NAMES[country]}
+          </a>
+          <span class="mono ml-3 text-[var(--ink-faded)]">
+            {count} {plural(count, "venue", "venues")}
+          </span>
+          <ul class="mono mt-3 flex flex-wrap gap-x-6 gap-y-2">
+            {codes.map((code) => (
+              <li>
+                <a href={placePath(country, code)}>{SUBDIVISION_NAMES[country][code]}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </main>
+</BaseLayout>

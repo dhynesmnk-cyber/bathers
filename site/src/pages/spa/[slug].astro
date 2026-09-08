@@ -9,18 +9,21 @@ import {
   AMENITY_KEYS,
   AMENITY_NOTATION,
   CATEGORY_LABELS,
+  COUNTRY_NAMES,
+  DRESS_CODE_LABELS,
   FACILITY_KEYS,
   FACILITY_LABELS,
-  coldPlungeTemperatureLine,
-  DRESS_CODE_LABELS,
-  saunaTemperatureLine,
   SESSION_GENDER_LABELS,
   STATE_NAMES,
   categoryUrlSlug,
+  coldPlungeTemperatureLine,
   formatDistanceKm,
   nearestByDistance,
+  placePath,
   priceRange,
+  saunaTemperatureLine,
   type GeoPoint,
+  worldRegionForCountry,
 } from "../../config";
 
 export async function getStaticPaths() {
@@ -57,6 +60,7 @@ const { Content } = await render(venue);
 
 // State/Province helper - used throughout the template
 const stateProvince = data.state_province;
+const country = data.country;
 
 // Temperature appendix line (2026-07-26) — prefer the Architect's display
 // string, fall back to the structured min/max range; null when neither is set.
@@ -121,8 +125,14 @@ const breadcrumbLd = {
   "@type": "BreadcrumbList",
   itemListElement: [
     { "@type": "ListItem", position: 1, name: "Home", item: new URL("/", Astro.site).href },
-    { "@type": "ListItem", position: 2, name: STATE_NAMES[stateProvince], item: new URL(`/${stateProvince.toLowerCase()}/`, Astro.site).href },
-    { "@type": "ListItem", position: 3, name: data.name, item: new URL(`/spa/${venue.id}/`, Astro.site).href },
+    // Full geographic chain since 2026-09-08 (TRD.md §1): the breadcrumb now
+    // mirrors the /places/ hierarchy the reader actually navigated, rather than
+    // jumping from the homepage straight to a state.
+    { "@type": "ListItem", position: 2, name: "Places", item: new URL("/places/", Astro.site).href },
+    { "@type": "ListItem", position: 3, name: worldRegionForCountry(country)!.name, item: new URL(`/places/${worldRegionForCountry(country)!.slug}/`, Astro.site).href },
+    { "@type": "ListItem", position: 4, name: COUNTRY_NAMES[country], item: new URL(placePath(country), Astro.site).href },
+    { "@type": "ListItem", position: 5, name: STATE_NAMES[stateProvince], item: new URL(placePath(country, stateProvince), Astro.site).href },
+    { "@type": "ListItem", position: 6, name: data.name, item: new URL(`/spa/${venue.id}/`, Astro.site).href },
   ],
 };
 
@@ -235,7 +245,7 @@ const faqLd = data.faq && data.faq.length > 0
           </p>
         )}
         <p class="mt-4">
-          <a href={`/${stateProvince.toLowerCase()}/`}>More bathhouses in {STATE_NAMES[stateProvince]}</a>
+          <a href={placePath(country, stateProvince)}>More bathhouses in {STATE_NAMES[stateProvince]}</a>
         </p>
         <p class="mt-4">
           <a href={`/category/${categoryUrlSlug(data.category)}/`}>More {CATEGORY_LABELS[data.category].toLowerCase()} venues</a>
