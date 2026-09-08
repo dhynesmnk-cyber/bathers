@@ -133,8 +133,13 @@ const { data } = venue;
         </fieldset>
 
         <div class="claim-field">
-          <span class="mono claim-field-label">Photo (optional)</span>
-          <input id="claim-photo-input" type="file" accept="image/*" class="mono" />
+          <span class="mono claim-field-label">Photo (optional) — JPEG, PNG or WebP, up to 4MB</span>
+          <input
+            id="claim-photo-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            class="mono"
+          />
           <input
             id="claim-photo-caption"
             class="claim-text-input mt-2"
@@ -268,6 +273,9 @@ const { data } = venue;
   const apiBase = form.dataset.apiBase!;
   const errorEl = document.getElementById("claim-form-error")!;
   const confirmationEl = document.getElementById("claim-confirmation")!;
+  // Mirrors MAX_PHOTO_BYTES in admin/config.py — the server is the authority,
+  // this only saves the visitor an upload that would be refused.
+  const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
   const photoInput = document.getElementById("claim-photo-input") as HTMLInputElement;
   const captionInput = document.getElementById("claim-photo-caption") as HTMLInputElement;
   const toggleChips = Array.from(form.querySelectorAll<HTMLButtonElement>(".claim-toggle-chip[data-group]"));
@@ -344,6 +352,11 @@ const { data } = venue;
     }
 
     const file = photoInput.files && photoInput.files[0];
+    if (file && file.size > MAX_PHOTO_BYTES) {
+      errorEl.textContent = "That photo is over 4MB. Please attach a smaller one.";
+      errorEl.hidden = false;
+      return;
+    }
     if (file && !captionInput.value.trim()) {
       errorEl.textContent = "A caption is required for the photo.";
       errorEl.hidden = false;

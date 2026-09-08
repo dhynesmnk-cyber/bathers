@@ -10,7 +10,14 @@ import hmac
 from pathlib import Path
 from typing import Any
 
-from admin.config import CLAIMS_TEMP_DIR, SITE_URL, STRIPE_PRICE_ONEOFF, STRIPE_PRICE_SUBSCRIPTION
+from admin.config import (
+    CLAIM_GLOBAL_MAX_PER_WINDOW,
+    CLAIM_RATE_WINDOW_SECONDS,
+    CLAIMS_TEMP_DIR,
+    SITE_URL,
+    STRIPE_PRICE_ONEOFF,
+    STRIPE_PRICE_SUBSCRIPTION,
+)
 from admin.pipeline import images, notify, staging, stripe_client
 from admin.pipeline import claims_store
 from admin.pipeline.claims_store import ClaimRequest
@@ -67,7 +74,7 @@ def submit_request(
     plan_type: str,
     patch: dict[str, Any],
     photo_bytes: bytes | None = None,
-    photo_content_type: str | None = None,
+    photo_extension: str | None = None,
     photo_caption: str | None = None,
     honeypot_value: str = "",
 ) -> ClaimRequest:
@@ -81,6 +88,13 @@ def submit_request(
 
     if claims_store.count_recent_for_slug(slug, RATE_LIMIT_WINDOW_SECONDS) >= RATE_LIMIT_MAX_PER_WINDOW:
         raise RateLimitExceeded(slug)
+    # Gate 12 (2026-09-08): the per-slug limit above bounds one venue but not
+    # the app — 36 published slugs were worth 180 rows and 180 notification
+    # emails an hour to a single caller. The per-client half of this pair lives
+    # in admin/app.py (in-process, keyed on the Fly-set peer address); this half
+    # is the one no client key can dodge.
+    if claims_store.count_recent_all(CLAIM_RATE_WINDOW_SECONDS) >= CLAIM_GLOBAL_MAX_PER_WINDOW:
+        raise RateLimitExceeded("global")
 
     honeypot_tripped = bool(honeypot_value.strip())
     has_photo = photo_bytes is not None
@@ -97,7 +111,11 @@ def submit_request(
     )
 
     if has_photo:
-        ext = (photo_content_type or "image/jpeg").split("/")[-1].split(";")[0] or "jpg"
+        # `photo_extension` comes from admin/security.py's magic-byte sniff, not
+        # from the caller's Content-Type header (Gate 12, 2026-09-08). The old
+        # header-derived extension could not traverse a path, but it did let the
+        # caller name the file on disk.
+        ext = photo_extension or "jpg"
         photo_dir = CLAIMS_TEMP_DIR / str(request.id)
         photo_dir.mkdir(parents=True, exist_ok=True)
         photo_path = photo_dir / f"photo.{ext}"

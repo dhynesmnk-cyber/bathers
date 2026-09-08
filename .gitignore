@@ -1,4 +1,3 @@
-```
 # Astro/Node.js build artifacts
 dist/
 .build/
@@ -15,6 +14,30 @@ node_modules/
 .env
 .env.local
 .env.*
+!.env.example
+
+# Admin-only SQLite state (Gate 12, 2026-09-08).
+# These two are their own source of truth, never rebuilt from published
+# content, and claims.db holds requester PII — names, email addresses,
+# submitted patches and Stripe customer ids. Four separate code comments
+# already asserted they were gitignored; until now nothing here said so, and
+# the only thing keeping them out of a public repo was deploy.py's
+# tracked-file guard, which guards the deploy path and not a manual `git add`.
+# data/directory.db and data/factchecks/ stay tracked — they are derived,
+# committed artefacts.
+data/claims.db
+data/articles.db
+data/backups/
+data/audit.log
+
+# Working directories the deploy guard already refuses to publish from
+# (deploy.py GUARD_PATHSPECS) — named here too so they can never be staged
+# in the first place.
+temp_data/
+content-staging/
+
+# Logs
+*.log
 
 # Editor/IDE files
 .vscode/
@@ -22,10 +45,6 @@ node_modules/
 *.swp
 *.swo
 
-# Logs
-*.log
-
 # OS generated files
 .DS_Store
 Thumbs.db
-```
