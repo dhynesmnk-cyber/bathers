@@ -5,12 +5,12 @@
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { STATE_NAMES, STATES } from "../../config";
-import { REGIONS, regionForSuburb } from "../../data/regions";
+import { REGIONS, regionForCity } from "../../data/regions";
 
 const venues = await getCollection("spas");
 const counts = new Map<string, number>();
 for (const v of venues) {
-  const r = regionForSuburb(v.data.state, v.data.suburb);
+  const r = regionForCity(v.data.country, v.data.state_province, v.data.city);
   if (r) counts.set(r.slug, (counts.get(r.slug) ?? 0) + 1);
 }
 const byState = STATES.map((state) => ({

@@ -12,7 +12,7 @@ const venues = await getCollection("spas");
 
 const byState = STATES.map((state) => ({
   state,
-  venues: venues.filter((v) => v.data.state === state),
+  venues: venues.filter((v) => v.data.state_province === state),
 })).filter((group) => group.venues.length > 0);
 
 // Homepage chooser (DESIGN.md §5/§6/§7, 2026-07-23 exception) — features
@@ -36,9 +36,11 @@ const presentPoolNational = POOL_NATIONAL_FILTERS.filter((f) => venues.some((v) 
 const allVenues = venues.map((v) => ({
   slug: v.id,
   name: v.data.name,
-  suburb: v.data.suburb,
   city: v.data.city,
-  state_province: v.data.state_province || v.data.state,
+  state_province: v.data.state_province,
+  country: v.data.country,
+  city: v.data.city,
+  state_province: v.data.state_province,
   country: v.data.country || 'AU',
   summary: v.data.summary,
   amenities: v.data.amenities,
@@ -187,7 +189,7 @@ const allVenues = venues.map((v) => ({
             <VenueEntry
               name={venue.name}
               slug={venue.slug}
-              suburb={venue.suburb}
+              city={venue.city}
               city={venue.city}
               state_province={venue.state_province}
               country={venue.country}

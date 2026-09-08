@@ -79,10 +79,21 @@ export const REGIONS: Region[] = [
   { slug: "canberra", name: "Canberra", state: "ACT", suburbs: ["Canberra", "Barton", "Braddon", "City"] },
 ];
 
-export function regionForSuburb(state: (typeof STATES)[number], suburb: string | undefined): Region | undefined {
-  if (!suburb) return undefined;
-  const needle = suburb.trim().toLowerCase();
-  return REGIONS.find((r) => r.state === state && r.suburbs.some((s) => s.toLowerCase() === needle));
+// 2026-09-08: the venue field this matches on is now `city` (was `suburb`) and
+// venues carry a `country`. REGIONS is an Australian taxonomy only, so a
+// non-AU venue must never match one — it would put a Washington venue in a
+// Western Australian region, since both subdivisions are "WA". Callers pass the
+// venue's country; anything but AU returns undefined until a US taxonomy exists.
+export function regionForCity(
+  country: string,
+  stateProvince: string,
+  city: string | undefined,
+): Region | undefined {
+  if (!city || country !== "AU") return undefined;
+  const needle = city.trim().toLowerCase();
+  return REGIONS.find(
+    (r) => r.state === stateProvince && r.suburbs.some((s) => s.toLowerCase() === needle),
+  );
 }
 
 export function regionsForState(state: (typeof STATES)[number]): Region[] {

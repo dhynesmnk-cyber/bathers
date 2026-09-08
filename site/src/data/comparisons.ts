@@ -35,8 +35,8 @@ export interface Comparison {
 
 // ---- shared cell helpers ----
 const locationCell = (v: Venue) => {
-  const city = v.data.city || v.data.suburb;
-  const stateOrProvince = v.data.state_province || v.data.state;
+  const city = v.data.city;
+  const stateOrProvince = v.data.state_province;
   const countryDisplay = v.data.country && v.data.country !== 'AU' ? `, ${v.data.country}` : '';
   return `${city}, ${stateOrProvince}${countryDisplay}`;
 };
@@ -251,10 +251,10 @@ export function comparisonFingerprint(columns: Column[], venues: Venue[]): Finge
 // venue-side "featured in" links all agree.
 export const comparePath = (slug: string) => `/compare/${slug}/`;
 export function stateHeading(v: Venue): string {
-  const stateOrProvince = v.data.state_province || v.data.state;
+  const stateOrProvince = v.data.state_province;
   if (v.data.country && v.data.country !== 'AU') {
     // For non-AU venues, we don't have STATE_NAMES, so just return state_province
     return stateOrProvince;
   }
-  return STATE_NAMES[v.data.state];
+  return STATE_NAMES[v.data.state_province];
 }

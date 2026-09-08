@@ -41,7 +41,7 @@ export const GET: APIRoute = async ({ site }) => {
   }
 
   for (const state of STATES) {
-    const stateVenues = venues.filter((v) => v.data.state === state);
+    const stateVenues = venues.filter((v) => v.data.state_province === state);
     if (stateVenues.length === 0) continue;
     entries.push({ path: `/${state.toLowerCase()}/` });
 
@@ -89,7 +89,7 @@ export const GET: APIRoute = async ({ site }) => {
 
   // Comparison + region roll-up pages (2026-07-31, Gate 10).
   const { resolveComparisons, comparePath } = await import("../data/comparisons");
-  const { REGIONS, regionForSuburb } = await import("../data/regions");
+  const { REGIONS, regionForCity } = await import("../data/regions");
   entries.push({ path: "/compare/" }, { path: "/region/" }, { path: "/methodology/" });
   for (const c of resolveComparisons(venues).eligible) {
     entries.push({ path: comparePath(c.slug) });
@@ -101,7 +101,7 @@ export const GET: APIRoute = async ({ site }) => {
   }
   const regionCounts = new Map<string, number>();
   for (const v of venues) {
-    const r = regionForSuburb(v.data.state, v.data.suburb);
+    const r = regionForCity(v.data.country, v.data.state_province, v.data.city);
     if (r) regionCounts.set(r.slug, (regionCounts.get(r.slug) ?? 0) + 1);
   }
   for (const r of REGIONS) {

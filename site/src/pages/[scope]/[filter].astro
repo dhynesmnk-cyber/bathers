@@ -34,7 +34,7 @@ export async function getStaticPaths() {
   const venues = await getCollection("spas");
   const paths: { params: { scope: string; filter: string }; props: Record<string, unknown> }[] = [];
   for (const state of STATES) {
-    const stateVenues = venues.filter((v) => v.data.state === state);
+    const stateVenues = venues.filter((v) => v.data.state_province === state);
     if (stateVenues.length === 0) continue;
 
     for (const amenityKey of AMENITY_KEYS) {
@@ -131,8 +131,9 @@ const pageTitle = `${full} in ${STATE_NAMES[state]} — ${venueCount} ${venueNou
           <VenueEntry
             name={venue.data.name}
             slug={venue.id}
-            suburb={venue.data.suburb}
-            state={venue.data.state}
+            city={venue.data.city}
+            state_province={venue.data.state_province}
+            country={venue.data.country}
             summary={venue.data.summary}
             amenities={venue.data.amenities}
             facilities={venue.data.facilities}

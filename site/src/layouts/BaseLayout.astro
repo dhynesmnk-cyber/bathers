@@ -61,8 +61,9 @@ const searchVenues = await getCollection("spas");
 const searchIndex = searchVenues.map((v) => ({
   slug: v.id,
   name: v.data.name,
-  suburb: v.data.suburb,
-  state: STATE_NAMES[v.data.state],
+  city: v.data.city,
+  state_province: v.data.state_province,
+  state: STATE_NAMES[v.data.state_province],
   category: CATEGORY_LABELS[v.data.category],
   amenities: AMENITY_KEYS.filter((k) => v.data.amenities?.[k]).map((k) => AMENITY_NOTATION[k].full),
 }));

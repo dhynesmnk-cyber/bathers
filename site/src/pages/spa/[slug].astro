@@ -56,7 +56,7 @@ const { data } = venue;
 const { Content } = await render(venue);
 
 // State/Province helper - used throughout the template
-const stateProvince = data.state_province || data.state;
+const stateProvince = data.state_province;
 
 // Temperature appendix line (2026-07-26) — prefer the Architect's display
 // string, fall back to the structured min/max range; null when neither is set.
@@ -84,7 +84,7 @@ const localBusinessLd: Record<string, unknown> = {
   address: {
     "@type": "PostalAddress",
     streetAddress: data.address,
-    addressLocality: data.city || data.suburb,
+    addressLocality: data.city,
     addressRegion: STATE_NAMES[stateProvince],
     addressCountry: data.country || "AU",
   },
@@ -139,7 +139,7 @@ const faqLd = data.faq && data.faq.length > 0
   : null;
 ---
 
-<BaseLayout title={`${data.name} — Where We Bathe`} description={data.summary} image={data.image ?? `/og/${venue.id}.png`} imageAlt={`${data.name}, ${data.suburb}`}>
+<BaseLayout title={`${data.name} — Where We Bathe`} description={data.summary} image={data.image ?? `/og/${venue.id}.png`} imageAlt={`${data.name}, ${data.city}`}>
   <script type="application/ld+json" set:html={JSON.stringify(localBusinessLd)} />
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbLd)} />
   {faqLd && <script type="application/ld+json" set:html={JSON.stringify(faqLd)} />}
@@ -197,12 +197,12 @@ const faqLd = data.faq && data.faq.length > 0
           </div>
           <ul>
             {nearby.map(({ item, distanceKm }) => {
-              const nearbyStateProvince = item.data.state_province || item.data.state;
+              const nearbyStateProvince = item.data.state_province;
               return (
               <li class="py-3" style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);">
                 <a href={`/spa/${item.id}/`} class="font-display text-xl font-light text-[var(--ink)]">{item.data.name}</a>
                 <span class="ml-2" style="color: var(--ink-faded);">
-                  {item.data.city || item.data.suburb}, {STATE_NAMES[nearbyStateProvince]} — {formatDistanceKm(distanceKm)}
+                  {item.data.city}, {STATE_NAMES[nearbyStateProvince]} — {formatDistanceKm(distanceKm)}
                 </span>
               </li>
             );
