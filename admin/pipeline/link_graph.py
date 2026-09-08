@@ -40,16 +40,29 @@ def _aggregation_pages(dist: Path) -> dict[str, Path]:
     # category counted as two. They are excluded from the `national/` glob below
     # (via `reserved`) because /category/ is a section prefix, not a list; that
     # exclusion was never meant to drop the listings underneath it.
-    for kind in ("compare", "region", "category"):
-        for d in sorted((dist / kind).glob("*/")):
+    for kind in ("compare", "category"):
+        base = dist / kind
+        if not base.exists():
+            continue
+        for d in sorted(base.glob("*/")):
             pages[f"{kind}/{d.name}"] = d / "index.html"
-    for state in STATES:
-        p = dist / state.lower() / "index.html"
-        if p.exists():
-            pages[f"state/{state}"] = p
+
+    # Geography moved under /places/ 2026-09-08 (TRD.md §1). Every level of the
+    # hierarchy that lists venues counts: country, subdivision, and the leaf
+    # pages (areas and per-subdivision filters) that used to be /region/<slug>/
+    # and /<code>/<filter>/. Walked rather than enumerated from STATES so a new
+    # country needs no change here.
+    places = dist / "places"
+    if places.exists():
+        for index in sorted(places.rglob("index.html")):
+            rel = index.parent.relative_to(places)
+            depth = len(rel.parts)
+            if depth < 2:
+                continue  # /places/ and /places/<world>/ are hubs, not listings
+            pages["places/" + "/".join(rel.parts)] = index
     # National amenity/facility lists live at /<slug>/ (Gate 6) — include any
     # top-level dir whose page links venues but isn't a venue/section page.
-    reserved = {"spa", "compare", "region", "category", "glossary", "blog", "claim", *(s.lower() for s in STATES)}
+    reserved = {"spa", "compare", "region", "places", "category", "glossary", "blog", "claim", *(s.lower() for s in STATES)}
     for d in sorted(dist.glob("*/")):
         if d.name in reserved:
             continue
@@ -80,7 +93,9 @@ def run(dist: Path = DIST) -> list[str]:
             failures.append(f"venue '{slug}' is linked from only {n} aggregation page(s) ({', '.join(sorted(membership[slug])) or 'none'}) — needs >= {MIN_AGGREGATION_PAGES}")
 
     # hub reachability: each comparison/region page must be linked from its hub
-    for hub_name, prefix in (("compare/index.html", "/compare/"), ("region/index.html", "/region/")):
+    # /region/ is gone; the places hierarchy is checked by reachability from its
+    # own parent below rather than from a single hub.
+    for hub_name, prefix in (("compare/index.html", "/compare/"),):
         hub = dist / hub_name
         hub_html = hub.read_text(encoding="utf-8") if hub.exists() else ""
         for label, page in pages.items():
