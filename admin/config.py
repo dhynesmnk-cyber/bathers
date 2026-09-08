@@ -213,7 +213,62 @@ CATEGORY_LABELS = {
     "other": "Other",
 }
 
-STATES = ("VIC", "NSW", "QLD", "SA", "WA", "TAS", "NT", "ACT")
+# ---------------------------------------------------------------------------
+# Country registry (2026-09-08 — international scope, TRD.md §1)
+# ---------------------------------------------------------------------------
+# The directory carried an Australia-only location model until 2026-08-19,
+# when the content moved to `country` / `state_province` / `city` / `zipcode` /
+# `currency` without the Python layer, SCHEMA.md or the validators following.
+# This registry is the single place a country's subdivisions, currency and
+# coordinate envelope are declared, so adding one is a data change here (and in
+# site/src/config.ts, its mirror) rather than an edit scattered across
+# validators.
+#
+# Mirrored EXACTLY in site/src/config.ts — SCHEMA.md's "one contract" rule, the
+# same two-mirrors posture as the amenity/facility/confidence constants.
+
+COUNTRIES = ("AU", "US")
+
+COUNTRY_NAMES = {
+    "AU": "Australia",
+    "US": "United States",
+}
+
+# Subdivision codes per country. AU's are the states and territories the site
+# has always used; US's are the postal codes for the 50 states plus DC.
+SUBDIVISIONS = {
+    "AU": ("VIC", "NSW", "QLD", "SA", "WA", "TAS", "NT", "ACT"),
+    "US": (
+        "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI",
+        "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN",
+        "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH",
+        "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA",
+        "WV", "WI", "WY",
+    ),
+}
+
+COUNTRY_CURRENCY = {"AU": "AUD", "US": "USD"}
+
+# Coordinate envelopes, used to catch a geocoder returning a plausible-looking
+# point on the wrong continent. Generous by design: these reject a mistake, not
+# a borderline island.
+COUNTRY_LATITUDE_BOUNDS = {"AU": (-44.0, -9.0), "US": (18.0, 72.0)}
+COUNTRY_LONGITUDE_BOUNDS = {"AU": (112.0, 154.0), "US": (-180.0, -66.0)}
+
+DEFAULT_COUNTRY = "AU"
+
+# Australia's subdivisions keep their own name because the AU-only routing,
+# forewords and region taxonomy all still key on them, and every published
+# venue is Australian today. `SUBDIVISIONS[country]` is the general form; this
+# is the AU shorthand those call sites already use.
+#
+# NOTE (2026-09-08): "WA" means Western Australia in SUBDIVISIONS["AU"] and
+# Washington in SUBDIVISIONS["US"]. The public routes are currently
+# subdivision-slug-only (/wa/), so the first US venue in a colliding
+# subdivision needs a country-namespaced URL decision FIRST — see TRD.md §1's
+# dated entry. Nothing here decides it; validation is already country-scoped so
+# the data model is not the blocker.
+STATES = SUBDIVISIONS["AU"]
 
 STATE_NAMES = {
     "VIC": "Victoria",
@@ -348,16 +403,28 @@ CAPITAL_CITIES = {
 # quality guard on auto-geocoded coordinates (Gate 7 validator). Deliberately
 # generous: catches a geocode that landed in the wrong state or ocean, not the
 # odd near-border venue.
-STATE_BBOX = {
-    "VIC": (-39.3, -33.9, 140.8, 150.1),
-    "NSW": (-37.6, -28.1, 140.9, 153.7),
-    "QLD": (-29.3, -9.0, 137.9, 153.6),
-    "SA": (-38.2, -25.9, 128.9, 141.1),
-    "WA": (-35.2, -13.5, 112.8, 129.1),
-    "TAS": (-43.8, -39.4, 143.7, 148.6),
-    "NT": (-26.1, -10.9, 128.9, 138.1),
-    "ACT": (-36.0, -35.1, 148.7, 149.5),
+# Keyed by country then subdivision (2026-09-08). It has to be two levels now
+# that "WA" is Western Australia in AU and Washington in US — a single flat map
+# would silently bbox-check a Seattle venue against Western Australia. Countries
+# with no boxes yet simply skip the check (see validate_facts), which is the
+# same "absence is not a failure" posture the rest of that module takes; US
+# boxes get hand-authored when the first US venue is harvested, not speculatively.
+SUBDIVISION_BBOX = {
+    "AU": {
+        "VIC": (-39.3, -33.9, 140.8, 150.1),
+        "NSW": (-37.6, -28.1, 140.9, 153.7),
+        "QLD": (-29.3, -9.0, 137.9, 153.6),
+        "SA": (-38.2, -25.9, 128.9, 141.1),
+        "WA": (-35.2, -13.5, 112.8, 129.1),
+        "TAS": (-43.8, -39.4, 143.7, 148.6),
+        "NT": (-26.1, -10.9, 128.9, 138.1),
+        "ACT": (-36.0, -35.1, 148.7, 149.5),
+    },
+    "US": {},
 }
+
+# Retained name for the AU boxes — several call sites still read it directly.
+STATE_BBOX = SUBDIVISION_BBOX["AU"]
 
 # ---------------------------------------------------------------------------
 # Security limits (Gate 12, 2026-09-08)
