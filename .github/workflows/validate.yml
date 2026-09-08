@@ -118,6 +118,11 @@ jobs:
       - name: "Check 14 — internal-linking graph"
         run: python3 -m admin.pipeline.link_graph
 
+      - name: "Check 26 — place hierarchy"
+        run: |
+          python3 -m admin.pipeline.validate_places
+          python3 -m admin.pipeline.validate_places --self-test
+
       # --- Check 3: derived-data freshness -------------------------------
       # Rebuilds into the working tree and asserts nothing moved. This is the
       # check that catches a published venue edited without a rebuild — and, as

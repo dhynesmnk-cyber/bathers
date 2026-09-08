@@ -57,6 +57,10 @@ Run the full validation pass and report results as a pass/fail table. This comma
 
 25. **Repo hygiene, extended** (folded into check 7). `git ls-files` must return nothing under `temp_data/`, `content-staging/`, `.env*` (except `.env.example`), `data/claims.db` or `data/articles.db`. The last two were asserted as gitignored by four separate code comments while `.gitignore` did not in fact list them; `claims.db` holds requester PII.
 
+## Place-hierarchy checks (global URL structure, 2026-09-08)
+
+26. **Place hierarchy.** `python3 -m admin.pipeline.validate_places` must exit 0 — area slugs and feature-filter slugs must not collide within a subdivision (they share one URL slot, and a collision silently drops one page with no build error); every published venue's `country` must belong to a declared world region and its `state_province` to that country; and in the built output every level of `/places/` must link the one below it (hub → world region → country → subdivision → leaf). `--self-test` proves the collision check catches a deliberately colliding fixture and passes a normal one.
+
 **CI.** `.github/workflows/validate.yml` runs the mechanisable subset of this file on every push. The checks it does not cover — 1/2 (subsumed by the build), 5, 6 (advisory by design), and 8–11 (still prose, not modules) — are listed at the bottom of that workflow so the gap stays written down.
 
 Output: a summary table (check / result / details), then the word **VALIDATE PASS** or **VALIDATE FAIL** on its own line. Do not fix anything during this command — report only.
