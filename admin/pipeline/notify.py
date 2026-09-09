@@ -13,21 +13,30 @@ _logger = logging.getLogger("admin.notify")
 
 from admin.config import (
     ADMIN_BASE_URL,
+    SITE_URL,
     CLAIM_NOTIFY_EMAIL,
     SMTP_FROM,
     SMTP_HOST,
     SMTP_PASSWORD,
     SMTP_PORT,
     SMTP_USERNAME,
+    VERIFIABLE_FIELD_LABELS,
 )
 from admin.pipeline.claims_store import ClaimRequest
 
 PLAN_LABELS = {"one_off": "one-off $25 processing fee", "subscription": "$5/month unlimited-changes subscription"}
 
 
-def _send(to_addr: str, subject: str, body_text: str, body_html: str | None = None) -> None:
+def _send(to_addr: str, subject: str, body_text: str, body_html: str | None = None) -> bool:
+    """Returns whether the message actually went out.
+
+    The claim-flow callers ignore this and always have (a failed notification
+    must never 500 a public submission endpoint). Gate 13's outreach flow does
+    not: it records a state transition saying an operator was contacted, and
+    that must not be written when nothing was sent.
+    """
     if not SMTP_HOST:
-        return  # unconfigured in local dev — silently no-op rather than error the caller
+        return False  # unconfigured in local dev — no-op rather than error the caller
 
     message = EmailMessage()
     message["From"] = SMTP_FROM or SMTP_USERNAME
@@ -51,8 +60,10 @@ def _send(to_addr: str, subject: str, body_text: str, body_html: str | None = No
             if SMTP_USERNAME:
                 smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
             smtp.send_message(message)
+        return True
     except (OSError, smtplib.SMTPException) as exc:
         _logger.error("failed to send %r to %s: %s", subject, to_addr, exc)
+        return False
 
 
 def _format_diff(diff: dict[str, Any]) -> str:
@@ -130,3 +141,101 @@ def send_denial_email(request: ClaimRequest, venue_name: str) -> None:
 def send_published_email(request: ClaimRequest, venue_name: str) -> None:
     body = f"Your requested changes to the {venue_name} listing are now live."
     _send(request.requester_email, f"Your {venue_name} listing update is live", body)
+
+
+# ---------------------------------------------------------------------------
+# Operator outreach (Gate 13, 2026-09-08)
+# ---------------------------------------------------------------------------
+
+
+
+def _field_value(frontmatter: dict[str, Any], field: str) -> str:
+    """What we currently publish for a field, as a reader would see it. Quoting
+    it back is the whole point of the email: an operator can correct a specific
+    wrong figure far more easily than answer 'is your listing right?'."""
+    if field == "price":
+        return str(frontmatter.get("cost") or "").strip() or "(nothing recorded)"
+    if field == "temperatures":
+        temps = frontmatter.get("temperatures") or {}
+        parts = [str(v) for v in (temps.get("sauna_display"), temps.get("cold_plunge_display")) if v]
+        for low, high, label in (
+            ("sauna_min_c", "sauna_max_c", "sauna"),
+            ("cold_plunge_min_c", "cold_plunge_max_c", "cold plunge"),
+        ):
+            lo, hi = temps.get(low), temps.get(high)
+            if lo is not None and hi is not None:
+                parts.append(f"{label} {lo} to {hi} degrees" if lo != hi else f"{label} {lo} degrees")
+        return "; ".join(parts) or "(nothing recorded)"
+    value = frontmatter.get(field)
+    if value in (None, "", {}):
+        return "(nothing recorded)"
+    return str(value)
+
+
+def send_outreach_email(
+    *,
+    slug: str,
+    venue_name: str,
+    operator_email: str,
+    operator_name: str,
+    fields: list[str],
+    frontmatter: dict[str, Any],
+) -> bool:
+    """Ask an operator to confirm or correct what we publish about their venue.
+
+    Deliberately quotes the current values back rather than linking and asking
+    them to check: a wrong price is easy to spot in a list and easy to reply to.
+
+    The listing is free and stays free whatever they do with this email, so the
+    email says so plainly before it mentions the paid claim option. An operator
+    who reads this as an invoice, or as pay-to-be-listed, would be right to be
+    annoyed and wrong about the facts.
+    """
+    site = SITE_URL or "https://wherewebathe.com"
+    greeting = f"Hello {operator_name}," if operator_name.strip() else "Hello,"
+    lines = [f"{VERIFIABLE_FIELD_LABELS.get(f, f)}: {_field_value(frontmatter, f)}" for f in fields]
+    recorded = "\n".join(f"  - {line}" for line in lines) or "  (we hold no detail beyond the basics)"
+
+    body_text = f"""{greeting}
+
+I run Where We Bathe, a free directory of Australian bathhouses, saunas and hot
+springs. {venue_name} is listed at {site}/spa/{slug}/.
+
+The listing is free, we take nothing for it, and nothing on the site ranks
+because a venue paid. I am writing because I would rather publish what you tell
+me than what I could work out from your website.
+
+Here is what we currently have on record:
+
+{recorded}
+
+If any of that is wrong or out of date, reply and tell me what it should be. If
+it is all correct, a one line "that's right" is enough. Either way I will mark
+those details as confirmed by you, and the page will say so.
+
+If you would also like to send through changes yourself in future, there is a
+paid option at {site}/claim/{slug}/. That is entirely separate. Confirming these
+details costs nothing and your listing does not change if you ignore it.
+
+Thanks,
+Where We Bathe
+{site}
+"""
+
+    recorded_html = "".join(f"<li>{html.escape(line)}</li>" for line in lines) or "<li>(we hold no detail beyond the basics)</li>"
+    body_html = f"""<p>{html.escape(greeting)}</p>
+<p>I run Where We Bathe, a free directory of Australian bathhouses, saunas and hot springs.
+{html.escape(venue_name)} is listed at <a href="{site}/spa/{slug}/">{site}/spa/{slug}/</a>.</p>
+<p>The listing is free, we take nothing for it, and nothing on the site ranks because a venue paid.
+I am writing because I would rather publish what you tell me than what I could work out from your website.</p>
+<p>Here is what we currently have on record:</p>
+<ul>{recorded_html}</ul>
+<p>If any of that is wrong or out of date, reply and tell me what it should be. If it is all correct,
+a one line &quot;that&#39;s right&quot; is enough. Either way I will mark those details as confirmed by you,
+and the page will say so.</p>
+<p>If you would also like to send through changes yourself in future, there is a paid option at
+<a href="{site}/claim/{slug}/">{site}/claim/{slug}/</a>. That is entirely separate. Confirming these
+details costs nothing and your listing does not change if you ignore it.</p>
+<p>Thanks,<br />Where We Bathe<br /><a href="{site}">{site}</a></p>
+"""
+    return _send(operator_email, f"{venue_name} — the details we publish about you", body_text, body_html)

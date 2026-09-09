@@ -80,6 +80,19 @@ export const SESSION_GENDER_LABELS: Record<(typeof SESSION_GENDER_KEYS)[number],
 // ---------------------------------------------------------------------------
 
 // Per-field verification confidence, weakest → strongest (SCHEMA.md §2a).
+// Reader-facing names for the verifiable fields. Mirrors admin/config.py's
+// VERIFIABLE_FIELD_LABELS exactly (SCHEMA.md's one-contract rule).
+export const VERIFIABLE_FIELD_LABELS: Record<string, string> = {
+  price: "Price",
+  hours: "Opening hours",
+  temperatures: "Temperatures",
+  dress_code: "Dress code",
+  session_gender: "Session type",
+  silence_policy: "Silence policy",
+  phone_policy: "Phone policy",
+  minimum_age: "Minimum age",
+};
+
 export const CONFIDENCE_TIERS = [
   "unverified",
   "published_by_venue",

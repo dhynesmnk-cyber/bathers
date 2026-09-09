@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Where We Bathe — Outreach</title>
+    <link rel="stylesheet" href="/static/admin.css" />
+    <link rel="stylesheet" href="/static/claims.css" />
+    <link rel="stylesheet" href="/static/outreach.css" />
+  </head>
+  <body>
+    <header class="hub-header">
+      <span class="mono eyebrow">WHERE WE BATHE — OUTREACH</span>
+      <p id="action-status" class="mono save-status" aria-live="polite"></p>
+      <a href="/claims" class="btn btn-plain">Claims</a>
+      <a href="/blog" class="btn btn-plain">Blog</a>
+      <a href="/articles" class="btn btn-plain">Articles</a>
+      <a href="/" class="btn btn-plain">Back to hub</a>
+    </header>
+
+    <main class="claims-grid">
+      <section class="pane claims-list-pane" aria-labelledby="outreach-list-heading">
+        <h2 id="outreach-list-heading" class="mono pane-heading">VENUES</h2>
+        <select id="state-filter" class="mono text-input" aria-label="Filter by outreach state">
+          <option value="">All states</option>
+          {% for key, label in states.items() %}
+          <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+        <p id="counts-line" class="mono field-hint"></p>
+        <ul id="outreach-list" class="queue-list" role="listbox" aria-label="Venues"></ul>
+        <p id="outreach-list-empty" class="mono empty-state" hidden>No venues match.</p>
+      </section>
+
+      <section class="pane claims-detail-pane" aria-labelledby="outreach-detail-heading">
+        <h2 id="outreach-detail-heading" class="mono pane-heading">VENUE</h2>
+        <div id="detail-empty" class="mono empty-state">Select a venue.</div>
+        <div id="detail-content" hidden>
+          <div class="claim-summary-row">
+            <span id="detail-venue-name" class="claim-venue-name"></span>
+            <span id="detail-state-chip" class="status-chip"></span>
+          </div>
+          <p class="mono claim-meta">
+            <span id="detail-where"></span> · <span id="detail-timeline"></span>
+          </p>
+
+          <div class="field">
+            <span class="mono field-label">Operator</span>
+            <div class="field-row">
+              <input id="operator-name" class="text-input" type="text" placeholder="Name (optional)" />
+              <input id="operator-email" class="text-input" type="email" placeholder="Email address" />
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="mono field-label">What we publish that they could confirm</span>
+            <ul id="fields-list" class="outreach-fields"></ul>
+            <p id="fields-empty" class="mono field-hint" hidden>
+              This venue publishes none of the verifiable fields, so there is nothing for an operator to confirm.
+            </p>
+          </div>
+
+          <div class="field">
+            <span class="mono field-label">Note</span>
+            <input id="outreach-note" class="text-input" type="text" placeholder="What was said, or why…" />
+          </div>
+
+          <div class="claim-actions">
+            <div id="stage-not_contacted" class="claim-action-row outreach-stage" hidden>
+              <button id="send-email-btn" type="button" class="btn btn-thermal">Send outreach email</button>
+              <select id="manual-channel" class="mono text-input" aria-label="Channel">
+                {% for channel in channels %}{% if channel != "email" %}
+                <option value="{{ channel }}">{{ channel.replace("_", " ") }}</option>
+                {% endif %}{% endfor %}
+              </select>
+              <button id="record-contact-btn" type="button" class="btn btn-plain">Record contact</button>
+            </div>
+
+            <div id="stage-contacted" class="claim-action-row outreach-stage" hidden>
+              <button id="responded-btn" type="button" class="btn btn-thermal">They responded</button>
+              <button id="no-response-btn" type="button" class="btn btn-plain">No response</button>
+            </div>
+
+            <div id="stage-responded" class="claim-action-row outreach-stage" hidden>
+              <button id="confirm-btn" type="button" class="btn btn-thermal">Confirm ticked fields</button>
+              <button id="declined-btn" type="button" class="btn btn-oxide">They declined</button>
+            </div>
+
+            <div id="stage-no_response" class="claim-action-row outreach-stage" hidden>
+              <button id="follow-up-btn" type="button" class="btn btn-plain">Contact again</button>
+            </div>
+
+            <div id="stage-operator_confirmed" class="claim-action-row outreach-stage" hidden>
+              <button id="reopen-btn" type="button" class="btn btn-plain">They got back in touch</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="mono field-label">History</span>
+            <ul id="outreach-log" class="outreach-log"></ul>
+            <p id="log-empty" class="mono field-hint" hidden>Nothing recorded yet.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>window.FOLLOW_UP_DAYS = {{ follow_up_days }};</script>
+    <script src="/static/outreach.js"></script>
+  </body>
+</html>

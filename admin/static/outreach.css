@@ -1,0 +1,84 @@
+/* Operator outreach (Gate 13, 2026-09-08). Deliberately thin: the screen reuses
+   claims.css's two-pane grid, panes, chips and buttons wholesale rather than
+   inventing a second admin vocabulary for the same shapes. Only what is genuinely
+   new to this screen lives here. */
+
+.outreach-fields {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+}
+
+.outreach-fields li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink-faded) 18%, transparent);
+}
+
+.outreach-field-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  min-width: 9rem;
+}
+
+.outreach-field-value {
+  color: var(--ink-faded);
+  font-size: 13px;
+  flex: 1;
+}
+
+.outreach-field-tier {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: var(--ink-faded);
+}
+
+.outreach-field-tier.tier-operator_confirmed {
+  color: var(--thermal);
+}
+
+.outreach-log {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--ink-faded);
+}
+
+.outreach-log li {
+  padding: 0.25rem 0;
+}
+
+.queue-item-flag {
+  color: var(--oxide);
+}
+
+.status-chip.status-not_contacted {
+  color: var(--ink-faded);
+  border-color: var(--ink-faded);
+}
+
+.status-chip.status-contacted {
+  color: var(--oxide);
+  border-color: var(--oxide);
+}
+
+.status-chip.status-responded {
+  color: var(--thermal);
+  border-color: var(--thermal);
+}
+
+.status-chip.status-operator_confirmed {
+  background: color-mix(in srgb, var(--thermal) 15%, transparent);
+  color: var(--thermal);
+  border-color: var(--thermal);
+}
+
+.status-chip.status-no_response,
+.status-chip.status-declined {
+  color: var(--ink-faded);
+  border-color: var(--ink-faded);
+}

@@ -51,6 +51,10 @@ Everything in Gate 12 follows from that one fact. The app holds `ANTHROPIC_API_K
 
 *Not decided here:* whether the app should instead move behind Fly private networking or a WireGuard-only listener, leaving only the two genuinely public paths (`/api/claims/submit`, `/api/stripe/webhook`) exposed via a thin forwarder. That is a real option and remains open; this entry only stops the documentation from describing a posture the deployment does not have.
 
+**Operator outreach store (Gate 13, 2026-09-08).** A third local SQLite file, `data/outreach.db`, alongside `claims.db` and `articles.db` — the outreach state machine CLAUDE.md's Gate 8 specified and no gate built. Same reasoning as the other two: `data_store.rebuild()` deletes and recreates `directory.db` on every venue write, and an outreach history (who was approached, when, what they said) cannot be reconstructed from published frontmatter. Gitignored, because it holds operator names, email addresses and private correspondence notes.
+
+No new dependency: stdlib `sqlite3`, and outreach email goes through the existing `notify.py` `smtplib` path. The one public-facing consequence is a new line on the venue page — until now `verification` was schema-checked and stored but rendered nowhere, so the fact model's strongest tier was invisible to readers. The outreach email tells operators their confirmation will show on the page, so it now does.
+
 **Secret rotation (Gate 12, 2026-09-08).** Cadence, revocation order and the incident procedure live in `SECURITY.md`, referenced here so the stack table's credential list has one documented owner.
 
 **Schema.org decisions (user sign-off, 2026-07-31, Gate 11):** two structured-data choices, recorded here per CLAUDE.md rule 3.

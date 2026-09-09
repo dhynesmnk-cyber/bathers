@@ -61,6 +61,10 @@ Run the full validation pass and report results as a pass/fail table. This comma
 
 26. **Place hierarchy.** `python3 -m admin.pipeline.validate_places` must exit 0 — area slugs and feature-filter slugs must not collide within a subdivision (they share one URL slot, and a collision silently drops one page with no build error); every published venue's `country` must belong to a declared world region and its `state_province` to that country; and in the built output every level of `/places/` must link the one below it (hub → world region → country → subdivision → leaf). `--self-test` proves the collision check catches a deliberately colliding fixture and passes a normal one.
 
+## Gate 13 checks (operator outreach, 2026-09-08)
+
+27. **Outreach & provenance integrity.** `python3 -m admin.pipeline.validate_outreach` must exit 0 — the `OUTREACH_TRANSITIONS` graph must name only known states and leave none unreachable from `not_contacted` (a typo making `operator_confirmed` unreachable breaks no test, it just silently means no venue is ever confirmed); and every published `operator_confirmed` record must name who confirmed it and when, since that tier is the strongest claim the site makes and an unattributable one is worse than none. The cross-check against `data/outreach.db` runs only where that file exists — it is gitignored (operator names, addresses, correspondence notes), so CI skips it and says so. `--self-test` proves each check catches its own failure and passes a clean input.
+
 **CI.** `.github/workflows/validate.yml` runs the mechanisable subset of this file on every push. The checks it does not cover — 1/2 (subsumed by the build), 5, 6 (advisory by design), and 8–11 (still prose, not modules) — are listed at the bottom of that workflow so the gap stays written down.
 
 Output: a summary table (check / result / details), then the word **VALIDATE PASS** or **VALIDATE FAIL** on its own line. Do not fix anything during this command — report only.

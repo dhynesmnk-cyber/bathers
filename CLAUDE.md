@@ -82,6 +82,28 @@ Superlative, constraint, head-to-head (heuristic-proposed pairs, user-approved),
 `amenityFeature` arrays, `BreadcrumbList`, `DefinedTermSet`/`DefinedTerm` on the glossary, `WebSite` schema, `Article` on blog posts, the methodology/about page (describing only verification activity that has actually occurred by this point), `llms.txt` audit + fix (the dead `/category/day-spa/` reference), offline JSON-LD structural validator folded into `/validate`. The `LocalBusiness` schema.org type decision and the blog `author` field addition are schema changes — explicit user sign-off required per rule 3 before either lands.
 **Done when:** JSON-LD passes the offline validator on 100% of page types; the venue schema.org type decision is recorded as a dated TRD.md exception with explicit sign-off; the blog author-field decision is explicitly recorded either way; `llms.txt`'s dead route is fixed and Gate 6/10's new route types are added; the methodology page is live and linked from footer/nav.
 
+---
+
+**2026-09-08: expansion/security engagement approved.** `ROADMAP.md` reviewed the project and proposed Gates 12–15; the owner approved them by starting them in sequence. They are new scope, sequenced and blocking per rule 1 exactly like Gates 1–11. `ROADMAP.md` remains the reasoning; the contracts below are operational.
+
+### Gate 12 — Admin hardening & operational safety *(complete, 2026-09-08)*
+Fail-open auth replaced with an explicit local-dev opt-in plus a startup assertion; byte cap, content-type allowlist and magic-byte sniff on the claim photo path; global and per-client rate limits alongside the per-slug one; auth-attempt throttling; an append-only audit log; verified off-host backups of `claims.db`/`articles.db` with a documented restore procedure; security headers; CI running `/validate` on every push; documented secret-rotation cadence and revocation order (`SECURITY.md`).
+
+### Gate 13 — Operator outreach & verification flow *(the deferred Gate 8)*
+The outreach state machine (not-contacted → contacted → responded → operator-confirmed / no-response / declined) feeding Gate 7's confidence tiers, in its own gitignored SQLite file for the same reason `claims.db` is separate; email via the existing `notify.py` SMTP pattern, zero new dependency; a manual-entry admin screen as the single source of truth for outcomes whatever the channel; tier upgrades flowing into the existing `verification` block, upgrade-only and field-by-field, never a silent sweep; the claim offer introduced in the same conversation.
+
+**Done when:** the state machine is visible in a new admin screen and every transition is exercised; a test outreach email sends via existing SMTP config; a manually recorded response upgrades a venue's confidence tier, visible on the next build and asserted by `validate_facts`; the first real batch (all VIC venues) has gone out with outcomes recorded; at least one venue carries an `operator_confirmed` field in published frontmatter.
+
+### Gate 14 — Coverage to a national floor
+WA first, then SA/NT/ACT to the floor, then the named remote thermal springs from Gate 9's list; every new venue harvested at full Gate-7 fact-model shape at publish time, never backfilled; outreach opened for each new venue as part of publishing it.
+
+**Done when:** every state and territory carries ≥5 published venues, or a logged, dated reason for any that cannot; no state exceeds 40% of the catalogue; `/validate` passes against the expanded set; every newly published venue is in the outreach state machine.
+
+### Gate 15 — Measurement, distribution & first revenue
+`gsc.py` replaced with a real Search Console integration feeding the opportunity queue as a ranked prompt only, never auto-creating articles; a tracked monthly AI-citation audit; a published commercial-relationships policy; whichever revenue lines the owner rules in; one chosen distribution channel actually running.
+
+**Done when:** the opportunity queue shows demand-derived candidates and the brief gate still governs each; the citation audit has three months of recorded results; the policy is live and linked from the methodology page; first revenue is recorded; the distribution channel has run a full cycle.
+
 ## Working style
 
 Small commits per logical unit within a gate, imperative messages, no drive-by refactors. When a screenshot is possible, take one before claiming visual work is done. When you are unsure whether something meets DESIGN.md, it doesn't — ask.
