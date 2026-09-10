@@ -53,7 +53,10 @@ def save_forewords(data: dict[str, Any], path: Path = FOREWORDS_JSON_PATH) -> No
 def _venues_by_state(published_dir: Path = PUBLISHED_DIR) -> dict[str, list[dict[str, Any]]]:
     by_state: dict[str, list[dict[str, Any]]] = {}
     for slug, data in iter_published(published_dir):
-        by_state.setdefault(data["state"], []).append({"slug": slug, **data})
+        # `state_province` since 2026-09-08 (was `state`). This line was missed by
+        # that migration, and because ensure_forewords() runs inside approve(),
+        # publishing ANY venue raised KeyError from then until 2026-09-10.
+        by_state.setdefault(data["state_province"], []).append({"slug": slug, **data})
     return by_state
 
 
