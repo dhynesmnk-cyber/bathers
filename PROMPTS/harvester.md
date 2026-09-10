@@ -14,6 +14,11 @@ name alone — `WA` means Western Australia under `AU` and Washington under `US`
 so the country decides which list applies. `city` is the suburb, town or city
 the venue sits in. Leave `zipcode` null unless the page states a postcode.
 
+`contact_email` is the venue's own published contact address, copied exactly
+from the page — the address it prints for enquiries or bookings. It is the one
+field here whose whole value is that it was published, not deduced, so the bar
+is higher than "null over guess": see rule 9.
+
 {
   "name": "string",
   "country": "AU|US",
@@ -24,6 +29,7 @@ the venue sits in. Leave `zipcode` null unless the page states a postcode.
   "latitude": null,
   "longitude": null,
   "website": "string",
+  "contact_email": "string|null",
   "amenities": {
     "magnesium_pool": false,
     "infrared_sauna": false,
@@ -48,3 +54,4 @@ the venue sits in. Leave `zipcode` null unless the page states a postcode.
 6. If the text is clearly not a spa/bathhouse website, output the structure with `"name": null` and a single confidence note saying why.
 7. **Pool-or-sauna eligibility (2026-07-26).** The directory only covers venues where a pool or a sauna is the actual reason to visit — not a treatment-only day spa, head spa (scalp treatments), or dental spa that happens to use spa language. If the text describes a venue built entirely around massage, facials, scalp/beauty treatments, or dental work, with no pool (magnesium, mineral, plunge, or otherwise) and no sauna described anywhere, output the structure with `"name": null` and a confidence note saying it's a treatment-only spa with no bathing facility. A venue with a real pool or sauna alongside a treatment menu is still in scope — extract normally.
 8. If a `Page title` line is present, treat it as strong evidence for `name` — page titles are usually the venue's proper name, sometimes followed by a tagline (e.g. "Peninsula Hot Springs — Spa & Massage Victoria" → name is "Peninsula Hot Springs"). This does not relax Rule 1 for amenities/facts, which must still come from the body text.
+9. **`contact_email` — published or nothing (2026-09-10).** Emit an address only if that exact string appears on the page as a way to contact this venue. Never build one from the domain (`info@`, `hello@`, `bookings@` are guesses even when they turn out to be right), never adapt one you have seen on a similar site, and never carry over an address belonging to a booking platform, a parent group's head office, a web designer, or a media contact. Two or more published addresses → the one for general or booking enquiries. No published address, only a form or a phone number → `null`. This field is used to write to real operators, so a wrong address means a real business is asked to confirm facts about a venue that is not theirs; `null` costs nothing by comparison.

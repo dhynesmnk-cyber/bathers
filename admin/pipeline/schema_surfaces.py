@@ -11,14 +11,24 @@ Compares the three machine-readable *field-set* surfaces for exact agreement:
 and checks the SQLite DDL columns match data_store's VENUE_SCALAR_COLUMNS, and
 that the two prose surfaces (prompts, mdx_preview) mention the new structured
 fields. Run via /validate; `run()` returns failure strings.
+
+The *Harvester's* JSON contract (2026-09-10) is diffed the same way, across its
+own three surfaces: the object literal in PROMPTS/harvester.md, the one in
+SCHEMA.md §4, and orchestrator.HARVESTER_REQUIRED_KEYS. Both literals are real
+JSON, so this is an exact key diff rather than a grep. It exists because that
+contract had drifted twice over: SCHEMA.md §4 still described the retired
+`state`/`suburb` fields three weeks after the migration renamed them, and
+`zipcode` was asked for by the prompt while nothing validated that it came
+back — the same silence that left `contact_email` uncollected on all 39 venues.
 """
 
 from __future__ import annotations
 
+import json
 import re
 
 from admin.config import ROOT
-from admin.pipeline import data_store, staging
+from admin.pipeline import data_store, orchestrator, staging
 from admin.schema import KNOWN_FIELDS
 
 
@@ -41,8 +51,63 @@ def _ddl_columns() -> set[str]:
     return set(re.findall(r"^\s*(\w+)\s+(?:TEXT|REAL|INTEGER)", data_store.SCHEMA_SQL, re.MULTILINE))
 
 
-def run() -> list[str]:
+def _json_object(text: str, label: str) -> tuple[set[str], str | None]:
+    """Top-level keys of the first `{...}` object literal in `text`."""
+    match = re.search(r"^\{$.*?^\}$", text, re.MULTILINE | re.DOTALL)
+    if not match:
+        return set(), f"{label} contains no JSON object literal for the Harvester contract"
+    try:
+        parsed = json.loads(match.group(0))
+    except json.JSONDecodeError as exc:
+        return set(), f"{label}'s Harvester JSON literal does not parse: {exc}"
+    if not isinstance(parsed, dict):
+        return set(), f"{label}'s Harvester JSON literal is not an object"
+    return set(parsed), None
+
+
+def _harvester_contract_failures() -> list[str]:
     failures: list[str] = []
+    surfaces: dict[str, set[str]] = {}
+
+    prompt_keys, error = _json_object(
+        (ROOT / "PROMPTS/harvester.md").read_text(encoding="utf-8"), "PROMPTS/harvester.md"
+    )
+    if error:
+        failures.append(error)
+    else:
+        surfaces["PROMPTS/harvester.md"] = prompt_keys
+
+    schema_section = (
+        (ROOT / "SCHEMA.md").read_text(encoding="utf-8")
+        .split("## 4. Harvester JSON output", 1)[-1]
+        .split("## 5.", 1)[0]
+    )
+    schema_keys, error = _json_object(schema_section, "SCHEMA.md §4")
+    if error:
+        failures.append(error)
+    else:
+        surfaces["SCHEMA.md §4"] = schema_keys
+
+    required = set(orchestrator.HARVESTER_REQUIRED_KEYS)
+    for label, keys in surfaces.items():
+        only_prompt = keys - required
+        only_code = required - keys
+        if only_prompt:
+            failures.append(
+                f"{label} asks the Harvester for key(s) that HARVESTER_REQUIRED_KEYS does not "
+                f"validate, so a missing one would pass silently: {', '.join(sorted(only_prompt))}"
+            )
+        if only_code:
+            failures.append(
+                f"HARVESTER_REQUIRED_KEYS requires key(s) {label} never asks for, so every "
+                f"harvest would fail validation: {', '.join(sorted(only_code))}"
+            )
+
+    return failures
+
+
+def run() -> list[str]:
+    failures: list[str] = _harvester_contract_failures()
 
     # 2026-09-08: render_frontmatter() writes ONLY the keys listed in
     # FRONTMATTER_FIELD_ORDER, so a known field missing from it is silently
@@ -83,6 +148,17 @@ def run() -> list[str]:
     for rel in ("PROMPTS/architect.md", "PROMPTS/gatekeeper.md", "admin/mdx_preview.py"):
         if "price" not in (ROOT / rel).read_text(encoding="utf-8"):
             failures.append(f"{rel} does not mention the structured 'price' field")
+
+    # The Harvester's key list is diffed above, but a key can be present in the
+    # literal with no rule governing it. `contact_email` is the one field here
+    # used to write to a real business, so its honesty rule (published or null,
+    # never pattern-built) must stay in the prompt's prose too.
+    harvester = (ROOT / "PROMPTS/harvester.md").read_text(encoding="utf-8")
+    if "never build one from the domain" not in harvester.lower():
+        failures.append(
+            "PROMPTS/harvester.md no longer forbids pattern-building contact_email from the "
+            "domain — see SCHEMA.md §4's note and harvester rule 9"
+        )
 
     return failures
 

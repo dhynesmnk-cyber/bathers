@@ -153,6 +153,10 @@ CREATE TABLE facilities (
 
 The DB is derived and disposable (TRD §5): rebuildable in full from `_published` frontmatter. Approve = upsert on `slug`.
 
+**Note on the location fields (2026-09-10, correcting a 2026-08-19 omission):** the block above named `state` and `suburb` until today. The international migration replaced those with `country`/`state_province`/`city`/`zipcode` across the content, the zod schema and `PROMPTS/harvester.md`, but left this section describing the retired shape — so the prompt the Harvester actually reads and the contract this document publishes disagreed for three weeks. The block above is now the live contract; `state_province` is the subdivision code of whichever `country` is set, which is why the country has to be decided first (`WA` is Western Australia under `AU` and Washington under `US`).
+
+**Note on `contact_email` (2026-09-10, Gate 13):** unlike every "no new Harvester fields" note below, this one *is* a new Harvester field, for the reason those others are not: it is a string published verbatim on the page, not a judgement drawn from `facts`. Gate 13's outreach flow needs somewhere to write, and `contact_email` was null on all 39 published venues because nothing in the pipeline ever collected it. The pipeline stamps it from the Harvester's JSON directly in `orchestrator._finalize_frontmatter()` — the same posture as `amenities`, and for the same reason: an address paraphrased by the Architect or Gatekeeper is worse than no address, because it would be used to write to a real business. `orchestrator._resolve_contact_email()` drops a malformed or administrative address (`noreply@`, `webmaster@`) and logs a warning when the address is off the venue's own domain without dropping it — small operators legitimately publish a Gmail address. Harvester rule 9 carries the honesty constraint: published or `null`, never pattern-built from the domain.
+
 **Note on FAQ:** not stored in SQLite — like the MDX body, it is rendered content, not a query/filter dimension.
 
 **Note on `temperatures`/`dress_code`/`session_gender`/`session_gender_note`/`silence_policy`/`phone_policy`/`minimum_age` (2026-07-26; promoted 2026-07-31):** originally rendered-only, these were **promoted into SQLite on 2026-07-31** (Gate 7, §2a) — exactly the "add real columns when a feature needs to sort/filter on them" path this note anticipated, now triggered by Gate 10's comparison pages. `temperatures` is flattened into `sauna_*`/`cold_plunge_*` columns; structured `price` and `drive_time` likewise. **Still rendered-only, not in SQLite:** `verified`, `verification`, `change_log`, `faq` — provenance/metadata, not query dimensions.
@@ -164,12 +168,15 @@ The Harvester agent must emit **only** this object — no prose, no markdown fen
 ```json
 {
   "name": "string",
-  "state": "VIC|NSW|QLD|SA|WA|TAS|NT|ACT|null",
-  "suburb": "string|null",
+  "country": "AU|US",
+  "state_province": "string|null",
+  "city": "string|null",
+  "zipcode": "string|null",
   "address": "string|null",
   "latitude": null,
   "longitude": null,
   "website": "string",
+  "contact_email": "string|null",
   "amenities": {
     "magnesium_pool": false, "infrared_sauna": false,
     "traditional_sauna": false, "cold_plunge": false, "led_therapy": false

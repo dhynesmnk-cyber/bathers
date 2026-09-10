@@ -136,6 +136,126 @@ def find_pricing_links(html: str, base_url: str, limit: int = 2) -> list[str]:
     return ranked[:limit]
 
 
+# --- Contact addresses (Gate 13, 2026-09-10) -----------------------------
+# Outreach needs an address to write to, and `contact_email` was null on all 39
+# published venues because nothing collected it. These two helpers read
+# candidates out of the fetched HTML rather than asking a model to produce one:
+# an address that was never on the page cannot come out of a literal scan, and
+# for a field used to email a real business that guarantee is worth more than
+# the flexibility of free-form extraction.
+
+_EMAIL_IN_HTML_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+")
+# Local parts nobody at a bathhouse reads, and addresses belonging to the tools
+# a site is built with rather than to the venue.
+_EMAIL_LOCAL_NOISE = frozenset({
+    "webmaster", "postmaster", "noreply", "no-reply", "donotreply", "do-not-reply",
+    "abuse", "privacy", "dmca", "unsubscribe", "mailer-daemon", "root", "admin@example",
+})
+_EMAIL_DOMAIN_NOISE = (
+    "example.com", "example.org", "example.net", "domain.com", "yourdomain.com",
+    "email.com", "sentry.io", "wixpress.com", "squarespace.com", "shopify.com",
+    "godaddy.com", "cloudflare.com", "wordpress.com", "sentry-next.wixpress.com",
+)
+# `logo@2x.png`, `icon@3x.svg` — retina asset names look exactly like addresses.
+_EMAIL_ASSET_RE = re.compile(r"\.(png|jpe?g|webp|svg|gif|css|js|woff2?)$", re.I)
+# Preference order within a venue's own domain. A general or bookings address is
+# the one an operator answers; a named individual is a fallback, not a target.
+_EMAIL_LOCAL_PREFERRED = ("bookings", "booking", "reservations", "enquiries", "enquiry",
+                          "inquiries", "info", "hello", "hi", "contact", "reception", "stay")
+
+_CONTACT_STRONG = {"contact", "contactus", "enquiries", "enquiry", "bookings"}
+_CONTACT_WEAK = {"about", "visit", "faq", "faqs", "help"}
+
+
+def _plausible_email(candidate: str) -> bool:
+    local, _, domain = candidate.rpartition("@")
+    if not local or "." not in domain:
+        return False
+    if local.lower() in _EMAIL_LOCAL_NOISE:
+        return False
+    if _EMAIL_ASSET_RE.search(candidate):
+        return False
+    lowered = domain.lower()
+    if any(lowered == noise or lowered.endswith("." + noise) for noise in _EMAIL_DOMAIN_NOISE):
+        return False
+    # A bare TLD-ish tail like `@2x.png` is caught above; this catches `@1.2`.
+    return bool(re.match(r"^[A-Za-z]{2,}$", lowered.rsplit(".", 1)[-1]))
+
+
+def find_contact_emails(html: str, base_url: str | None = None) -> list[str]:
+    """Literal addresses published on the page, best candidate first.
+
+    `mailto:` hrefs rank above addresses found in body text — a site that links
+    an address is stating it is for contacting them. Within each group, the
+    venue's own domain beats an off-domain address, and a general or bookings
+    local part beats a named individual. Order is the ranking; the caller
+    decides how much of it to keep.
+    """
+    site_host = None
+    if base_url:
+        site_host = urlsplit(base_url).netloc.lower().split(":")[0].removeprefix("www.")
+
+    linked: list[str] = []
+    for match in _ANCHOR_RE.finditer(html):
+        href = match.group(1).strip()
+        if not href.lower().startswith("mailto:"):
+            continue
+        address = href[len("mailto:"):].split("?")[0].strip()
+        for found in _EMAIL_IN_HTML_RE.findall(address):
+            linked.append(found)
+
+    in_text = _EMAIL_IN_HTML_RE.findall(re.sub(r"<[^>]+>", " ", html))
+
+    def rank(address: str) -> tuple[int, int, int]:
+        local, _, domain = address.rpartition("@")
+        host = domain.lower().removeprefix("www.")
+        on_domain = 0 if (site_host and (host == site_host or host.endswith("." + site_host))) else 1
+        try:
+            preference = _EMAIL_LOCAL_PREFERRED.index(local.lower())
+        except ValueError:
+            preference = len(_EMAIL_LOCAL_PREFERRED)
+        return (on_domain, preference, len(address))
+
+    ranked: list[str] = []
+    seen: set[str] = set()
+    for group in (linked, in_text):
+        for address in sorted({a for a in group if _plausible_email(a)}, key=rank):
+            if address.lower() in seen:
+                continue
+            seen.add(address.lower())
+            ranked.append(address)
+    return ranked
+
+
+def find_contact_links(html: str, base_url: str, limit: int = 2) -> list[str]:
+    """Same-host contact/enquiries pages, strongest first — where a venue that
+    keeps its address off the landing page usually keeps it."""
+    base = urlsplit(base_url)
+    base_host = base.netloc.lower().removeprefix("www.")
+    scored: dict[str, int] = {}
+    for match in _ANCHOR_RE.finditer(html):
+        absolute = urljoin(base_url, match.group(1)).split("#")[0]
+        parts = urlsplit(absolute)
+        if parts.scheme not in ("http", "https"):
+            continue
+        if parts.netloc.lower().removeprefix("www.") != base_host:
+            continue
+        if parts.path.rstrip("/") == base.path.rstrip("/"):
+            continue
+        if _SKIP_EXTENSIONS_RE.search(parts.path):
+            continue
+        anchor_text = re.sub(r"<[^>]+>", " ", match.group(2)).lower()
+        tokens = set(re.findall(r"[a-z]+", f"{parts.path.lower()} {anchor_text}"))
+        if tokens & _CONTACT_STRONG:
+            score = 2
+        elif tokens & _CONTACT_WEAK:
+            score = 1
+        else:
+            continue
+        scored[absolute] = max(scored.get(absolute, 0), score)
+    return sorted(scored, key=lambda link: (-scored[link], len(link)))[:limit]
+
+
 def harvest(url: str) -> ScrapeResult:
     html = fetch_html(url)
     text = extract_text(html, url)

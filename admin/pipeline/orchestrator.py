@@ -9,16 +9,28 @@ from __future__ import annotations
 import datetime
 import json
 import re
+import sys
 from dataclasses import asdict, dataclass
 from typing import Iterator
+from urllib.parse import urlsplit
 
 from admin.config import AMENITY_KEYS, FAILED_DIR, MODEL_ARCHITECT, MODEL_GATEKEEPER, MODEL_HARVESTER, PUBLISHED_DIR, ROOT, STAGING_DIR
+from admin import schema
 from admin.pipeline import agents, drivetime, geocode, harvest, images, places, staging, verification
 from admin.pipeline.staging import render_mdx, split_frontmatter
 
 HARVESTER_REQUIRED_KEYS = (
-    "name", "country", "state_province", "city", "address", "latitude", "longitude",
-    "website", "amenities", "facts", "confidence_notes",
+    "name", "country", "state_province", "city", "zipcode", "address", "latitude", "longitude",
+    "website", "contact_email", "amenities", "facts", "confidence_notes",
+)
+
+# Addresses a venue's own page can carry that are not the venue's (Gate 13,
+# 2026-09-10). The Harvester is told not to emit these (PROMPTS/harvester.md
+# rule 9) but a shared footer makes them easy to mistake for the contact
+# address, and writing to one means asking a booking platform or a web agency
+# to confirm facts about someone else's venue.
+_NON_OPERATOR_EMAIL_LOCAL_PARTS = frozenset(
+    {"webmaster", "postmaster", "noreply", "no-reply", "donotreply", "abuse", "privacy"}
 )
 
 
@@ -87,7 +99,46 @@ def _validate_mdx(text: str) -> tuple[dict, str]:
     return data, body
 
 
-def _finalize_frontmatter(gate_fm: dict, harvester_data: dict, coords: tuple[float, float] | None, url: str) -> dict:
+def _resolve_contact_email(harvester_data: dict, website: str | None) -> tuple[str | None, str | None]:
+    """(email, note) — the Harvester's `contact_email`, or None with a reason.
+
+    Kept a machine step rather than an agent judgement for the same reason
+    amenities are re-stamped below: this address is used to write to a real
+    business, so a malformed or obviously-not-theirs value must be dropped
+    here, not caught by a reviewer reading prose. `note` is logged so a
+    dropped address is visible in the harvest log rather than silent.
+    """
+    raw = harvester_data.get("contact_email")
+    if raw is None or (isinstance(raw, str) and not raw.strip()):
+        return None, None
+    if not isinstance(raw, str):
+        return None, f"harvester returned a non-string contact_email ({type(raw).__name__}) — dropped"
+    email = raw.strip().strip("<>.,;: \t\r\n")
+    if not schema._is_email(email):
+        return None, f"harvester returned an unusable contact_email ({email!r}) — dropped"
+    local, _, domain = email.rpartition("@")
+    if local.lower() in _NON_OPERATOR_EMAIL_LOCAL_PARTS:
+        return None, f"contact_email {email!r} is an administrative address, not an operator's — dropped"
+    note = None
+    site_host = _bare_host(website)
+    if site_host and _bare_host(domain) != site_host:
+        # Not dropped: plenty of small operators publish a gmail address, and
+        # guessing which off-domain addresses are wrong would lose real ones.
+        # Flagged so the reviewer looks before outreach writes to it.
+        note = f"contact_email {email!r} is not on the venue's own domain ({site_host}) — confirm it before outreach"
+    return email, note
+
+
+def _bare_host(url: str | None) -> str | None:
+    """Host of a URL or a bare hostname, lowercased and www-stripped."""
+    if not url:
+        return None
+    host = urlsplit(url if "//" in url else f"//{url}").netloc.lower()
+    host = host.split(":")[0].removeprefix("www.")
+    return host or None
+
+
+def _finalize_frontmatter(gate_fm: dict, harvester_data: dict, coords: tuple[float, float] | None, url: str, log=None) -> dict:
     final = dict(gate_fm)
     final["source_url"] = url
     if not final.get("website"):
@@ -101,6 +152,13 @@ def _finalize_frontmatter(gate_fm: dict, harvester_data: dict, coords: tuple[flo
     # Amenities are the Harvester's finding, not the Architect/Gatekeeper's —
     # enforce that rather than trusting it survived two rewrite passes intact.
     final["amenities"] = {key: bool(harvester_data["amenities"].get(key, False)) for key in AMENITY_KEYS}
+    # Same posture for the operator's contact address (Gate 13, 2026-09-10):
+    # it exists so outreach has somewhere to write, and an address paraphrased
+    # by the Architect or Gatekeeper would be worse than none at all.
+    contact_email, email_note = _resolve_contact_email(harvester_data, final.get("website"))
+    final["contact_email"] = contact_email
+    if email_note and log:
+        log(email_note, "warn")
     if coords and not final.get("latitude"):
         final["latitude"] = coords[0]
     if coords and not final.get("longitude"):
@@ -335,7 +393,7 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False, allow_existing_
     log(f"gatekeeper agent ({MODEL_GATEKEEPER})  ok — {gate_word_count} words")
     yield from drain()
 
-    final_fm = _finalize_frontmatter(gate_fm, harvester_data, coords, url)
+    final_fm = _finalize_frontmatter(gate_fm, harvester_data, coords, url, log=log)
     STAGING_DIR.mkdir(parents=True, exist_ok=True)
     (STAGING_DIR / f"{slug}.mdx").write_text(render_mdx(final_fm, gate_body), encoding="utf-8")
     log(f"saved → _staging/{slug}.mdx")
@@ -367,3 +425,70 @@ def _save_failed(stage: str, key: str, raw_text: str, log) -> None:
     path = FAILED_DIR / f"{safe_key}-{stage}-{stamp}.txt"
     path.write_text(raw_text, encoding="utf-8")
     log(f"{stage} agent failed validation after retry — raw output saved to {path.relative_to(ROOT)}", "error")
+
+
+def _self_test() -> int:
+    """Proves the contact_email guard (Gate 13, 2026-09-10).
+
+    This is the one harvested field the pipeline uses to *write to a real
+    business*, so its rejections are asserted alongside a clean pass — a guard
+    that only ever says no would be indistinguishable from one that drops
+    everything, which is exactly how a field stays empty on all 39 venues
+    without anybody noticing.
+    """
+    site = "https://example-bathhouse.com.au/visit"
+    cases: list[tuple[str, bool]] = []
+
+    def resolve(raw, website=site):
+        return _resolve_contact_email({"contact_email": raw}, website)
+
+    email, note = resolve("hello@example-bathhouse.com.au")
+    cases.append(("a published on-domain address is kept, unflagged", email == "hello@example-bathhouse.com.au" and note is None))
+
+    email, note = resolve("  <Bookings@Example-Bathhouse.com.au>,  ")
+    cases.append(("stray punctuation and brackets are stripped", email == "Bookings@Example-Bathhouse.com.au"))
+
+    email, note = resolve(None)
+    cases.append(("a null address stays null, with nothing to log", email is None and note is None))
+
+    email, note = resolve("   ")
+    cases.append(("a blank string is treated as null", email is None and note is None))
+
+    email, note = resolve("not an address")
+    cases.append(("a malformed address is dropped with a reason", email is None and note is not None))
+
+    email, note = resolve(["a@b.com"])
+    cases.append(("a non-string address is dropped with a reason", email is None and "non-string" in (note or "")))
+
+    email, note = resolve("noreply@example-bathhouse.com.au")
+    cases.append(("an administrative address is dropped", email is None and "administrative" in (note or "")))
+
+    email, note = resolve("hello@some-booking-platform.com")
+    cases.append(("an off-domain address is kept but flagged", email == "hello@some-booking-platform.com" and "not on the venue's own domain" in (note or "")))
+
+    email, note = resolve("hello@www.example-bathhouse.com.au")
+    cases.append(("a www-prefixed host is not mistaken for a different domain", email and note is None))
+
+    email, note = resolve("hello@anything.com", website=None)
+    cases.append(("with no website to compare against, nothing is flagged", email == "hello@anything.com" and note is None))
+
+    cases.append(("contact_email is a required Harvester key", "contact_email" in HARVESTER_REQUIRED_KEYS))
+    cases.append(("contact_email is a known frontmatter field", "contact_email" in schema.KNOWN_FIELDS))
+    cases.append((
+        "render_frontmatter writes contact_email rather than dropping it",
+        "contact_email" in staging.FRONTMATTER_FIELD_ORDER,
+    ))
+
+    for label, ok in cases:
+        print(f"  {'ok  ' if ok else 'FAIL'} {label}")
+    return 0 if all(ok for _, ok in cases) else 1
+
+
+def main() -> None:
+    if "--self-test" in sys.argv:
+        raise SystemExit(_self_test())
+    raise SystemExit("orchestrator has no CLI beyond --self-test; harvest runs from the admin app")
+
+
+if __name__ == "__main__":
+    main()
