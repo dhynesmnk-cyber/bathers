@@ -282,7 +282,11 @@ def outreach_page(request: Request):
 
 @app.get("/api/outreach")
 def api_outreach_list():
-    return {"venues": outreach.overview(), "counts": outreach_store.counts_by_state()}
+    # Counts tallied from the same rows the screen lists — see
+    # outreach.counts_by_state() for why the store's own tally is a different
+    # question and the wrong one to show here.
+    rows = outreach.overview()
+    return {"venues": rows, "counts": outreach.counts_by_state(rows)}
 
 
 @app.get("/api/outreach/{slug}")

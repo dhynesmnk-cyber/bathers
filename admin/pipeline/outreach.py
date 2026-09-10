@@ -243,6 +243,24 @@ def overview() -> list[dict[str, Any]]:
     return out
 
 
+def counts_by_state(rows: list[dict[str, Any]] | None = None) -> dict[str, int]:
+    """Tally across *published venues*, which is what the screen lists.
+
+    Not the same question as `outreach_store.counts_by_state()`, which counts
+    rows in `outreach.db` — and a venue only gets a row once something happens
+    to it or once `approve()` opens one. Every venue published before that call
+    existed has no row, so the store's tally reported "Not contacted 1" beside
+    a list of 39 not-contacted venues. `overview()` is driven by `_published`
+    and resolves each venue's effective state, so it is the honest denominator:
+    an outreach batch is sized by how many venues there are, not by how many
+    the table happens to know about.
+    """
+    tally: dict[str, int] = {}
+    for row in rows if rows is not None else overview():
+        tally[row["state"]] = tally.get(row["state"], 0) + 1
+    return tally
+
+
 def detail(slug: str) -> dict[str, Any]:
     row = outreach_store.ensure(slug)
     frontmatter = venue_frontmatter(slug)

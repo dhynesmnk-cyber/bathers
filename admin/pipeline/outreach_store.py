@@ -222,6 +222,10 @@ def log_for(slug: str) -> list[dict[str, Any]]:
 
 
 def counts_by_state() -> dict[str, int]:
+    """Rows in this table, by state — not a venue tally. A venue has no row
+    until something happens to it, so this under-reports `not_contacted` by
+    every venue nothing has happened to yet. For the screen's numbers use
+    `outreach.counts_by_state()`, which tallies published venues."""
     conn = _connect()
     try:
         found = conn.execute("SELECT state, COUNT(*) FROM outreach GROUP BY state").fetchall()
