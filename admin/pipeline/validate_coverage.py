@@ -1,11 +1,17 @@
-"""Coverage floor and concentration ceiling (Gate 14, 2026-09-10).
+"""Coverage floor (Gate 14, 2026-09-10).
 
 Gate 14's done-condition is a shape for the catalogue, not a feature: every
 state and territory carries at least `COVERAGE_FLOOR` published venues, or a
-logged and dated reason why it cannot, and no single subdivision holds more than
-`CONCENTRATION_CEILING` of the whole. A directory claiming national scope with
-two thirds of its venues in one state cannot honestly answer a national
-question, and every comparison page it generates is quality-capped by that.
+logged and dated reason why it cannot. A directory claiming national scope with
+a state holding one venue cannot honestly answer a question about that state.
+
+**No concentration ceiling (owner decision, 2026-09-10).** An earlier draft of
+this gate also capped any one subdivision at 40% of the catalogue. That was
+dropped: with Victoria at 26 of 39 it would have required 26 new venues
+elsewhere purely to move a ratio, and if Victoria genuinely holds most of
+Australia's bathhouses then a ceiling fights the territory rather than measuring
+it. The distribution is still printed as context, with no target attached — the
+floor is the criterion.
 
 **What fails here and what only reports.** Coverage below the floor is a content
 backlog, not a defect: it is reported with a per-subdivision countdown and does
@@ -30,7 +36,6 @@ that the work has not been done yet.
 from __future__ import annotations
 
 import json
-import math
 import re
 import sys
 from pathlib import Path
@@ -44,7 +49,6 @@ from admin.config import (
 from admin.pipeline.staging import split_frontmatter
 
 COVERAGE_FLOOR = 5
-CONCENTRATION_CEILING = 0.40
 
 # Flip to True when Gate 14 closes: from then on, a subdivision below the floor
 # without a logged reason is a build failure rather than a reported backlog.
@@ -102,16 +106,11 @@ def report() -> tuple[list[str], list[str]]:
     if total == 0:
         return ["no published venues found"], lines
 
-    # Concentration.
+    # Distribution, as context only — no ceiling since 2026-09-10 (see docstring).
     largest_key, largest = max(tally.items(), key=lambda kv: kv[1])
-    share = largest / total
-    marker = "" if share <= CONCENTRATION_CEILING else (
-        f"  <- over the {CONCENTRATION_CEILING:.0%} ceiling; "
-        f"needs {_needed_for_ceiling(largest, total)} more venues elsewhere"
-    )
     lines.append(
         f"{total} venues; largest is {largest_key[0]}/{largest_key[1]} at "
-        f"{largest} ({share:.0%}){marker}"
+        f"{largest} ({largest / total:.0%} of the catalogue)"
     )
 
     # Per-subdivision floor.
@@ -144,19 +143,7 @@ def report() -> tuple[list[str], list[str]]:
     else:
         lines.append(f"every claimed subdivision is at or above the floor of {COVERAGE_FLOOR}")
 
-    if share > CONCENTRATION_CEILING and FLOOR_IS_BLOCKING:
-        failures.append(
-            f"{largest_key[0]}/{largest_key[1]} holds {share:.0%} of the catalogue, "
-            f"over the {CONCENTRATION_CEILING:.0%} ceiling"
-        )
     return failures, lines
-
-
-def _needed_for_ceiling(largest: int, total: int) -> int:
-    """How many venues elsewhere would bring the largest subdivision's share to
-    the ceiling. Solves largest / (total + n) <= ceiling for n."""
-    required_total = math.ceil(largest / CONCENTRATION_CEILING)
-    return max(0, required_total - total)
 
 
 def main() -> None:
@@ -174,8 +161,8 @@ def main() -> None:
 
 
 def _self_test() -> int:
-    """Proves the reasons-file validation and the ceiling arithmetic, and that a
-    clean input passes — a check that only ever says "no" proves nothing."""
+    """Proves the reasons-file validation, including that a clean input passes —
+    a check that only ever says "no" proves nothing."""
     module = sys.modules[__name__]
     results: list[tuple[str, bool]] = []
 
@@ -209,11 +196,6 @@ def _self_test() -> int:
             results.append(("a proper reason passes", not failures and "AU/NT" in parsed))
     finally:
         module.REASONS_PATH = original_path
-
-    # 26 of 39 is 67%; reaching 40% needs a catalogue of 65, so 26 more.
-    results.append(("ceiling arithmetic", module._needed_for_ceiling(26, 39) == 26))
-    # Already under the ceiling: nothing needed.
-    results.append(("no shortfall when under the ceiling", module._needed_for_ceiling(10, 100) == 0))
 
     for label, ok in results:
         print(f"  {'ok  ' if ok else 'FAIL'} {label}")
