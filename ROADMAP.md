@@ -309,6 +309,15 @@ region, national and comparison pages regenerate with no manual intervention
 beyond the normal approve action; every newly published venue is in the
 outreach state machine.
 
+*(2026-09-10: `COVERAGE-LEADS.md` holds the starting point for this backlog —
+the four Gate 9 named targets still outstanding, NT's three thermal pools, the
+two chains already in the catalogue, and the `discovery.py` region strings for
+every urban venue. It is unverified recall by design; nothing in it is
+publishable until the pipeline has read the venue's own site. ACT is flagged
+there as the one subdivision where the floor may be genuinely unreachable
+rather than merely unworked — one city, no thermal geology — which is the
+`coverage-reasons.json` case the gate contract anticipates.)*
+
 ### Gate 15 — Measurement, distribution & first revenue
 `gsc.py` replaced with a real Search Console integration feeding the existing
 opportunity queue as a ranked prompt only — never auto-creating articles; a
