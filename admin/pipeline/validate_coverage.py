@@ -21,9 +21,8 @@ fails today is a malformed entry in the reasons file — that is the escape hatc
 being used without saying why, which is a defect.
 
 So this module's job right now is to be the authoritative number: how far off
-the floor each subdivision is, and how many venues elsewhere the concentration
-ceiling needs. Flipping the floor and ceiling to hard failures is a one-line
-change (`FLOOR_IS_BLOCKING`), and is what closing Gate 14 should do.
+the floor each claimed subdivision is. Flipping the floor to a hard failure is a
+one-line change (`FLOOR_IS_BLOCKING`), and is what closing Gate 14 should do.
 
 **The reasons file.** `data/coverage-reasons.json` records, per subdivision, a
 dated reason the floor is genuinely unreachable — a territory with no qualifying
