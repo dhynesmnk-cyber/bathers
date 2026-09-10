@@ -97,7 +97,9 @@ The outreach state machine (not-contacted → contacted → responded → operat
 ### Gate 14 — Coverage to a national floor
 WA first, then SA/NT/ACT to the floor, then the named remote thermal springs from Gate 9's list; every new venue harvested at full Gate-7 fact-model shape at publish time, never backfilled; outreach opened for each new venue as part of publishing it.
 
-**Done when:** every state and territory carries ≥5 published venues, or a logged, dated reason for any that cannot; no state exceeds 40% of the catalogue; `/validate` passes against the expanded set; every newly published venue is in the outreach state machine.
+**Done when:** every state and territory carries ≥5 published venues, or a logged, dated reason for any that cannot; `/validate` passes against the expanded set; every newly published venue is in the outreach state machine.
+
+*(Amended 2026-09-10, owner decision: the proposed "no state exceeds 40% of the catalogue" ceiling is dropped. With Victoria at 26 of 39 it would have required 26 new venues elsewhere purely to move a ratio, and if Victoria genuinely holds most of Australia's bathhouses a ceiling fights the territory rather than measuring it. The floor is the criterion; `admin/pipeline/validate_coverage.py` still prints the distribution as context.)*
 
 ### Gate 15 — Measurement, distribution & first revenue
 `gsc.py` replaced with a real Search Console integration feeding the opportunity queue as a ranked prompt only, never auto-creating articles; a tracked monthly AI-citation audit; a published commercial-relationships policy; whichever revenue lines the owner rules in; one chosen distribution channel actually running.

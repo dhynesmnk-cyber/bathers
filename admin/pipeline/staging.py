@@ -20,7 +20,7 @@ from typing import Any
 import yaml
 
 from admin.config import DELETED_DIR, PUBLISHED_DIR, REJECTED_DIR, SITE_IMAGES_DIR, STAGING_DIR
-from admin.pipeline import article_store, data_store, forewords, images, places
+from admin.pipeline import article_store, data_store, forewords, images, outreach_store, places
 from admin.schema import FieldError, count_prose_words, staging_status, validate_frontmatter
 
 _logger = logging.getLogger("admin.staging")
@@ -427,6 +427,21 @@ def approve(slug: str) -> int:
     src.unlink()
     count = _rebuild_derived()
     forewords.ensure_forewords()  # UX.md §2.3 — generated once, on first venue in a new state/amenity combo
+
+    # Gate 14 (2026-09-10): a newly published venue enters the outreach queue as
+    # part of publishing it, so the operator conversation is opened by the action
+    # that puts the venue live rather than by someone remembering afterwards.
+    #
+    # `outreach_store` only, never `outreach` — that module imports this one, and
+    # importing it here would be a cycle. A failure is logged and swallowed: the
+    # venue is published and schema-valid at this point, and losing an outreach
+    # row is recoverable (the /outreach screen reads _published, so the venue
+    # still appears as not_contacted) while un-publishing it over a bookkeeping
+    # error is not.
+    try:
+        outreach_store.ensure(slug)
+    except Exception as exc:  # noqa: BLE001 — see comment above
+        _logger.error("could not open outreach for %s: %s", slug, exc)
 
     _UNDO_STORE[slug] = _UndoRecord(
         staged_text=staged_text,

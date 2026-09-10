@@ -146,7 +146,11 @@ unearned.
 
 - **Coverage floor:** ≥5 published venues in every state and territory,
   WA first. Concretely: 36 → ~75 venues.
-- **Concentration ceiling:** no single state above 40% of the catalogue.
+- ~~**Concentration ceiling:** no single state above 40% of the catalogue.~~
+  *Dropped 2026-09-10 by owner decision: at 26 of 39 in Victoria it would have
+  cost 26 new venues purely to move a ratio, and a ceiling fights the territory
+  if Victoria really does hold most of Australia's bathhouses. The floor stands
+  on its own.*
 - **Depth floor:** ≥40% of published venues carrying at least one
   `operator_confirmed` field — which requires Gate 8 to exist.
 - **Sustained cadence:** a standing weekly publish rhythm rather than the
@@ -298,8 +302,9 @@ at publish time, never backfilled; outreach opened for each new venue as part
 of publishing it, not as a later pass.
 
 **Done when:** every state and territory carries ≥5 published venues, or a
-logged, dated reason for any that cannot; no state exceeds 40% of the
-catalogue; the full `/validate` suite passes against the expanded set; state,
+logged, dated reason for any that cannot *(the 40% concentration ceiling
+proposed here was dropped 2026-09-10 — see §3)*; the full `/validate` suite
+passes against the expanded set; state,
 region, national and comparison pages regenerate with no manual intervention
 beyond the normal approve action; every newly published venue is in the
 outreach state machine.
