@@ -28,7 +28,7 @@ through `render_mdx()` so field order and dates are preserved exactly.
 
 Usage:
     python -m admin.pipeline.backfill_contact_email [--dry-run] [--slugs a,b,c]
-        [--overwrite] [--self-test]
+        [--overwrite] [--playwright] [--self-test]
 
 `--overwrite` re-reads venues that already carry an address; without it they
 are skipped, so the run is safe to repeat. Do not run while an admin-UI harvest
@@ -52,7 +52,22 @@ REQUEST_DELAY_SECONDS = 1.0
 MAX_CONTACT_PAGES = 2
 
 
-def _candidates_for(url: str) -> tuple[list[str], list[str]]:
+def _fetch(url: str, use_playwright: bool) -> str:
+    """HTML for `url`, via httpx or — only when explicitly asked — Playwright.
+
+    Playwright is never reached automatically here, the same rule
+    `harvest.harvest()` follows (TRD.md §2, UX.md §1.5): it is a fallback a
+    person chooses after seeing httpx fail, not a silent retry. Note it sends
+    the same User-Agent, so it does not defeat a UA block — what it buys is a
+    real browser for a site that renders its contact details in JavaScript or
+    puts a JS challenge in front of them.
+    """
+    if use_playwright:
+        return harvest.harvest_with_playwright(url).html
+    return harvest.fetch_html(url)
+
+
+def _candidates_for(url: str, use_playwright: bool = False) -> tuple[list[str], list[str]]:
     """(addresses, notes) — every literal address published on the venue's site.
 
     Tries the given page first, then its contact/enquiries pages if that page
@@ -60,11 +75,13 @@ def _candidates_for(url: str) -> tuple[list[str], list[str]]:
     """
     notes: list[str] = []
     try:
-        html = harvest.fetch_html(url)
+        html = _fetch(url, use_playwright)
     except harvest.RobotsDisallowed as exc:
         return [], [f"robots.txt disallows the fetch — {exc}"]
     except harvest.ScrapeError as exc:
         return [], [f"could not fetch {url} — {exc}"]
+    except Exception as exc:  # noqa: BLE001 — Playwright raises its own error types
+        return [], [f"could not fetch {url} — {type(exc).__name__}: {exc}"]
 
     found = harvest.find_contact_emails(html, url)
     if found:
@@ -73,8 +90,8 @@ def _candidates_for(url: str) -> tuple[list[str], list[str]]:
     for link in harvest.find_contact_links(html, url, limit=MAX_CONTACT_PAGES):
         time.sleep(REQUEST_DELAY_SECONDS)
         try:
-            page = harvest.fetch_html(link)
-        except (harvest.RobotsDisallowed, harvest.ScrapeError) as exc:
+            page = _fetch(link, use_playwright)
+        except Exception as exc:  # noqa: BLE001 — as above
             notes.append(f"could not fetch {link} — {exc}")
             continue
         found = harvest.find_contact_emails(page, link)
@@ -85,7 +102,10 @@ def _candidates_for(url: str) -> tuple[list[str], list[str]]:
 
 
 def backfill(
-    dry_run: bool = False, slugs: list[str] | None = None, overwrite: bool = False
+    dry_run: bool = False,
+    slugs: list[str] | None = None,
+    overwrite: bool = False,
+    use_playwright: bool = False,
 ) -> tuple[int, int]:
     """(updated, missed). Prints one line per venue either way."""
     wanted = set(slugs or [])
@@ -98,6 +118,7 @@ def backfill(
     updated = 0
     missed = 0
     first = True
+    unreachable: list[str] = []
 
     for path in sorted(PUBLISHED_DIR.glob("*.mdx")):
         slug = path.stem
@@ -116,12 +137,19 @@ def backfill(
             time.sleep(REQUEST_DELAY_SECONDS)
         first = False
 
-        found, notes = _candidates_for(url)
+        found, notes = _candidates_for(url, use_playwright)
         for note in notes:
             print(f"       {slug}: {note}")
         if not found:
             missed += 1
-            print(f"  MISS {slug}: no address published on {url}")
+            # "could not read the page" and "the page has no address" are
+            # different outcomes: the first is worth retrying, the second is
+            # not. Only the first goes in the retry list.
+            if any(note.startswith("could not fetch") for note in notes):
+                unreachable.append(slug)
+                print(f"  MISS {slug}: could not read {url}")
+            else:
+                print(f"  MISS {slug}: no address published on {url}")
             continue
 
         # The same guard the harvest path applies, so the two cannot diverge.
@@ -141,6 +169,15 @@ def backfill(
         if not dry_run:
             data["contact_email"] = email
             path.write_text(render_mdx(data, body), encoding="utf-8")
+
+    if unreachable:
+        print(
+            "\ncould not read " + str(len(unreachable)) + " venue(s). Retry just those with a real\n"
+            "browser (same User-Agent, so this helps with JS-rendered contact pages,\n"
+            "not with a User-Agent block):\n"
+            "  python3 -m admin.pipeline.backfill_contact_email --playwright --slugs "
+            + ",".join(unreachable)
+        )
 
     if updated and not dry_run:
         # `contact_email` is frontmatter-only — it is not in
@@ -215,6 +252,13 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="report only, write nothing")
     parser.add_argument("--slugs", help="comma-separated slugs to limit the run to")
     parser.add_argument("--overwrite", action="store_true", help="re-read venues that already have an address")
+    parser.add_argument(
+        "--playwright",
+        action="store_true",
+        help="fetch with a real browser instead of httpx — for sites that render their "
+             "contact details in JavaScript. Explicit by design (TRD.md §2); pair it with "
+             "--slugs to retry only what the first pass could not read.",
+    )
     parser.add_argument("--self-test", action="store_true", help="offline assertions, no network")
     args = parser.parse_args()
 
@@ -222,7 +266,9 @@ def main() -> None:
         raise SystemExit(_self_test())
 
     slugs = [s.strip() for s in args.slugs.split(",") if s.strip()] if args.slugs else None
-    updated, missed = backfill(dry_run=args.dry_run, slugs=slugs, overwrite=args.overwrite)
+    updated, missed = backfill(
+        dry_run=args.dry_run, slugs=slugs, overwrite=args.overwrite, use_playwright=args.playwright
+    )
     print(f"{updated} address(es) found, {missed} venue(s) without one" + (" (dry run — nothing written)" if args.dry_run else ""))
     if not updated and not missed and not slugs:
         print("every venue already carries a contact address — pass --overwrite to re-read them")
