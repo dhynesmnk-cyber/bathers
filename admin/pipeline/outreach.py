@@ -225,6 +225,14 @@ def overview() -> list[dict[str, Any]]:
             "state": row.state if row else "not_contacted",
             "operator_name": row.operator_name if row else None,
             "operator_email": row.operator_email if row else None,
+            # The venue's own published address, kept distinct from
+            # `operator_email`: that one is who we actually wrote to, this one
+            # is what the venue publishes. Both live in this gitignored DB —
+            # the published address was frontmatter until 2026-09-15, when the
+            # owner ruled that the directory should not publish a business's
+            # contact address on its behalf. The screen offers it as a starting
+            # point; it is never silently treated as contacted.
+            "published_email": row.published_email if row else None,
             "contacted_at": row.contacted_at if row else None,
             "days_since_contact": days,
             "needs_follow_up": bool(
@@ -237,6 +245,24 @@ def overview() -> list[dict[str, Any]]:
     return out
 
 
+def counts_by_state(rows: list[dict[str, Any]] | None = None) -> dict[str, int]:
+    """Tally across *published venues*, which is what the screen lists.
+
+    Not the same question as `outreach_store.counts_by_state()`, which counts
+    rows in `outreach.db` — and a venue only gets a row once something happens
+    to it or once `approve()` opens one. Every venue published before that call
+    existed has no row, so the store's tally reported "Not contacted 1" beside
+    a list of 39 not-contacted venues. `overview()` is driven by `_published`
+    and resolves each venue's effective state, so it is the honest denominator:
+    an outreach batch is sized by how many venues there are, not by how many
+    the table happens to know about.
+    """
+    tally: dict[str, int] = {}
+    for row in rows if rows is not None else overview():
+        tally[row["state"]] = tally.get(row["state"], 0) + 1
+    return tally
+
+
 def detail(slug: str) -> dict[str, Any]:
     row = outreach_store.ensure(slug)
     frontmatter = venue_frontmatter(slug)
@@ -246,6 +272,7 @@ def detail(slug: str) -> dict[str, Any]:
         "state": row.state,
         "operator_name": row.operator_name,
         "operator_email": row.operator_email,
+        "published_email": row.published_email,
         "contacted_at": row.contacted_at,
         "responded_at": row.responded_at,
         "resolved_at": row.resolved_at,

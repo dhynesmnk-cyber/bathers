@@ -60,10 +60,15 @@
     const data = await api("/api/outreach");
     venues = data.venues;
     const counts = data.counts || {};
-    countsLine.textContent = Object.keys(STATE_LABELS)
+    const parts = Object.keys(STATE_LABELS)
       .filter((k) => counts[k])
-      .map((k) => `${STATE_LABELS[k]} ${counts[k]}`)
-      .join(" · ") || "Nothing contacted yet.";
+      .map((k) => `${STATE_LABELS[k]} ${counts[k]}`);
+    const uncontacted = venues.filter((v) => v.state === "not_contacted");
+    const addressable = uncontacted.filter((v) => v.published_email).length;
+    if (uncontacted.length) {
+      parts.push(`${addressable} of ${uncontacted.length} uncontacted have a published address`);
+    }
+    countsLine.textContent = parts.join(" · ") || "Nothing contacted yet.";
     renderList();
   }
 
@@ -133,7 +138,21 @@
     el("detail-timeline").textContent = stamps.join(" · ") || "not contacted";
 
     operatorName.value = current.operator_name || "";
-    operatorEmail.value = current.operator_email || "";
+    // The address we already wrote to wins; failing that, the one the venue
+    // publishes is offered as a starting point. Both come from the gitignored
+    // outreach.db. The hint below always says which, because an address nobody
+    // has checked must not look like one somebody has.
+    operatorEmail.value = current.operator_email || current.published_email || "";
+    const emailHint = el("published-email-hint");
+    if (current.operator_email) {
+      emailHint.hidden = true;
+    } else if (current.published_email) {
+      emailHint.textContent = "From the venue's own site — worth a glance before you send.";
+      emailHint.hidden = false;
+    } else {
+      emailHint.textContent = "The venue publishes no contact address. Re-harvest it, or find one and type it in.";
+      emailHint.hidden = false;
+    }
     noteInput.value = "";
 
     // Fields, each with its current tier, tickable only where a confirmation

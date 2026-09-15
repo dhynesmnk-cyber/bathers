@@ -52,7 +52,7 @@ URL_FIELDS = ("website", "source_url")
 # can compare it against the zod schema and the SCHEMA.md table — the concrete
 # guard against a field drifting between the validation layers.
 KNOWN_FIELDS = {
-    "name", "country", "state_province", "city", "zipcode", "currency", "contact_email",
+    "name", "country", "state_province", "city", "zipcode", "currency",
     "category", "address", "latitude", "longitude", "website",
     "amenities", "facilities", "hours", "cost", "access", "status", "summary", "drafted", "verified", "source_url",
     "image", "image_source", "image_caption", "faq",
@@ -115,10 +115,6 @@ def validate_frontmatter(data: dict[str, Any]) -> list[FieldError]:
     zipcode = data.get("zipcode")
     if zipcode is not None and (not isinstance(zipcode, str) or not zipcode.strip()):
         errors.append(FieldError("zipcode", "zipcode must be a non-empty string or null"))
-
-    contact_email = data.get("contact_email")
-    if contact_email is not None and not _is_email(contact_email):
-        errors.append(FieldError("contact_email", "contact_email must be a valid email address or null"))
 
     category = data.get("category")
     if category not in CATEGORY_KEYS:

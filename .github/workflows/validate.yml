@@ -84,6 +84,11 @@ jobs:
       - name: "Check 13 — six-surface schema diff"
         run: python3 -m admin.pipeline.schema_surfaces
 
+      - name: "Check 30 — contact-address scan (harvest guard + offline scan)"
+        run: |
+          python3 -m admin.pipeline.orchestrator --self-test
+          python3 -m admin.pipeline.backfill_contact_email --self-test
+
       - name: "Check 12 — fact plausibility"
         run: python3 -m admin.pipeline.validate_facts
 
@@ -98,7 +103,7 @@ jobs:
           python3 -m admin.pipeline.validate_outreach
           python3 -m admin.pipeline.validate_outreach --self-test
 
-      - name: "Check 28 — coverage floor & concentration ceiling"
+      - name: "Check 28 — coverage floor"
         run: |
           python3 -m admin.pipeline.validate_coverage
           python3 -m admin.pipeline.validate_coverage --self-test

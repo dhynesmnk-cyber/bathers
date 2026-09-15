@@ -139,7 +139,6 @@ const spasCollection = defineCollection({
       zipcode: z.string().nullable().optional(),
       currency: z.string().optional(),
       website: z.string().url().nullable().optional(),
-      contact_email: z.string().email().nullable().optional(),
       category: z.enum(CATEGORIES),
       address: z.string(),
       latitude: z.number().nullable().optional(),

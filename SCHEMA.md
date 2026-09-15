@@ -47,7 +47,6 @@ Practical/logistics info, distinct from the bathing-experience amenities above �
 | `city` | string | ✓ | *(2026-09-08 — replaces `suburb`)* The suburb, town or city the venue sits in. |
 | `zipcode` | string | – | *(2026-09-08)* Postcode/ZIP as printed by the venue. Null when the page doesn't state one. |
 | `currency` | string | – | *(2026-09-08)* ISO-4217 code for every money figure on the venue, including `price`. Must equal `COUNTRY_CURRENCY[country]` (`AUD` for `AU`, `USD` for `US`); defaults from `country` when omitted. This is why `price`'s keys lost their `_aud` suffix — the currency is a field now, not a suffix. |
-| `contact_email` | string | – | *(2026-09-08)* The venue's own published contact address, when it publishes one. Never a guessed or pattern-built address. |
 | `category` | enum | ✓ | *(2026-07-22, `day_spa` retired/`hotel_spa` added 2026-07-26)* One of `thermal_springs`, `bathhouse`, `hotel_spa`, `other`. The directory is scoped to venues with a pool or a sauna as a central offering; `hotel_spa` is for hotel/lodge venues with a real bathing circuit, not a treatment-only spa. Set by the Architect from the Google Places block's `primaryType` or editorial judgement; reviewer-editable. |
 | `address` | string | ✓ | Street address, single line. |
 | `latitude` | number | – | *(2026-07-22: no longer required; bounds became country-scoped 2026-09-08)* Inside `COUNTRY_LATITUDE_BOUNDS[country]` when present — −44.0 … −9.0 for `AU`, 18.0 … 72.0 for `US`; build fails outside. Null when geocoding the address found no match — the venue simply doesn't appear on the map, it is not blocked from publishing. No manual entry UI; see §4. |
@@ -153,6 +152,12 @@ CREATE TABLE facilities (
 
 The DB is derived and disposable (TRD §5): rebuildable in full from `_published` frontmatter. Approve = upsert on `slug`.
 
+**Note on the location fields (2026-09-10, correcting a 2026-08-19 omission):** the block above named `state` and `suburb` until today. The international migration replaced those with `country`/`state_province`/`city`/`zipcode` across the content, the zod schema and `PROMPTS/harvester.md`, but left this section describing the retired shape — so the prompt the Harvester actually reads and the contract this document publishes disagreed for three weeks. The block above is now the live contract; `state_province` is the subdivision code of whichever `country` is set, which is why the country has to be decided first (`WA` is Western Australia under `AU` and Washington under `US`).
+
+**Note on `contact_email` (2026-09-15, Gate 13):** this *is* a Harvester field — unlike every "no new Harvester fields" note below — because it is a string published verbatim on the page, not a judgement drawn from `facts`. **It is not a frontmatter field.** The address is collected because Gate 13's outreach needs somewhere to write, and it is written to the gitignored `data/outreach.db` (`outreach.published_email`), never to `_published/`: the directory should not publish a business's contact address on its behalf, and `_published/` is committed to a public repository (owner decision, 2026-09-15). So it appears in the Harvester contract above and in `orchestrator.HARVESTER_REQUIRED_KEYS`, and deliberately in none of §2's frontmatter surfaces — `schema_surfaces.py` asserts both halves of that, because a field that is collected but must not be published is exactly the kind of thing a later change re-adds by accident.
+
+It is still resolved straight from the Harvester's JSON rather than trusted through the Architect and Gatekeeper — the same posture as `amenities`, and for a sharper reason: the address is used to email a real business, so one paraphrased in a rewrite pass is worse than none. `orchestrator._resolve_contact_email()` drops a malformed or administrative address (`noreply@`, `webmaster@`) and flags an off-domain address without dropping it, since small operators legitimately publish a Gmail address. Harvester rule 9 carries the honesty constraint: published or `null`, never pattern-built from the domain.
+
 **Note on FAQ:** not stored in SQLite — like the MDX body, it is rendered content, not a query/filter dimension.
 
 **Note on `temperatures`/`dress_code`/`session_gender`/`session_gender_note`/`silence_policy`/`phone_policy`/`minimum_age` (2026-07-26; promoted 2026-07-31):** originally rendered-only, these were **promoted into SQLite on 2026-07-31** (Gate 7, §2a) — exactly the "add real columns when a feature needs to sort/filter on them" path this note anticipated, now triggered by Gate 10's comparison pages. `temperatures` is flattened into `sauna_*`/`cold_plunge_*` columns; structured `price` and `drive_time` likewise. **Still rendered-only, not in SQLite:** `verified`, `verification`, `change_log`, `faq` — provenance/metadata, not query dimensions.
@@ -164,12 +169,15 @@ The Harvester agent must emit **only** this object — no prose, no markdown fen
 ```json
 {
   "name": "string",
-  "state": "VIC|NSW|QLD|SA|WA|TAS|NT|ACT|null",
-  "suburb": "string|null",
+  "country": "AU|US",
+  "state_province": "string|null",
+  "city": "string|null",
+  "zipcode": "string|null",
   "address": "string|null",
   "latitude": null,
   "longitude": null,
   "website": "string",
+  "contact_email": "string|null",
   "amenities": {
     "magnesium_pool": false, "infrared_sauna": false,
     "traditional_sauna": false, "cold_plunge": false, "led_therapy": false

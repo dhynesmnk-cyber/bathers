@@ -30,6 +30,12 @@ venues in it, say. It is the escape the gate contract allows, and it is
 deliberately narrow: it excuses a subdivision from the *floor*, never from being
 counted, and an undated or unexplained entry fails. It is not a place to record
 that the work has not been done yet.
+
+`COVERAGE-LEADS.md` is the other half of this: where the shortfall is a
+backlog, it holds the named leads and the `discovery.py` region strings to work
+through. It is unverified recall by design and nothing in it is publishable —
+this module points at it when it reports a shortfall, so the number comes with
+somewhere to start.
 """
 
 from __future__ import annotations
@@ -137,6 +143,7 @@ def report() -> tuple[list[str], list[str]]:
     if shortfalls:
         lines.append(f"below the floor of {COVERAGE_FLOOR} ({len(shortfalls)} subdivision(s)):")
         lines.extend(shortfalls)
+        lines.append("  research leads and discovery regions: COVERAGE-LEADS.md")
         if FLOOR_IS_BLOCKING:
             failures.extend(s.strip() + " — below the coverage floor" for s in shortfalls)
     else:
