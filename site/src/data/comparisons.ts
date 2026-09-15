@@ -6,7 +6,7 @@
 // threshold; thinner ones are skipped and logged, never a hard failure
 // (mirrors SCHEMA.md's "omit if thin" posture).
 import type { CollectionEntry } from "astro:content";
-import { AMENITY_NOTATION, CATEGORY_LABELS, STATE_NAMES, priceRange } from "../config";
+import { AMENITY_NOTATION, CATEGORY_LABELS, priceRange, subdivisionName } from "../config";
 
 export const COMPARISON_MIN_VENUES = 5;
 
@@ -251,10 +251,5 @@ export function comparisonFingerprint(columns: Column[], venues: Venue[]): Finge
 // venue-side "featured in" links all agree.
 export const comparePath = (slug: string) => `/compare/${slug}/`;
 export function stateHeading(v: Venue): string {
-  const stateOrProvince = v.data.state_province;
-  if (v.data.country && v.data.country !== 'AU') {
-    // For non-AU venues, we don't have STATE_NAMES, so just return state_province
-    return stateOrProvince;
-  }
-  return STATE_NAMES[v.data.state_province];
+  return subdivisionName(v.data.country, v.data.state_province);
 }

@@ -397,6 +397,21 @@ def subdivision_slug(country: str, code: str) -> str:
     return slugify(SUBDIVISION_NAMES[country].get(code, code))
 
 
+def subdivision_name(country: str, code: str) -> str:
+    """Display name for a subdivision, scoped by country. Mirrors
+    site/src/config.ts's subdivisionName exactly. STATE_NAMES is the AU table
+    alone, so indexing it with a US code raises KeyError here and yields
+    undefined on the TS side; both are avoided by going through this."""
+    return SUBDIVISION_NAMES.get(country, {}).get(code, code)
+
+
+def foreword_key(country: str, code: str) -> str:
+    """Key for a subdivision's entry in forewords.json. Country-qualified: the
+    bare code is not unique across countries, so AU's WA and US's WA would
+    otherwise share one foreword. Mirrors site/src/config.ts's forewordKey."""
+    return f"{country}:{code}"
+
+
 def world_region_for_country(country: str):
     for region in WORLD_REGIONS:
         if country in region["countries"]:
@@ -416,17 +431,6 @@ def place_path(country: str, subdivision: str | None = None, leaf: str | None = 
         if leaf:
             parts.append(leaf)
     return "/".join(parts) + "/"
-
-STATE_NAMES = {
-    "VIC": "Victoria",
-    "NSW": "New South Wales",
-    "QLD": "Queensland",
-    "SA": "South Australia",
-    "WA": "Western Australia",
-    "TAS": "Tasmania",
-    "NT": "Northern Territory",
-    "ACT": "Australian Capital Territory",
-}
 
 AMENITY_FULL_NAMES = {
     "magnesium_pool": "magnesium pool",

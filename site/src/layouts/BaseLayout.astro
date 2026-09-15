@@ -5,7 +5,7 @@ import CornerMenu from "../components/CornerMenu.astro";
 import Footer from "../components/Footer.astro";
 import GrainOverlay from "../components/GrainOverlay.astro";
 import SiteLogo from "../components/SiteLogo.astro";
-import { AMENITY_KEYS, AMENITY_NOTATION, CATEGORY_LABELS, GOATCOUNTER_SITE, SITE_NAME, SITE_TAGLINE, STATE_NAMES } from "../config";
+import { AMENITY_KEYS, AMENITY_NOTATION, CATEGORY_LABELS, GOATCOUNTER_SITE, SITE_NAME, SITE_TAGLINE, subdivisionName } from "../config";
 import "../styles/global.css";
 
 interface Props {
@@ -63,7 +63,7 @@ const searchIndex = searchVenues.map((v) => ({
   name: v.data.name,
   city: v.data.city,
   state_province: v.data.state_province,
-  state: STATE_NAMES[v.data.state_province],
+  state: subdivisionName(v.data.country, v.data.state_province),
   category: CATEGORY_LABELS[v.data.category],
   amenities: AMENITY_KEYS.filter((k) => v.data.amenities?.[k]).map((k) => AMENITY_NOTATION[k].full),
 }));

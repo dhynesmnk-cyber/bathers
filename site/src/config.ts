@@ -374,6 +374,24 @@ export function subdivisionSlug(country: Country, code: string): string {
   return slugify(SUBDIVISION_NAMES[country][code] ?? code);
 }
 
+/** Display name for a subdivision, scoped by country. `STATE_NAMES` is the AU
+ *  table alone: indexing it with a US code yields `undefined`, which renders as
+ *  an empty breadcrumb or a JSON-LD field with no value — invisible in a build
+ *  that still passes. Every display path goes through here instead. An unknown
+ *  code falls back to itself: wrong but legible, which is the failure mode you
+ *  can actually see. */
+export function subdivisionName(country: Country, code: string): string {
+  return SUBDIVISION_NAMES[country]?.[code] ?? code;
+}
+
+/** Key for a subdivision's entry in forewords.json. Country-qualified because
+ *  the bare code is not unique across countries: AU's WA and US's WA would
+ *  otherwise share one foreword, and whichever was written first would silently
+ *  describe the other. Mirrors admin/config.py's foreword_key. */
+export function forewordKey(country: Country, code: string): string {
+  return `${country}:${code}`;
+}
+
 export function worldRegionForCountry(country: Country): WorldRegion | undefined {
   return WORLD_REGIONS.find((r) => r.countries.includes(country));
 }

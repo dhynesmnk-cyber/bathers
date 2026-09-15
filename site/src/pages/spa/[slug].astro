@@ -14,7 +14,6 @@ import {
   FACILITY_KEYS,
   FACILITY_LABELS,
   SESSION_GENDER_LABELS,
-  STATE_NAMES,
   VERIFIABLE_FIELDS,
   VERIFIABLE_FIELD_LABELS,
   categoryUrlSlug,
@@ -24,6 +23,7 @@ import {
   placePath,
   priceRange,
   saunaTemperatureLine,
+  subdivisionName,
   type GeoPoint,
   worldRegionForCountry,
 } from "../../config";
@@ -123,7 +123,7 @@ const localBusinessLd: Record<string, unknown> = {
     "@type": "PostalAddress",
     streetAddress: data.address,
     addressLocality: data.city,
-    addressRegion: STATE_NAMES[stateProvince],
+    addressRegion: subdivisionName(country, stateProvince),
     addressCountry: data.country || "AU",
   },
 };
@@ -165,7 +165,7 @@ const breadcrumbLd = {
     { "@type": "ListItem", position: 2, name: "Places", item: new URL("/places/", Astro.site).href },
     { "@type": "ListItem", position: 3, name: worldRegionForCountry(country)!.name, item: new URL(`/places/${worldRegionForCountry(country)!.slug}/`, Astro.site).href },
     { "@type": "ListItem", position: 4, name: COUNTRY_NAMES[country], item: new URL(placePath(country), Astro.site).href },
-    { "@type": "ListItem", position: 5, name: STATE_NAMES[stateProvince], item: new URL(placePath(country, stateProvince), Astro.site).href },
+    { "@type": "ListItem", position: 5, name: subdivisionName(country, stateProvince), item: new URL(placePath(country, stateProvince), Astro.site).href },
     { "@type": "ListItem", position: 6, name: data.name, item: new URL(`/spa/${venue.id}/`, Astro.site).href },
   ],
 };
@@ -246,7 +246,7 @@ const faqLd = data.faq && data.faq.length > 0
               <li class="py-3" style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);">
                 <a href={`/spa/${item.id}/`} class="font-display text-xl font-light text-[var(--ink)]">{item.data.name}</a>
                 <span class="ml-2" style="color: var(--ink-faded);">
-                  {item.data.city}, {STATE_NAMES[nearbyStateProvince]} — {formatDistanceKm(distanceKm)}
+                  {item.data.city}, {subdivisionName(item.data.country, nearbyStateProvince)} — {formatDistanceKm(distanceKm)}
                 </span>
               </li>
             );
@@ -279,7 +279,7 @@ const faqLd = data.faq && data.faq.length > 0
           </p>
         )}
         <p class="mt-4">
-          <a href={placePath(country, stateProvince)}>More bathhouses in {STATE_NAMES[stateProvince]}</a>
+          <a href={placePath(country, stateProvince)}>More bathhouses in {subdivisionName(country, stateProvince)}</a>
         </p>
         <p class="mt-4">
           <a href={`/category/${categoryUrlSlug(data.category)}/`}>More {CATEGORY_LABELS[data.category].toLowerCase()} venues</a>

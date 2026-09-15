@@ -7,7 +7,7 @@
 // by hand: no figure here is a literal.
 import { getCollection } from "astro:content";
 import { resolveArticleComparison } from "../../data/comparisons";
-import { STATE_NAMES } from "../../config";
+import { subdivisionName } from "../../config";
 
 interface Props {
   queryKey: string;
@@ -28,7 +28,7 @@ const isPrice = lead?.header === "Adult drop-in";
     isPrice ? (
       <Fragment>
         Of the {n} venues compared here, {first.data.name} in {first.data.city},{" "}
-        {STATE_NAMES[first.data.state_province]} publishes the lowest adult drop-in price, at {cell(first)}.
+        {subdivisionName(first.data.country, first.data.state_province)} publishes the lowest adult drop-in price, at {cell(first)}.
         {second && (
           <Fragment>
             {" "}
@@ -38,7 +38,7 @@ const isPrice = lead?.header === "Adult drop-in";
       </Fragment>
     ) : (
       <Fragment>
-        {first.data.name} in {first.data.city}, {STATE_NAMES[first.data.state_province]} leads the {n} venues
+        {first.data.name} in {first.data.city}, {subdivisionName(first.data.country, first.data.state_province)} leads the {n} venues
         compared here{lead && cell(first) ? <Fragment> at {cell(first)}</Fragment> : null}.
       </Fragment>
     )

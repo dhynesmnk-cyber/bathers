@@ -11,7 +11,7 @@ import {
   coldPlungeTemperatureLine,
   priceRange,
   saunaTemperatureLine,
-  STATE_NAMES,
+  subdivisionName,
 } from "../config";
 
 type Venue = CollectionEntry<"spas">;
@@ -85,10 +85,16 @@ export function h2hTitle(a: Venue, b: Venue): string {
 }
 
 export function h2hLead(a: Venue, b: Venue): string {
-  const where =
-    a.data.state_province === b.data.state_province && a.data.city === b.data.city
-      ? `both in ${a.data.city}, ${STATE_NAMES[a.data.state_province]}`
-      : `both in ${STATE_NAMES[a.data.state_province]}`;
+  // Country is part of the comparison, not just the subdivision: AU's WA and
+  // US's WA are different places that share a code, and "both in Western
+  // Australia" would be a confident lie about a pair that is nothing of the sort.
+  const sameSubdivision =
+    a.data.country === b.data.country && a.data.state_province === b.data.state_province;
+  const where = sameSubdivision
+    ? a.data.city === b.data.city
+      ? `both in ${a.data.city}, ${subdivisionName(a.data.country, a.data.state_province)}`
+      : `both in ${subdivisionName(a.data.country, a.data.state_province)}`
+    : "in different places";
   const kind = a.data.category === b.data.category ? CATEGORY_LABELS[a.data.category].toLowerCase() : "bathing";
   return `${a.data.name} and ${b.data.name} are ${where} — two ${kind} venues, side by side. Every figure below is drawn from each venue's own published materials.`;
 }

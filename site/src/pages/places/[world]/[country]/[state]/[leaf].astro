@@ -25,6 +25,7 @@ import {
   SUBDIVISION_NAMES,
   WORLD_REGIONS,
   amenityUrlSlug,
+  forewordKey,
   placePath,
   subdivisionSlug,
   type Country,
@@ -123,7 +124,7 @@ const pageTitle =
     : `${label} in ${stateName} — ${venues.length} ${noun}`;
 const description =
   kind === "filter" && amenityKey
-    ? FOREWORDS[code]?.amenity_meta_descriptions?.[amenityKey] ||
+    ? FOREWORDS[forewordKey(country as Country, code)]?.amenity_meta_descriptions?.[amenityKey] ||
       `${label} at ${venues.length} ${noun} in ${stateName}, compared side by side.`
     : kind === "area"
       ? `Bathhouses, saunas and hot springs in ${label}, ${stateName} — ${venues.length} ${noun}.`

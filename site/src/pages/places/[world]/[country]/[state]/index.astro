@@ -17,6 +17,7 @@ import {
   SUBDIVISION_NAMES,
   WORLD_REGIONS,
   amenityUrlSlug,
+  forewordKey,
   placePath,
   subdivisionSlug,
   type Country,
@@ -84,7 +85,7 @@ const path = (leaf?: string) => placePath(country as Country, code, leaf);
 <BaseLayout
   title={`Bathhouses & Hot Springs in ${stateName} — ${venues.length} ${noun}`}
   description={
-    FOREWORDS[code]?.meta_description ||
+    FOREWORDS[forewordKey(country as Country, code)]?.meta_description ||
     `Find bathhouses, hot springs and saunas in ${stateName} — ${venues.length} ${noun}, no sponsored listings.`
   }
   canonicalPath={path()}
