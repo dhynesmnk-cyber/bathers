@@ -6,7 +6,7 @@ import Icon from "../components/Icon.astro";
 import MarginAnimal from "../components/MarginAnimal.astro";
 import SearchBox from "../components/SearchBox.astro";
 import PromoClaimModal from "../components/PromoClaimModal.astro";
-import { AMENITY_KEYS, AMENITY_NOTATION, COUNTRY_NAMES, POOL_NATIONAL_FILTERS, SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES, SUBDIVISION_NAMES, WORLD_REGIONS, amenityUrlSlug, placePath } from "../config";
+import { AMENITY_KEYS, AMENITY_NOTATION, COUNTRY_NAMES, POOL_NATIONAL_FILTERS, SITE_NAME, SITE_TAGLINE, SUBDIVISION_NAMES, WORLD_REGIONS, amenityUrlSlug, placePath } from "../config";
 
 const venues = await getCollection("spas");
 
@@ -30,12 +30,6 @@ const byCountry = WORLD_REGIONS.flatMap((region) =>
     }),
 );
 const multiCountry = byCountry.length > 1;
-
-// The homepage list still groups venues by subdivision for the results area.
-const byState = STATES.map((state) => ({
-  state,
-  venues: venues.filter((v) => v.data.state_province === state),
-})).filter((group) => group.venues.length > 0);
 
 // Homepage chooser (DESIGN.md §5/§6/§7, 2026-07-23 exception) — features
 // (formerly labelled "amenities" in copy; schema/field names unchanged, see
