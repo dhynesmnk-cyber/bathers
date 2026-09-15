@@ -173,11 +173,16 @@ def backfill(
             outreach_store.set_published_email(slug, email)
 
     if unreachable:
+        # Carry --dry-run into the suggested command when we are in one. Without
+        # this the hint silently promotes a dry run to a live write, which reads
+        # as the command having been ignored when the next dry run still shows
+        # nothing recorded.
+        flags = " --dry-run" if dry_run else ""
         print(
             "\ncould not read " + str(len(unreachable)) + " venue(s). Retry just those with a real\n"
             "browser (same User-Agent, so this helps with JS-rendered contact pages,\n"
             "not with a User-Agent block):\n"
-            "  python3 -m admin.pipeline.backfill_contact_email --playwright --slugs "
+            "  python3 -m admin.pipeline.backfill_contact_email --playwright" + flags + " --slugs "
             + ",".join(unreachable)
         )
 
@@ -272,7 +277,18 @@ def main() -> None:
     updated, missed = backfill(
         dry_run=args.dry_run, slugs=slugs, overwrite=args.overwrite, use_playwright=args.playwright
     )
-    print(f"{updated} address(es) found, {missed} venue(s) without one" + (" (dry run — nothing written)" if args.dry_run else ""))
+    print(f"{updated} address(es) found, {missed} venue(s) without one")
+    if args.dry_run:
+        # Say what is still true after this run, not just what the flag was: a
+        # dry run that found 30 addresses looks like success until you notice
+        # the outreach screen still reads zero.
+        print(
+            "DRY RUN — nothing was recorded. The outreach screen will still show no "
+            "addresses.\nRun the same command again without --dry-run to record "
+            f"{'them' if updated != 1 else 'it'}."
+        )
+    elif updated:
+        print(f"recorded in data/outreach.db — the outreach screen will show {updated} address(es)")
     if not updated and not missed and not slugs:
         print("every venue already carries a contact address — pass --overwrite to re-read them")
 
