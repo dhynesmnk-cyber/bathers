@@ -54,14 +54,17 @@ export async function getStaticPaths() {
         };
         const shared = { region, country, code };
 
-        for (const area of REGIONS) {
+        // Scoped to this country and subdivision: slugs are unique only within
+        // one, so iterating all of REGIONS and matching on slug alone could pair
+        // this page with another country's area of the same name.
+        for (const area of REGIONS.filter((r) => r.country === country && r.subdivision === code)) {
           const matching = inState.filter(
             (v) => regionForCity(v.data.country, v.data.state_province, v.data.city)?.slug === area.slug,
           );
           if (matching.length < 2) continue; // same >=2 threshold the old region hub used
           paths.push({
             params: { ...base, leaf: area.slug },
-            props: { ...shared, kind: "area", label: area.name, venues: matching },
+            props: { ...shared, kind: "area", label: area.name, area, venues: matching },
           });
         }
 
@@ -110,24 +113,32 @@ export async function getStaticPaths() {
   return paths;
 }
 
-const { region, country, code, kind, label, glossaryKey, amenityKey, venues } = Astro.props;
+const { region, country, code, kind, label, area, glossaryKey, amenityKey, venues } = Astro.props;
 const countryName = COUNTRY_NAMES[country as Country];
 const stateName = SUBDIVISION_NAMES[country as Country][code];
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 const noun = plural(venues.length, "venue", "venues");
 const leafSlug = Astro.params.leaf!;
 
+// "on the <area>" was hardcoded, which read correctly for the Mornington
+// Peninsula and absurdly for everywhere else — "on the Melbourne", "on the
+// Hobart". Areas that need more than a plain "in" declare it themselves.
+const areaLocative = area?.locative ?? `in ${label}`;
+// And the state is only worth repeating when the area's name doesn't already
+// carry it: "North Central Florida, Florida" says Florida twice.
+const areaAndState = label.includes(stateName) ? label : `${label}, ${stateName}`;
+
 const heading = kind === "area" ? label : `${label} in ${stateName}`;
 const pageTitle =
   kind === "area"
-    ? `Bathhouses & Hot Springs on the ${label} — ${venues.length} ${noun}`
+    ? `Bathhouses & Hot Springs ${areaLocative} — ${venues.length} ${noun}`
     : `${label} in ${stateName} — ${venues.length} ${noun}`;
 const description =
   kind === "filter" && amenityKey
     ? FOREWORDS[forewordKey(country as Country, code)]?.amenity_meta_descriptions?.[amenityKey] ||
       `${label} at ${venues.length} ${noun} in ${stateName}, compared side by side.`
     : kind === "area"
-      ? `Bathhouses, saunas and hot springs in ${label}, ${stateName} — ${venues.length} ${noun}.`
+      ? `Bathhouses, saunas and hot springs in ${areaAndState} — ${venues.length} ${noun}.`
       : `${label} at ${venues.length} ${noun} in ${stateName}.`;
 
 const sorted = [...venues].sort((a: any, b: any) => a.data.name.localeCompare(b.data.name));

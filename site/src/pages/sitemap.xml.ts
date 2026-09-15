@@ -121,14 +121,18 @@ export const GET: APIRoute = async ({ site }) => {
   for (const p of HEAD_TO_HEAD) {
     if (venueIds.has(p.a) && venueIds.has(p.b)) entries.push({ path: comparePath(p.slug) });
   }
+  const regionKey = (r: { country: string; subdivision: string; slug: string }) =>
+    `${r.country}:${r.subdivision}:${r.slug}`;
   const regionCounts = new Map<string, number>();
   for (const v of venues) {
     const r = regionForCity(v.data.country, v.data.state_province, v.data.city);
-    if (r) regionCounts.set(r.slug, (regionCounts.get(r.slug) ?? 0) + 1);
+    if (r) regionCounts.set(regionKey(r), (regionCounts.get(regionKey(r)) ?? 0) + 1);
   }
   // Area pages sit under their subdivision now, not at /region/<slug>/.
   for (const r of REGIONS) {
-    if ((regionCounts.get(r.slug) ?? 0) >= 2) entries.push({ path: placePath("AU", r.state, r.slug) });
+    if ((regionCounts.get(regionKey(r)) ?? 0) >= 2) {
+      entries.push({ path: placePath(r.country, r.subdivision, r.slug) });
+    }
   }
 
   const urls = entries

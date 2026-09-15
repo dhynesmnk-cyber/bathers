@@ -37,15 +37,23 @@ REGIONS_TS = SITE_DIR / "src" / "data" / "regions.ts"
 CONFIG_TS = SITE_DIR / "src" / "config.ts"
 
 
-def _area_slugs_by_state() -> dict[str, list[str]]:
-    """Region taxonomy slugs, per AU subdivision, read from regions.ts — the
-    taxonomy's own file, so this cannot drift from what the routes generate."""
+def _area_slugs_by_subdivision() -> dict[tuple[str, str], list[str]]:
+    """Region taxonomy slugs, per (country, subdivision), read from regions.ts —
+    the taxonomy's own file, so this cannot drift from what the routes generate.
+
+    Keyed by country as well as code (Gate 16): the subdivision code alone is
+    not unique, so an AU "WA" region and a US "WA" region would land in one
+    bucket and their slugs would be checked for collisions against each other
+    while the real collisions — within a single subdivision's own URL level —
+    went unexamined."""
     text = REGIONS_TS.read_text(encoding="utf-8")
-    out: dict[str, list[str]] = {}
-    for slug, state in re.findall(
-        r'\{\s*slug:\s*"([a-z0-9-]+)",\s*name:\s*"[^"]+",\s*state:\s*"([A-Z]{2,3})"', text
+    out: dict[tuple[str, str], list[str]] = {}
+    for slug, country, subdivision in re.findall(
+        r'\{\s*slug:\s*"([a-z0-9-]+)",\s*name:\s*"[^"]+",\s*country:\s*"([A-Z]{2})",'
+        r'\s*subdivision:\s*"([A-Z]{2,3})"',
+        text,
     ):
-        out.setdefault(state, []).append(slug)
+        out.setdefault((country, subdivision), []).append(slug)
     return out
 
 
@@ -72,16 +80,17 @@ def run() -> list[str]:
 
     # 1. Area and filter slugs must not collide within a subdivision.
     filters = _filter_slugs()
-    for state, areas in _area_slugs_by_state().items():
+    for (country, subdivision), areas in _area_slugs_by_subdivision().items():
+        where = f"{country}/{subdivision}"
         clash = sorted(set(areas) & filters)
         if clash:
             failures.append(
-                f"{state}: area slug(s) collide with feature-filter slug(s) at the same URL "
+                f"{where}: area slug(s) collide with feature-filter slug(s) at the same URL "
                 f"level — one page would silently overwrite the other: {', '.join(clash)}"
             )
         duplicates = sorted({s for s in areas if areas.count(s) > 1})
         if duplicates:
-            failures.append(f"{state}: duplicate area slug(s): {', '.join(duplicates)}")
+            failures.append(f"{where}: duplicate area slug(s): {', '.join(duplicates)}")
 
     # 2. Every published venue's place must resolve to a declared one.
     for path in sorted(PUBLISHED_DIR.glob("*.mdx")):

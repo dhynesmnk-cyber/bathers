@@ -76,7 +76,12 @@ for (const v of venues as any[]) {
   const r = regionForCity(v.data.country, v.data.state_province, v.data.city);
   if (r) areaCounts.set(r.slug, (areaCounts.get(r.slug) ?? 0) + 1);
 }
-const areas = REGIONS.filter((r) => (areaCounts.get(r.slug) ?? 0) >= 2);
+// Scoped to this page's own country and subdivision: region slugs are unique
+// only within one, so filtering on the count alone would let another
+// subdivision's area appear here if the two ever shared a slug.
+const areas = REGIONS.filter(
+  (r) => r.country === country && r.subdivision === code && (areaCounts.get(r.slug) ?? 0) >= 2,
+);
 
 const sorted = [...venues].sort((a: any, b: any) => a.data.name.localeCompare(b.data.name));
 const path = (leaf?: string) => placePath(country as Country, code, leaf);
