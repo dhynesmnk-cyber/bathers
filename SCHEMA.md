@@ -82,7 +82,7 @@ Slug = filename (`peninsula-hot-springs.mdx`), kebab-case, unique across `_stagi
 
 ### 2a. Verification, structured price & drive-time (2026-07-31)
 
-Added for the SEO/AI-citation engagement (Gate 7): the fact model a comparison page or an AI answer can cite needs provenance, structured numbers, and drive-time. Constants live once in `admin/config.py` / `site/src/config.ts` (`CONFIDENCE_TIERS`, `VERIFIABLE_FIELDS`, `CAPITAL_CITIES`) and are mirrored, same posture as the amenity/facility keys.
+Added for the SEO/AI-citation engagement (Gate 7): the fact model a comparison page or an AI answer can cite needs provenance, structured numbers, and drive-time. Constants live once in `admin/config.py` / `site/src/config.ts` (`CONFIDENCE_TIERS`, `VERIFIABLE_FIELDS`, `DRIVE_TIME_ORIGINS`) and are mirrored, same posture as the amenity/facility keys.
 
 **Confidence tiers** (weakest → strongest): `unverified`, `published_by_venue`, `observed_on_visit`, `operator_confirmed`. The pipeline only ever sets `published_by_venue` (drafted from the venue's own published materials). `observed_on_visit` exists for completeness but is never pipeline-set — this project makes no first-hand visits (CLAUDE.md rule 6); only a reviewer who genuinely visited may set it. `operator_confirmed` is reached via Gate 8 outreach. A re-harvest **upgrades, never silently downgrades** a field's tier (`CONFIDENCE_TIER_RANK`).
 

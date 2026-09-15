@@ -198,8 +198,8 @@ def send_outreach_email(
 
     body_text = f"""{greeting}
 
-I run Where We Bathe, a free directory of Australian bathhouses, saunas and hot
-springs. {venue_name} is listed at {site}/spa/{slug}/.
+I run Where We Bathe, a free directory of bathhouses, saunas and hot springs.
+{venue_name} is listed at {site}/spa/{slug}/.
 
 The listing is free, we take nothing for it, and nothing on the site ranks
 because a venue paid. I am writing because I would rather publish what you tell
@@ -224,7 +224,7 @@ Where We Bathe
 
     recorded_html = "".join(f"<li>{html.escape(line)}</li>" for line in lines) or "<li>(we hold no detail beyond the basics)</li>"
     body_html = f"""<p>{html.escape(greeting)}</p>
-<p>I run Where We Bathe, a free directory of Australian bathhouses, saunas and hot springs.
+<p>I run Where We Bathe, a free directory of bathhouses, saunas and hot springs.
 {html.escape(venue_name)} is listed at <a href="{site}/spa/{slug}/">{site}/spa/{slug}/</a>.</p>
 <p>The listing is free, we take nothing for it, and nothing on the site ranks because a venue paid.
 I am writing because I would rather publish what you tell me than what I could work out from your website.</p>

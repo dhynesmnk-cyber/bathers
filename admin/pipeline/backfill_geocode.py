@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import argparse
 
-from admin.config import PUBLISHED_DIR
+from admin.config import DEFAULT_COUNTRY, PUBLISHED_DIR
 from admin.pipeline import data_store, geocode
 from admin.pipeline.staging import render_mdx, split_frontmatter
 
@@ -37,7 +37,7 @@ def backfill(dry_run: bool = False) -> tuple[int, int]:
         if data.get("latitude") is not None and data.get("longitude") is not None:
             continue
         address = data.get("address") or ""
-        coords = geocode.geocode_address(address, log=_log)
+        coords = geocode.geocode_address(address, data.get("country", DEFAULT_COUNTRY), log=_log)
         if coords is None:
             missed += 1
             print(f"  MISS {slug}: no match for {address!r}")

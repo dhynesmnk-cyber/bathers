@@ -75,7 +75,7 @@ export const SESSION_GENDER_LABELS: Record<(typeof SESSION_GENDER_KEYS)[number],
 
 // ---------------------------------------------------------------------------
 // Gate 7 (verification metadata / structured facts, 2026-07-31). Mirrors
-// admin/config.py's CONFIDENCE_TIERS / VERIFIABLE_FIELDS / CAPITAL_CITIES
+// admin/config.py's CONFIDENCE_TIERS / VERIFIABLE_FIELDS / DRIVE_TIME_ORIGINS
 // exactly (SCHEMA.md "one contract" rule).
 // ---------------------------------------------------------------------------
 
@@ -127,17 +127,34 @@ export interface Verification {
   date: Date | string;
 }
 
-// State capital CBDs — drive-time reference origins (user sign-off 2026-07-31,
-// "from nearest capital").
-export const CAPITAL_CITIES: Record<(typeof STATES)[number], { name: string; latitude: number; longitude: number }> = {
-  VIC: { name: "Melbourne", latitude: -37.8136, longitude: 144.9631 },
-  NSW: { name: "Sydney", latitude: -33.8688, longitude: 151.2093 },
-  QLD: { name: "Brisbane", latitude: -27.4698, longitude: 153.0251 },
-  SA: { name: "Adelaide", latitude: -34.9285, longitude: 138.6007 },
-  WA: { name: "Perth", latitude: -31.9523, longitude: 115.8613 },
-  TAS: { name: "Hobart", latitude: -42.8826, longitude: 147.3257 },
-  NT: { name: "Darwin", latitude: -12.4637, longitude: 130.8444 },
-  ACT: { name: "Canberra", latitude: -35.2809, longitude: 149.13 },
+// Drive-time reference origins, per country. Mirrors admin/config.py's
+// DRIVE_TIME_ORIGINS exactly — see that file for why US uses major metros
+// where AU uses state capitals.
+export interface DriveTimeOrigin {
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
+export const DRIVE_TIME_ORIGINS: Record<string, readonly DriveTimeOrigin[]> = {
+  AU: [
+    { name: "Melbourne", latitude: -37.8136, longitude: 144.9631 },
+    { name: "Sydney", latitude: -33.8688, longitude: 151.2093 },
+    { name: "Brisbane", latitude: -27.4698, longitude: 153.0251 },
+    { name: "Adelaide", latitude: -34.9285, longitude: 138.6007 },
+    { name: "Perth", latitude: -31.9523, longitude: 115.8613 },
+    { name: "Hobart", latitude: -42.8826, longitude: 147.3257 },
+    { name: "Darwin", latitude: -12.4637, longitude: 130.8444 },
+    { name: "Canberra", latitude: -35.2809, longitude: 149.13 },
+  ],
+  US: [
+    { name: "Miami", latitude: 25.7617, longitude: -80.1918 },
+    { name: "Tampa", latitude: 27.9506, longitude: -82.4572 },
+    { name: "Orlando", latitude: 28.5383, longitude: -81.3792 },
+    { name: "Jacksonville", latitude: 30.3322, longitude: -81.6557 },
+    { name: "Tallahassee", latitude: 30.4383, longitude: -84.2807 },
+    { name: "Gainesville", latitude: 29.6516, longitude: -82.3248 },
+  ],
 };
 
 export interface DriveTime {

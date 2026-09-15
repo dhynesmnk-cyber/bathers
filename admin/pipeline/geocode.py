@@ -15,7 +15,7 @@ from typing import Callable
 
 import httpx
 
-from admin.config import GEOCODE_CACHE_PATH, GEOCODER, GEOCODER_USER_AGENT
+from admin.config import DEFAULT_COUNTRY, GEOCODE_CACHE_PATH, GEOCODER, GEOCODER_USER_AGENT
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 MIN_INTERVAL_SECONDS = 1.0  # Nominatim usage policy: max 1 req/sec
@@ -33,8 +33,16 @@ def _wait_for_politeness() -> None:
     _last_request_time = time.monotonic()
 
 
-def _cache_key(address: str) -> str:
-    return re.sub(r"\s+", " ", address).strip().lower()
+def _cache_key(address: str, country: str = DEFAULT_COUNTRY) -> str:
+    """Normalised address, country-qualified for anything but AU.
+
+    The country restricts which results Nominatim will return, so it is part of
+    the question being asked and belongs in the key. AU keeps the bare-address
+    form it has always used: every entry already on disk was an AU lookup, and
+    re-prefixing them would discard a cache that costs one request per second
+    to rebuild."""
+    key = re.sub(r"\s+", " ", address).strip().lower()
+    return key if country == DEFAULT_COUNTRY else f"{country.lower()}|{key}"
 
 
 def _load_cache() -> dict[str, list[float] | None]:
@@ -48,7 +56,9 @@ def _save_cache(cache: dict[str, list[float] | None]) -> None:
     GEOCODE_CACHE_PATH.write_text(json.dumps(cache, indent=2), encoding="utf-8")
 
 
-def geocode_address(address: str, log: LogFn | None = None) -> tuple[float, float] | None:
+def geocode_address(
+    address: str, country: str = DEFAULT_COUNTRY, log: LogFn | None = None
+) -> tuple[float, float] | None:
     """Returns None both when Nominatim genuinely has no match (expected,
     silent — the venue simply gets no map marker) and when the request itself
     fails. Those are different situations for the operator, though not for
@@ -59,12 +69,12 @@ def geocode_address(address: str, log: LogFn | None = None) -> tuple[float, floa
     normal miss.
 
     Results (including genuine misses) are cached on disk keyed by normalised
-    address — this is now the only source of coordinates (no manual reviewer
+    address and country — this is now the only source of coordinates (no manual reviewer
     fallback), so repeatedly geocoding the same address across pipeline runs
     would otherwise mean unnecessary Nominatim traffic and politeness waits."""
     if GEOCODER != "nominatim" or not address:
         return None
-    key = _cache_key(address)
+    key = _cache_key(address, country)
     cache = _load_cache()
     if key in cache:
         cached = cache[key]
@@ -73,7 +83,16 @@ def geocode_address(address: str, log: LogFn | None = None) -> tuple[float, floa
     try:
         response = httpx.get(
             NOMINATIM_URL,
-            params={"q": address, "format": "json", "limit": 1, "countrycodes": "au"},
+            params={
+                "q": address,
+                "format": "json",
+                "limit": 1,
+                # Scoped to the venue's own country (Gate 16). Hardcoded "au"
+                # until 2026-09-15, which made a US address structurally
+                # unresolvable: the right street in the wrong hemisphere simply
+                # returned nothing, indistinguishable from a bad address.
+                "countrycodes": country.lower(),
+            },
             headers={"User-Agent": GEOCODER_USER_AGENT or "spa-directory-admin (local)"},
             timeout=10.0,
         )

@@ -497,7 +497,7 @@ SESSION_GENDER_LABELS = {
 
 # ---------------------------------------------------------------------------
 # Gate 7 (verification metadata / structured facts, 2026-07-31). Mirrors
-# site/src/config.ts's CONFIDENCE_TIERS / VERIFIABLE_FIELDS / CAPITAL_CITIES
+# site/src/config.ts's CONFIDENCE_TIERS / VERIFIABLE_FIELDS / DRIVE_TIME_ORIGINS
 # exactly (SCHEMA.md "one contract" rule — same two-mirrors posture as the
 # amenity/facility/dress-code constants above).
 # ---------------------------------------------------------------------------
@@ -553,18 +553,42 @@ VERIFIABLE_FIELD_LABELS = {
     "minimum_age": "Minimum age",
 }
 
-# State capital CBDs — drive-time reference origins (Gate 7, user sign-off
-# 2026-07-31: "from nearest capital"). Also usable as a display anchor.
-CAPITAL_CITIES = {
-    "VIC": {"name": "Melbourne", "latitude": -37.8136, "longitude": 144.9631},
-    "NSW": {"name": "Sydney", "latitude": -33.8688, "longitude": 151.2093},
-    "QLD": {"name": "Brisbane", "latitude": -27.4698, "longitude": 153.0251},
-    "SA": {"name": "Adelaide", "latitude": -34.9285, "longitude": 138.6007},
-    "WA": {"name": "Perth", "latitude": -31.9523, "longitude": 115.8613},
-    "TAS": {"name": "Hobart", "latitude": -42.8826, "longitude": 147.3257},
-    "NT": {"name": "Darwin", "latitude": -12.4637, "longitude": 130.8444},
-    "ACT": {"name": "Canberra", "latitude": -35.2809, "longitude": 149.1300},
+# Drive-time reference origins, per country (Gate 7 user sign-off 2026-07-31;
+# country-keyed 2026-09-15 for Gate 16). A venue is only ever measured against
+# origins in its own country — ranking a Miami venue against Australian
+# capitals produced "45 min from Darwin", and OSRM then routed across an ocean.
+#
+# AU uses the eight state/territory capital CBDs, unchanged: "from nearest
+# capital" was the signed-off rule, and in Australia the capital IS the
+# population centre of its state.
+#
+# US uses major metros rather than state capitals, because there the two come
+# apart: Florida's capital is Tallahassee, but almost nobody drives to a
+# Florida spring from Tallahassee. "2 hr from Orlando" is the useful sentence;
+# "6 hr from Tallahassee" is a true one nobody asked for. Seeded with Florida's
+# metros — other states get theirs as they gain venues, the same way
+# SUBDIVISION_BBOX does.
+DRIVE_TIME_ORIGINS = {
+    "AU": [
+        {"name": "Melbourne", "latitude": -37.8136, "longitude": 144.9631},
+        {"name": "Sydney", "latitude": -33.8688, "longitude": 151.2093},
+        {"name": "Brisbane", "latitude": -27.4698, "longitude": 153.0251},
+        {"name": "Adelaide", "latitude": -34.9285, "longitude": 138.6007},
+        {"name": "Perth", "latitude": -31.9523, "longitude": 115.8613},
+        {"name": "Hobart", "latitude": -42.8826, "longitude": 147.3257},
+        {"name": "Darwin", "latitude": -12.4637, "longitude": 130.8444},
+        {"name": "Canberra", "latitude": -35.2809, "longitude": 149.1300},
+    ],
+    "US": [
+        {"name": "Miami", "latitude": 25.7617, "longitude": -80.1918},
+        {"name": "Tampa", "latitude": 27.9506, "longitude": -82.4572},
+        {"name": "Orlando", "latitude": 28.5383, "longitude": -81.3792},
+        {"name": "Jacksonville", "latitude": 30.3322, "longitude": -81.6557},
+        {"name": "Tallahassee", "latitude": 30.4383, "longitude": -84.2807},
+        {"name": "Gainesville", "latitude": 29.6516, "longitude": -82.3248},
+    ],
 }
+
 
 # Rough per-state bounding boxes (lat_min, lat_max, lng_min, lng_max) — the
 # quality guard on auto-geocoded coordinates (Gate 7 validator). Deliberately
@@ -575,7 +599,8 @@ CAPITAL_CITIES = {
 # would silently bbox-check a Seattle venue against Western Australia. Countries
 # with no boxes yet simply skip the check (see validate_facts), which is the
 # same "absence is not a failure" posture the rest of that module takes; US
-# boxes get hand-authored when the first US venue is harvested, not speculatively.
+# boxes get hand-authored when the first US venue is harvested, not speculatively
+# — Florida's is the first, added 2026-09-15 for Gate 16.
 SUBDIVISION_BBOX = {
     "AU": {
         "VIC": (-39.3, -33.9, 140.8, 150.1),
@@ -587,7 +612,9 @@ SUBDIVISION_BBOX = {
         "NT": (-26.1, -10.9, 128.9, 138.1),
         "ACT": (-36.0, -35.1, 148.7, 149.5),
     },
-    "US": {},
+    "US": {
+        "FL": (24.4, 31.1, -87.7, -79.9),
+    },
 }
 
 # Retained name for the AU boxes — several call sites still read it directly.
