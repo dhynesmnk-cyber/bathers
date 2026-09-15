@@ -7,7 +7,7 @@
 //
 // Suburb matching is a plain, case-insensitive exact match against the
 // venue's `suburb` frontmatter field (SCHEMA.md §2) — the same posture as
-// the hand-curated gazetteer in au-places.ts, not a geometry/polygon
+// the hand-curated gazetteer in places.ts, not a geometry/polygon
 // computation (no new geospatial dependency). A region's `suburbs` list only
 // needs to cover suburbs that actually have (or are expected to shortly
 // gain) a venue; it isn't a exhaustive locality list.

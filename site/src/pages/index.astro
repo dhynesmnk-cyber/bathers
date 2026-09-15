@@ -124,7 +124,7 @@ const allVenues = venues.map((v) => ({
               type="text"
               id="near-me-input"
               class="near-me-input"
-              placeholder="Suburb or postcode…"
+              placeholder="Town, suburb or postcode…"
               autocomplete="off"
             />
             <button type="submit" id="near-me-submit" class="near-me-btn">Find</button>
@@ -250,7 +250,7 @@ const allVenues = venues.map((v) => ({
 
 <script>
   import { AMENITY_KEYS, AMENITY_NOTATION, POOL_TYPES, haversineDistanceKm, formatDistanceKm } from "../config";
-  import { AU_PLACES } from "../data/au-places";
+  import { PLACES } from "../data/places";
 
   interface VenueRow {
     slug: string;
@@ -351,13 +351,53 @@ const allVenues = venues.map((v) => ({
         .toLowerCase();
     }
 
-    function resolvePlace(query: string) {
-      const q = normalizePlace(query.trim());
-      if (!q) return null;
-      if (/^\d+$/.test(q)) return AU_PLACES.find((p) => p.postcode === q) ?? null;
-      const exact = AU_PLACES.find((p) => normalizePlace(p.name) === q);
-      if (exact) return exact;
-      return AU_PLACES.find((p) => normalizePlace(p.name).includes(q)) ?? null;
+    // Resolution order matters, because place names are not unique across
+    // countries: there is a Melbourne in Victoria and a Melbourne in Florida,
+    // and a bare name match used to silently pick whichever sat higher in the
+    // list. A trailing subdivision ("melbourne fl") settles it; an ambiguous
+    // bare name reports the ambiguity instead of guessing.
+    function matchesName(p: (typeof PLACES)[number], q: string) {
+      return normalizePlace(p.name) === q;
+    }
+
+    function resolvePlace(query: string): (typeof PLACES)[number] | "ambiguous" | null {
+      const raw = normalizePlace(query.trim()).replace(/,/g, " ").replace(/\s+/g, " ").trim();
+      if (!raw) return null;
+
+      // Postcode / ZIP, exact.
+      if (/^\d+$/.test(raw)) {
+        const hit = PLACES.find((p) => p.postcode === raw);
+        if (hit) return hit;
+        // A US ZIP's first three digits are its sectional centre, which really
+        // does denote a region — so "33139" still finds Miami. AU postcodes
+        // carry no such structure, so this is US-only on purpose.
+        if (raw.length === 5) {
+          const near = PLACES.find((p) => p.country === "US" && p.postcode.slice(0, 3) === raw.slice(0, 3));
+          if (near) return near;
+        }
+        return null;
+      }
+
+      // "<name> <subdivision>" — the disambiguating form.
+      const parts = raw.split(" ");
+      if (parts.length > 1) {
+        const tail = parts[parts.length - 1].toUpperCase();
+        const head = parts.slice(0, -1).join(" ");
+        const scoped = PLACES.find((p) => p.subdivision === tail && matchesName(p, head));
+        if (scoped) return scoped;
+      }
+
+      const exact = PLACES.filter((p) => matchesName(p, raw));
+      if (exact.length === 1) return exact[0];
+      if (exact.length > 1) return "ambiguous";
+
+      const partial = PLACES.filter((p) => normalizePlace(p.name).includes(raw));
+      if (partial.length === 1) return partial[0];
+      if (partial.length > 1) {
+        const names = new Set(partial.map((p) => normalizePlace(p.name)));
+        return names.size === 1 ? "ambiguous" : partial[0];
+      }
+      return null;
     }
 
     function showNearMeMessage(text: string, tone?: "error") {
@@ -454,6 +494,13 @@ const allVenues = venues.map((v) => ({
 
     function submitNearMe(query: string) {
       const place = resolvePlace(query);
+      if (place === "ambiguous") {
+        showNearMeMessage(
+          "More than one place goes by that name — add the state, like \u201cMelbourne VIC\u201d.",
+          "error",
+        );
+        return;
+      }
       if (!place) {
         showNearMeMessage("Couldn't find that place — try a bigger nearby town, or a postcode.", "error");
         return;
