@@ -160,6 +160,25 @@ def run() -> list[str]:
             "domain — see SCHEMA.md §4's note and harvester rule 9"
         )
 
+    # Collected, never published (owner decision, 2026-09-15). `contact_email`
+    # is the one field that must appear in the Harvester's contract and in none
+    # of the frontmatter surfaces, so the usual "all surfaces agree" diff would
+    # not catch it being re-added — this asserts the asymmetry directly.
+    # `_published/` is committed to a public repository; an operator's address
+    # reaching it would be a disclosure, not a bug to fix next release.
+    for label, names in (
+        ("admin KNOWN_FIELDS", admin),
+        ("SCHEMA.md §2 table", schema_md),
+        ("the zod content schema", zod),
+        ("staging.FRONTMATTER_FIELD_ORDER", set(staging.FRONTMATTER_FIELD_ORDER)),
+    ):
+        if "contact_email" in names:
+            failures.append(
+                f"contact_email is back in {label} — it is collected for outreach and stored in "
+                "the gitignored outreach.db (outreach.published_email), and must never become "
+                "published frontmatter. See SCHEMA.md §4's note."
+            )
+
     return failures
 
 

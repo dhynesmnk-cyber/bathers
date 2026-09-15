@@ -16,7 +16,7 @@ from urllib.parse import urlsplit
 
 from admin.config import AMENITY_KEYS, FAILED_DIR, MODEL_ARCHITECT, MODEL_GATEKEEPER, MODEL_HARVESTER, PUBLISHED_DIR, ROOT, STAGING_DIR
 from admin import schema
-from admin.pipeline import agents, drivetime, geocode, harvest, images, places, staging, verification
+from admin.pipeline import agents, drivetime, geocode, harvest, images, outreach_store, places, staging, verification
 from admin.pipeline.staging import render_mdx, split_frontmatter
 
 HARVESTER_REQUIRED_KEYS = (
@@ -138,7 +138,7 @@ def _bare_host(url: str | None) -> str | None:
     return host or None
 
 
-def _finalize_frontmatter(gate_fm: dict, harvester_data: dict, coords: tuple[float, float] | None, url: str, log=None) -> dict:
+def _finalize_frontmatter(gate_fm: dict, harvester_data: dict, coords: tuple[float, float] | None, url: str) -> dict:
     final = dict(gate_fm)
     final["source_url"] = url
     if not final.get("website"):
@@ -152,13 +152,6 @@ def _finalize_frontmatter(gate_fm: dict, harvester_data: dict, coords: tuple[flo
     # Amenities are the Harvester's finding, not the Architect/Gatekeeper's —
     # enforce that rather than trusting it survived two rewrite passes intact.
     final["amenities"] = {key: bool(harvester_data["amenities"].get(key, False)) for key in AMENITY_KEYS}
-    # Same posture for the operator's contact address (Gate 13, 2026-09-10):
-    # it exists so outreach has somewhere to write, and an address paraphrased
-    # by the Architect or Gatekeeper would be worse than none at all.
-    contact_email, email_note = _resolve_contact_email(harvester_data, final.get("website"))
-    final["contact_email"] = contact_email
-    if email_note and log:
-        log(email_note, "warn")
     if coords and not final.get("latitude"):
         final["latitude"] = coords[0]
     if coords and not final.get("longitude"):
@@ -393,10 +386,30 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False, allow_existing_
     log(f"gatekeeper agent ({MODEL_GATEKEEPER})  ok — {gate_word_count} words")
     yield from drain()
 
-    final_fm = _finalize_frontmatter(gate_fm, harvester_data, coords, url, log=log)
+    final_fm = _finalize_frontmatter(gate_fm, harvester_data, coords, url)
     STAGING_DIR.mkdir(parents=True, exist_ok=True)
     (STAGING_DIR / f"{slug}.mdx").write_text(render_mdx(final_fm, gate_body), encoding="utf-8")
     log(f"saved → _staging/{slug}.mdx")
+
+    # The operator's published address goes to the gitignored outreach store,
+    # never into frontmatter (owner decision, 2026-09-15): the directory should
+    # not publish a business's contact address on its behalf, and `_published/`
+    # is committed to a public repository. It is still the Harvester's finding
+    # rather than the Architect's — resolved straight from the Harvester JSON,
+    # the same posture as `amenities` — it just lands somewhere else.
+    #
+    # A store failure must not fail a harvest that otherwise succeeded: the
+    # draft is already written, and the address is recoverable by re-running
+    # `backfill_contact_email`. Same reasoning as approve()'s ensure() call.
+    contact_email, email_note = _resolve_contact_email(harvester_data, final_fm.get("website"))
+    if email_note:
+        log(email_note, "warn")
+    if contact_email:
+        try:
+            outreach_store.set_published_email(slug, contact_email)
+            log(f"contact address recorded for outreach — {contact_email}")
+        except Exception as exc:  # noqa: BLE001 — see comment above
+            log(f"could not record the contact address for {slug} — {exc}", "warn")
     for dupe in staging.find_duplicates(slug, final_fm):
         log(f"possible duplicate of {dupe['name']} ({dupe['location']}: {dupe['slug']}) — {dupe['reason']}", "warn")
     yield from drain()
@@ -473,10 +486,21 @@ def _self_test() -> int:
     cases.append(("with no website to compare against, nothing is flagged", email == "hello@anything.com" and note is None))
 
     cases.append(("contact_email is a required Harvester key", "contact_email" in HARVESTER_REQUIRED_KEYS))
-    cases.append(("contact_email is a known frontmatter field", "contact_email" in schema.KNOWN_FIELDS))
+    # The address is collected but never published (owner decision, 2026-09-15).
+    # Asserted from both directions: it must not be a frontmatter field, and it
+    # must not be in the render order — either one would put an operator's
+    # address into a public repository on the next re-save.
     cases.append((
-        "render_frontmatter writes contact_email rather than dropping it",
-        "contact_email" in staging.FRONTMATTER_FIELD_ORDER,
+        "contact_email is NOT a published frontmatter field",
+        "contact_email" not in schema.KNOWN_FIELDS,
+    ))
+    cases.append((
+        "render_frontmatter would not write contact_email into published content",
+        "contact_email" not in staging.FRONTMATTER_FIELD_ORDER,
+    ))
+    cases.append((
+        "the outreach store can hold it instead",
+        "published_email" in outreach_store.COLUMNS,
     ))
 
     for label, ok in cases:

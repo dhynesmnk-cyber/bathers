@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS outreach (
   state TEXT NOT NULL DEFAULT 'not_contacted',
   operator_name TEXT,
   operator_email TEXT,
+  published_email TEXT,
   contacted_at TEXT,
   responded_at TEXT,
   resolved_at TEXT,
@@ -51,8 +52,16 @@ CREATE TABLE IF NOT EXISTS outreach_log (
 CREATE INDEX IF NOT EXISTS idx_outreach_log_slug ON outreach_log(slug);
 """
 
+# Additive schema evolution, matching claims_store.py's posture: no formal
+# migration tool, applied on every connect, failure-to-apply meaning "already
+# there". Needed because `CREATE TABLE IF NOT EXISTS` above never adds a column
+# to a table that already exists on the Fly volume.
+_MIGRATIONS = (
+    "ALTER TABLE outreach ADD COLUMN published_email TEXT",
+)
+
 COLUMNS = (
-    "slug", "state", "operator_name", "operator_email",
+    "slug", "state", "operator_name", "operator_email", "published_email",
     "contacted_at", "responded_at", "resolved_at",
     "confirmed_fields_json", "note", "created_at", "updated_at",
 )
@@ -70,7 +79,13 @@ class OutreachRow:
     slug: str
     state: str
     operator_name: str | None
+    # Two addresses, deliberately not one. `operator_email` is who we actually
+    # wrote to — part of the outreach record. `published_email` is what the
+    # venue publishes on its own site, harvested rather than typed, and offered
+    # to the screen as a starting point. Collapsing them would lose the
+    # distinction between an address somebody has checked and one nobody has.
     operator_email: str | None
+    published_email: str | None
     contacted_at: str | None
     responded_at: str | None
     resolved_at: str | None
@@ -88,6 +103,11 @@ def _connect() -> sqlite3.Connection:
     OUTREACH_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(OUTREACH_DB_PATH)
     conn.executescript(SCHEMA_SQL)
+    for statement in _MIGRATIONS:
+        try:
+            conn.execute(statement)
+        except sqlite3.OperationalError:
+            pass  # column already exists — migration already applied
     return conn
 
 
@@ -123,6 +143,31 @@ def ensure(slug: str) -> OutreachRow:
         conn.execute(
             "INSERT INTO outreach (slug, state, created_at, updated_at) VALUES (?, 'not_contacted', ?, ?)",
             (slug, now, now),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    row = get(slug)
+    assert row is not None
+    return row
+
+
+def set_published_email(slug: str, email: str | None) -> OutreachRow:
+    """Record the address the venue publishes on its own site.
+
+    Deliberately not a transition: learning a venue's email address is not
+    something that happened *with* the operator, so it earns no `outreach_log`
+    entry and never moves the state machine. It is reference data attached to
+    the venue, which is why it lives here rather than in published frontmatter
+    — this file is gitignored, and an operator's address is not something the
+    directory should publish on their behalf (owner decision, 2026-09-15).
+    """
+    ensure(slug)
+    conn = _connect()
+    try:
+        conn.execute(
+            "UPDATE outreach SET published_email = ?, updated_at = ? WHERE slug = ?",
+            (email, _now(), slug),
         )
         conn.commit()
     finally:

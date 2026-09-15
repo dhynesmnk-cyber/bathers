@@ -139,9 +139,9 @@
 
     operatorName.value = current.operator_name || "";
     // The address we already wrote to wins; failing that, the one the venue
-    // publishes (harvested since 2026-09-10) is offered as a starting point.
-    // The hint below always says which, because an address nobody has checked
-    // must not look like one somebody has.
+    // publishes is offered as a starting point. Both come from the gitignored
+    // outreach.db. The hint below always says which, because an address nobody
+    // has checked must not look like one somebody has.
     operatorEmail.value = current.operator_email || current.published_email || "";
     const emailHint = el("published-email-hint");
     if (current.operator_email) {

@@ -154,5 +154,5 @@ for every urban venue on this list.
 
 Every venue published here lands in the outreach queue automatically
 (`approve()` calls `outreach_store.ensure()`), so Gate 14 feeds Gate 13 — and
-each new venue harvested from today carries a `contact_email`, so the outreach
-it opens has somewhere to write.
+each new venue harvested from today has its published contact address recorded
+in the outreach store, so the outreach it opens has somewhere to write.

@@ -225,12 +225,14 @@ def overview() -> list[dict[str, Any]]:
             "state": row.state if row else "not_contacted",
             "operator_name": row.operator_name if row else None,
             "operator_email": row.operator_email if row else None,
-            # The venue's own published address (Gate 13, 2026-09-10), kept
-            # distinct from `operator_email`: that one is who we actually wrote
-            # to and belongs to the outreach record, this one is what the venue
-            # publishes and belongs to the frontmatter. The screen offers it as
-            # a starting point; it is never silently treated as contacted.
-            "published_email": frontmatter.get("contact_email"),
+            # The venue's own published address, kept distinct from
+            # `operator_email`: that one is who we actually wrote to, this one
+            # is what the venue publishes. Both live in this gitignored DB —
+            # the published address was frontmatter until 2026-09-15, when the
+            # owner ruled that the directory should not publish a business's
+            # contact address on its behalf. The screen offers it as a starting
+            # point; it is never silently treated as contacted.
+            "published_email": row.published_email if row else None,
             "contacted_at": row.contacted_at if row else None,
             "days_since_contact": days,
             "needs_follow_up": bool(
@@ -270,7 +272,7 @@ def detail(slug: str) -> dict[str, Any]:
         "state": row.state,
         "operator_name": row.operator_name,
         "operator_email": row.operator_email,
-        "published_email": frontmatter.get("contact_email"),
+        "published_email": row.published_email,
         "contacted_at": row.contacted_at,
         "responded_at": row.responded_at,
         "resolved_at": row.resolved_at,

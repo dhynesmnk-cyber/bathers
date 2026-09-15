@@ -9,9 +9,15 @@ change delivers nothing to the gate.
 
 A full re-harvest would collect the addresses, but it also regenerates the
 prose and restages the venue, so 23 drafts would need re-reviewing to obtain 23
-email addresses. This is the same targeted shape as `backfill_geocode.py`
-instead: read the page, take the address, write that one field back through the
-staging render path. The prose is untouched.
+email addresses. This reads the page and takes the address, and nothing else —
+the published content is never touched at all.
+
+**The address is stored in the gitignored `data/outreach.db`** (as
+`outreach.published_email`), not in frontmatter. `_published/` is committed to a
+public repository, and the directory should not publish a business's contact
+address on its behalf (owner decision, 2026-09-15). So this module writes no
+MDX and needs no derived-data rebuild; it is a read of the web and a write to
+one SQLite column.
 
 **No model is asked to produce an address.** `harvest.find_contact_emails()`
 scans the fetched HTML for literal addresses and ranks them; this module picks
@@ -22,16 +28,12 @@ for a field used to email real businesses is worth more than the flexibility of
 free-form extraction. Every candidate found is printed, not just the chosen
 one, so a wrong pick is visible rather than buried.
 
-Writing to `_published` is deliberate and matches `backfill_geocode.py`:
-CLAUDE.md rule 5 forbids editing that directory *by hand*, and this goes
-through `render_mdx()` so field order and dates are preserved exactly.
-
 Usage:
     python -m admin.pipeline.backfill_contact_email [--dry-run] [--slugs a,b,c]
         [--overwrite] [--playwright] [--self-test]
 
-`--overwrite` re-reads venues that already carry an address; without it they
-are skipped, so the run is safe to repeat. Do not run while an admin-UI harvest
+`--overwrite` re-reads venues whose row already carries an address; without it
+they are skipped, so the run is safe to repeat. Do not run while an admin-UI harvest
 job is active — this CLI bypasses the app's single-job harvest lock.
 """
 
@@ -42,8 +44,8 @@ import sys
 import time
 
 from admin.config import PUBLISHED_DIR
-from admin.pipeline import data_store, harvest, orchestrator
-from admin.pipeline.staging import render_mdx, split_frontmatter
+from admin.pipeline import harvest, orchestrator, outreach_store
+from admin.pipeline.staging import split_frontmatter
 
 # One request a second, and at most this many pages per venue: the landing page
 # plus a couple of contact pages. Matches the geocoder's politeness posture —
@@ -124,8 +126,9 @@ def backfill(
         slug = path.stem
         if wanted and slug not in wanted:
             continue
-        data, body = split_frontmatter(path.read_text(encoding="utf-8"), slug)
-        if data.get("contact_email") and not overwrite:
+        data, _ = split_frontmatter(path.read_text(encoding="utf-8"), slug)
+        existing = outreach_store.get(slug)
+        if existing is not None and existing.published_email and not overwrite:
             continue
         url = data.get("website") or data.get("source_url")
         if not url:
@@ -167,8 +170,7 @@ def backfill(
             print(f"       {slug}: {guard_note}")
         updated += 1
         if not dry_run:
-            data["contact_email"] = email
-            path.write_text(render_mdx(data, body), encoding="utf-8")
+            outreach_store.set_published_email(slug, email)
 
     if unreachable:
         print(
@@ -179,13 +181,9 @@ def backfill(
             + ",".join(unreachable)
         )
 
-    if updated and not dry_run:
-        # `contact_email` is frontmatter-only — it is not in
-        # data_store.VENUE_SCALAR_COLUMNS, so nothing derived should move. The
-        # rebuild runs anyway to keep check 3 honest: if it does move, that is
-        # a surface drift worth seeing rather than a surprise in CI.
-        count = data_store.rebuild()
-        print(f"rebuilt derived data — {count} venue(s)")
+    # No rebuild: nothing published changed. The addresses went into the
+    # gitignored outreach.db, which is exactly why this backfill leaves no
+    # commit behind and cannot drift the derived data.
     return updated, missed
 
 
@@ -241,6 +239,11 @@ def _self_test() -> int:
         {"contact_email": scan('<a href="mailto:info@example-bathhouse.com.au">x</a>')[0]}, site
     )
     results.append(("the top candidate clears the harvest-path guard", email == "info@example-bathhouse.com.au"))
+
+    results.append((
+        "the store has a column for the published address",
+        "published_email" in outreach_store.COLUMNS,
+    ))
 
     for label, ok in results:
         print(f"  {'ok  ' if ok else 'FAIL'} {label}")
