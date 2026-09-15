@@ -24,6 +24,13 @@ from admin.config import (
 )
 from admin.pipeline.claims_store import ClaimRequest
 
+# The outreach email's opt-out line (2026-09-15). Defined once because the
+# plain-text and HTML bodies below are hand-maintained twins with nothing
+# asserting they agree — and this is the one sentence in the email that is there
+# for a legal reason (see send_outreach_email's docstring), so it is the worst
+# candidate for silently existing in only one of them.
+OUTREACH_OPT_OUT = 'If you would rather I did not write again, reply with "no thanks" and I won\'t.'
+
 PLAN_LABELS = {"one_off": "one-off $25 processing fee", "subscription": "$5/month unlimited-changes subscription"}
 
 
@@ -190,6 +197,15 @@ def send_outreach_email(
     email says so plainly before it mentions the paid claim option. An operator
     who reads this as an invoice, or as pay-to-be-listed, would be right to be
     annoyed and wrong about the facts.
+
+    The closing opt-out line (2026-09-15) is not decoration: this goes to
+    Australian businesses and mentions a paid option, so Australia's Spam Act
+    wants a functional opt-out on it. Consent itself is the inferred kind — the
+    addresses are conspicuously published by those businesses and the message
+    concerns their own listing — but "ignore it and nothing changes" addresses
+    pressure, not opt-out. A reply of "no thanks" is recorded through the
+    existing `declined` state (responded -> declined), so honouring it needs no
+    new mechanism. Keep the line if you rewrite this email.
     """
     site = SITE_URL or "https://wherewebathe.com"
     greeting = f"Hello {operator_name}," if operator_name.strip() else "Hello,"
@@ -217,6 +233,8 @@ If you would also like to send through changes yourself in future, there is a
 paid option at {site}/claim/{slug}/. That is entirely separate. Confirming these
 details costs nothing and your listing does not change if you ignore it.
 
+{OUTREACH_OPT_OUT}
+
 Thanks,
 Where We Bathe
 {site}
@@ -236,6 +254,7 @@ and the page will say so.</p>
 <p>If you would also like to send through changes yourself in future, there is a paid option at
 <a href="{site}/claim/{slug}/">{site}/claim/{slug}/</a>. That is entirely separate. Confirming these
 details costs nothing and your listing does not change if you ignore it.</p>
+<p>{html.escape(OUTREACH_OPT_OUT)}</p>
 <p>Thanks,<br />Where We Bathe<br /><a href="{site}">{site}</a></p>
 """
     return _send(operator_email, f"{venue_name} — the details we publish about you", body_text, body_html)
