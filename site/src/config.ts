@@ -510,14 +510,42 @@ export function videoEmbedUrl(url: string): string {
 // range derived from every dollar amount in the string; the full text
 // stays on the venue page's appendix. Returns null when no $ amount is
 // found so callers can fall back to the raw string.
-export function priceRange(cost: string): string | null {
-  const amounts = Array.from(cost.matchAll(/\$\s?(\d[\d,]*(?:\.\d{1,2})?)/g), (m) =>
+/** One money formatter for the whole site. There were six, and they disagreed:
+ *  "$65", "$65 AUD", "US$65" for the same figure depending on which component
+ *  rendered it, with AUD as the silent default in five of them and one ternary
+ *  that returned "$" either way.
+ *
+ *  A currency is left bare when it is the currency of the page's own country —
+ *  an Australian reading an Australian page wants "$65", not "$65 AUD" — and
+ *  marked with its code otherwise. Which country is "home" is the page's, not
+ *  Australia's: on a US page it is USD that goes bare.
+ */
+export function formatMoney(
+  amount: number,
+  currency: string | undefined,
+  viewerCountry: Country = DEFAULT_COUNTRY,
+): string {
+  const code = currency ?? COUNTRY_CURRENCY[viewerCountry];
+  const figure = amount % 1 === 0 ? amount.toLocaleString("en-AU") : amount.toFixed(2);
+  const suffix = code === COUNTRY_CURRENCY[viewerCountry] ? "" : ` ${code}`;
+  return `$${figure}${suffix}`;
+}
+
+export function priceRange(
+  cost: string,
+  currency?: string,
+  viewerCountry: Country = DEFAULT_COUNTRY,
+): string | null {
+  // Accepts a bare "$", and the "US$"/"A$" prefixes a cost string may carry
+  // once two currencies are in play — the bare-dollar-only pattern found no
+  // amounts at all in "US$45", and silently returned null.
+  const amounts = Array.from(cost.matchAll(/(?:US|A|AU)?\$\s?(\d[\d,]*(?:\.\d{1,2})?)/gi), (m) =>
     Number(m[1].replace(/,/g, "")),
   ).filter((n) => Number.isFinite(n));
   if (amounts.length === 0) return null;
   const min = Math.min(...amounts);
   const max = Math.max(...amounts);
-  const fmt = (n: number) => `$${n % 1 === 0 ? n.toLocaleString("en-AU") : n.toFixed(2)}`;
+  const fmt = (n: number) => formatMoney(n, currency, viewerCountry);
   if (min === max) return /\bfrom\b/i.test(cost) ? `from ${fmt(min)}` : fmt(min);
   return `${fmt(min)}–${fmt(max)}`;
 }

@@ -20,6 +20,8 @@ import html
 import re
 from typing import Any
 
+from admin.config import COUNTRY_CURRENCY, DEFAULT_COUNTRY
+
 _PULL_RE = re.compile(r"^<Pull>(.*)</Pull>$", re.DOTALL)
 _TIPPED_PHOTO_RE = re.compile(r"^<TippedPhoto\b")
 
@@ -93,24 +95,36 @@ def temperature_line(temperatures: dict[str, Any] | None) -> str | None:
     return ". ".join(parts) or None
 
 
-def _fmt_aud(value: Any) -> str:
-    return f"${int(value)}" if float(value).is_integer() else f"${value:.2f}"
+def format_money(value: Any, currency: str | None, viewer_country: str = DEFAULT_COUNTRY) -> str:
+    """Mirrors site/src/config.ts's formatMoney exactly. Bare when the currency
+    is the viewer country's own, code-suffixed otherwise."""
+    code = currency or COUNTRY_CURRENCY.get(viewer_country)
+    figure = f"{int(value)}" if float(value).is_integer() else f"{value:.2f}"
+    suffix = "" if code == COUNTRY_CURRENCY.get(viewer_country) else f" {code}"
+    return f"${figure}{suffix}"
 
 
 def price_line(data: dict[str, Any]) -> str | None:
     """Structured-price display for the review preview (Gate 7). Mirrors the
     intent of site/src/config.ts's priceRange but reads the numeric `price`
-    object rather than the freeform `cost` string."""
+    object rather than the freeform `cost` string.
+
+    The field names lost their `_aud` suffix when the schema went
+    international; this function did not, so from that day until 2026-09-15 it
+    read two keys that never exist and the preview's price line never rendered
+    for any venue at all."""
     price = data.get("price") or {}
-    drop_in = price.get("adult_drop_in_aud")
-    standard = price.get("standard_session_aud")
+    drop_in = price.get("adult_drop_in")
+    standard = price.get("standard_session")
     if drop_in is None and standard is None:
         return None
+    country = data.get("country", DEFAULT_COUNTRY)
+    currency = data.get("currency")
     parts = []
     if drop_in is not None:
-        parts.append(f"from {_fmt_aud(drop_in)} drop-in")
+        parts.append(f"from {format_money(drop_in, currency, country)} drop-in")
     if standard is not None:
-        parts.append(f"{_fmt_aud(standard)} standard session")
+        parts.append(f"{format_money(standard, currency, country)} standard session")
     return ", ".join(parts)
 
 

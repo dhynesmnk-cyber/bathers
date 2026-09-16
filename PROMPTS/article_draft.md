@@ -24,7 +24,7 @@ components, which you place in the body:
 - `<Superlative queryKey="KEY" />` — renders the winning venue and its figure
   (e.g. "Bitter Springs ($10)"). Use it in a sentence instead of naming the
   winner or its price yourself: "The cheapest is <Superlative queryKey="KEY" />."
-- `<Figure venue="venue-slug" field="price.adult_drop_in_aud" />` — one field of
+- `<Figure venue="venue-slug" field="price.adult_drop_in" />` — one field of
   one venue. Renders the value, or a plain "Not published" if the venue hasn't
   published it. Use it whenever you must state a specific figure in prose.
 

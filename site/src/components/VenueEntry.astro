@@ -1,6 +1,7 @@
 ---
 import Features from "./Features.astro";
 import type { AMENITY_KEYS, FACILITY_KEYS } from "../config";
+import { formatMoney } from "../config";
 
 interface Props {
   name: string;
@@ -52,13 +53,8 @@ const formatLocation = () => {
   return `${displayCity}, ${state_province}, ${country}`;
 };
 
-// Format price with currency
-const formatPrice = () => {
-  if (!price?.adult_drop_in || !currency) return null;
-  
-  const currencySymbol = currency === 'USD' ? 'US$' : '$';
-  return `${currencySymbol}${price.adult_drop_in} ${currency}`;
-};
+const formatPrice = () =>
+  price?.adult_drop_in != null ? formatMoney(price.adult_drop_in, currency, country) : null;
 
 const locationString = formatLocation();
 const priceString = formatPrice();

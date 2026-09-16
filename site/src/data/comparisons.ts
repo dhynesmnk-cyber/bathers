@@ -6,7 +6,7 @@
 // threshold; thinner ones are skipped and logged, never a hard failure
 // (mirrors SCHEMA.md's "omit if thin" posture).
 import type { CollectionEntry } from "astro:content";
-import { AMENITY_NOTATION, CATEGORY_LABELS, priceRange, subdivisionName } from "../config";
+import { AMENITY_NOTATION, CATEGORY_LABELS, formatMoney, priceRange, subdivisionName } from "../config";
 
 export const COMPARISON_MIN_VENUES = 5;
 
@@ -44,13 +44,8 @@ const categoryCell = (v: Venue) => CATEGORY_LABELS[v.data.category];
 const dropIn = (v: Venue) => v.data.price?.adult_drop_in ?? null;
 const priceCell = (v: Venue) => {
   const n = dropIn(v);
-  if (n != null) {
-    const currency = v.data.currency ?? 'AUD';
-    const symbol = currency === 'AUD' || currency === 'USD' ? '$' : '$';
-    const currencySuffix = currency !== 'AUD' ? ` ${currency}` : '';
-    return `${symbol}${n % 1 === 0 ? n : n.toFixed(2)}${currencySuffix}`;
-  }
-  return v.data.cost ? priceRange(v.data.cost) : null;
+  if (n != null) return formatMoney(n, v.data.currency, v.data.country);
+  return v.data.cost ? priceRange(v.data.cost, v.data.currency, v.data.country) : null;
 };
 const amenityCell = (v: Venue) =>
   (["magnesium_pool", "infrared_sauna", "traditional_sauna", "cold_plunge", "led_therapy"] as const)

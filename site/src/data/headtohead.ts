@@ -9,6 +9,7 @@ import {
   AMENITY_NOTATION,
   CATEGORY_LABELS,
   coldPlungeTemperatureLine,
+  formatMoney,
   priceRange,
   saunaTemperatureLine,
   subdivisionName,
@@ -29,8 +30,6 @@ export const HEAD_TO_HEAD: H2HPair[] = [
   { slug: "mineral-springs-hotel-vs-the-mineral-spa", a: "mineral-springs-hotel", b: "the-mineral-spa" },
 ];
 
-const fmtAud = (n: number) => `$${n % 1 === 0 ? n : n.toFixed(2)}`;
-
 export interface H2HRow {
   label: string;
   value: (v: Venue) => string | null;
@@ -44,11 +43,8 @@ export const H2H_ROWS: H2HRow[] = [
     label: "Adult drop-in",
     value: (v) => {
       const n = v.data.price?.adult_drop_in;
-      if (n != null) {
-        const currency = v.data.currency ?? 'AUD';
-        return fmtAud(n) + (currency !== 'AUD' ? ` ${currency}` : '');
-      }
-      return v.data.cost ? priceRange(v.data.cost) : null;
+      if (n != null) return formatMoney(n, v.data.currency, v.data.country);
+      return v.data.cost ? priceRange(v.data.cost, v.data.currency, v.data.country) : null;
     },
   },
   { 
