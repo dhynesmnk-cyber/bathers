@@ -65,12 +65,14 @@ export const H2H_ROWS: H2HRow[] = [
   {
     label: "Sauna",
     value: (v) =>
-      saunaTemperatureLine(v.data.temperatures ?? {}) ??
+      saunaTemperatureLine(v.data.temperatures ?? {}, v.data.country) ??
       (v.data.amenities.traditional_sauna || v.data.amenities.infrared_sauna ? "Yes" : null),
   },
   {
     label: "Cold plunge",
-    value: (v) => coldPlungeTemperatureLine(v.data.temperatures ?? {}) ?? (v.data.amenities.cold_plunge ? "Yes" : null),
+    value: (v) =>
+      coldPlungeTemperatureLine(v.data.temperatures ?? {}, v.data.country) ??
+      (v.data.amenities.cold_plunge ? "Yes" : null),
   },
   { label: "Natural spring", value: (v) => (v.data.facilities?.natural_spring ? "Yes" : null) },
   { label: "Hours", value: (v) => v.data.hours ?? null },

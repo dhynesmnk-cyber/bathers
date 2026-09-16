@@ -9,6 +9,7 @@ import {
   AMENITY_KEYS,
   AMENITY_NOTATION,
   CATEGORY_LABELS,
+  COUNTRY_CURRENCY,
   COUNTRY_NAMES,
   DRESS_CODE_LABELS,
   FACILITY_KEYS,
@@ -43,11 +44,16 @@ export async function getStaticPaths() {
     // this venue has no coordinate of its own to measure from; otherwise
     // shows whatever's available even below 3 (thin neighbour pools, e.g.
     // Tasmania today, are expected as the directory grows nationally).
+    //
+    // Same country only (Gate 16). "Nearest 3" has no distance cap, which is
+    // fine within one country and absurd across two: with coverage still thin,
+    // a Melbourne venue's nearest neighbour was a Florida one, 15,578 km away,
+    // listed under a heading that says Nearby.
     const origin = venueCoords(venue);
     const nearby = origin
       ? nearestByDistance(
           origin,
-          venues.filter((v) => v.id !== venue.id),
+          venues.filter((v) => v.id !== venue.id && v.data.country === venue.data.country),
           3,
           venueCoords,
         )
@@ -98,8 +104,8 @@ const confirmedPhrase =
 
 // Temperature appendix line (2026-07-26) — prefer the Architect's display
 // string, fall back to the structured min/max range; null when neither is set.
-const saunaLine = data.temperatures ? saunaTemperatureLine(data.temperatures) : null;
-const coldPlungeLine = data.temperatures ? coldPlungeTemperatureLine(data.temperatures) : null;
+const saunaLine = data.temperatures ? saunaTemperatureLine(data.temperatures, country) : null;
+const coldPlungeLine = data.temperatures ? coldPlungeTemperatureLine(data.temperatures, country) : null;
 const temperatureLine = [saunaLine && `Sauna ${saunaLine}`, coldPlungeLine && `Cold plunge ${coldPlungeLine}`]
   .filter(Boolean)
   .join(". ");
@@ -132,9 +138,21 @@ if (data.latitude != null && data.longitude != null) {
   localBusinessLd.geo = { "@type": "GeoCoordinates", latitude: data.latitude, longitude: data.longitude };
 }
 if (data.cost) {
-  const range = priceRange(data.cost);
-  if (range) localBusinessLd.priceRange = range;
+  const range = priceRange(data.cost, data.currency, country);
+  if (range) {
+    localBusinessLd.priceRange = range;
+    // priceRange is a bare "$39–$59" string. Without a currency beside it that
+    // is ambiguous the moment the directory holds two, and a crawler has no
+    // way to tell an Australian forty dollars from an American one.
+    localBusinessLd.priceCurrency = data.currency ?? COUNTRY_CURRENCY[country];
+  }
 }
+// The subdivision a venue actually serves — a reader in Florida is not served
+// by a venue in Victoria, and areaServed is how that is said in schema.org.
+localBusinessLd.areaServed = {
+  "@type": "AdministrativeArea",
+  name: subdivisionName(country, stateProvince),
+};
 // amenityFeature (Gate 11, 2026-07-31) — the same amenity/facility booleans
 // shown on the page (Features.astro), made machine-readable. Generic
 // LocalBusiness type retained deliberately (TRD.md §2, 2026-07-31): these
@@ -246,7 +264,7 @@ const faqLd = data.faq && data.faq.length > 0
               <li class="py-3" style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);">
                 <a href={`/spa/${item.id}/`} class="font-display text-xl font-light text-[var(--ink)]">{item.data.name}</a>
                 <span class="ml-2" style="color: var(--ink-faded);">
-                  {item.data.city}, {subdivisionName(item.data.country, nearbyStateProvince)} — {formatDistanceKm(distanceKm)}
+                  {item.data.city}, {subdivisionName(item.data.country, nearbyStateProvince)} — {formatDistanceKm(distanceKm, country)}
                 </span>
               </li>
             );

@@ -249,7 +249,16 @@ const allVenues = venues.map((v) => ({
 </BaseLayout>
 
 <script>
-  import { AMENITY_KEYS, AMENITY_NOTATION, POOL_TYPES, haversineDistanceKm, formatDistanceKm } from "../config";
+  import {
+    AMENITY_KEYS,
+    AMENITY_NOTATION,
+    COUNTRY_UNITS,
+    KM_PER_MILE,
+    POOL_TYPES,
+    formatDistanceKm,
+    haversineDistanceKm,
+    type Country,
+  } from "../config";
   import { PLACES } from "../data/places";
 
   interface VenueRow {
@@ -408,7 +417,16 @@ const allVenues = venues.map((v) => ({
     }
 
     const RADIUS_KM = 50;
-    let currentPlace: { name: string; latitude: number; longitude: number } | null = null;
+    // Distances read in the units of the place searched FROM, not the site's
+    // default: someone searching from Tampa is told miles, someone searching
+    // from Torquay is told kilometres. The radius itself stays 50 km either
+    // way — it is a search parameter, not a figure anyone reads off a page.
+    let currentPlace: { name: string; country: Country; latitude: number; longitude: number } | null =
+      null;
+    const radiusLabel = () =>
+      currentPlace && COUNTRY_UNITS[currentPlace.country] === "imperial"
+        ? `${Math.round(RADIUS_KM / KM_PER_MILE)} miles`
+        : `${RADIUS_KM}km`;
 
     function render() {
       const hasFilter = active.size > 0 || activePoolType !== null;
@@ -459,7 +477,7 @@ const allVenues = venues.map((v) => ({
           venueContents!.appendChild(el);
           const slot = el.querySelector<HTMLElement>("[data-distance-slot]");
           if (slot) {
-            slot.textContent = ` — ${formatDistanceKm(distanceKm)} away`;
+            slot.textContent = ` — ${formatDistanceKm(distanceKm, currentPlace!.country)} away`;
             slot.hidden = false;
           }
         }
@@ -467,9 +485,9 @@ const allVenues = venues.map((v) => ({
         hiddenAll.forEach((el) => (el.hidden = true));
 
         if (ranked.length === 0) {
-          showNearMeMessage(`No venues within ${RADIUS_KM}km of ${currentPlace!.name}.`);
+          showNearMeMessage(`No venues within ${radiusLabel()} of ${currentPlace!.name}.`);
         } else {
-          showNearMeMessage(`Showing venues within ${RADIUS_KM}km of ${currentPlace!.name}.`);
+          showNearMeMessage(`Showing venues within ${radiusLabel()} of ${currentPlace!.name}.`);
         }
       } else {
         const visibleSlugs = new Set(visible.map((el) => el.dataset.venueSlug));

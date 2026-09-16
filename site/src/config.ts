@@ -470,8 +470,33 @@ export function nearestByDistance<T>(
 
 // Distance display: one decimal place under 10 km, whole km at/above —
 // shared by the Nearby block and the near-me distance-slot span.
-export function formatDistanceKm(distanceKm: number): string {
+/** Which measurement system a country's readers actually use. Storage stays
+ *  metric everywhere — °C and km are what the schema holds and what the
+ *  validators check. This governs display only: "39°C" tells a Floridian
+ *  nothing, and converting at the point of storage would mean two spellings of
+ *  one fact, which is the drift rule 4 exists to prevent. */
+export const COUNTRY_UNITS: Record<Country, "metric" | "imperial"> = {
+  AU: "metric",
+  US: "imperial",
+};
+
+export const KM_PER_MILE = 1.609344;
+
+export function formatDistanceKm(
+  distanceKm: number,
+  country: Country = DEFAULT_COUNTRY,
+): string {
+  if (COUNTRY_UNITS[country] === "imperial") {
+    const miles = distanceKm / KM_PER_MILE;
+    return miles < 10 ? `${miles.toFixed(1)} miles` : `${Math.round(miles)} miles`;
+  }
   return distanceKm < 10 ? `${distanceKm.toFixed(1)} km` : `${Math.round(distanceKm)} km`;
+}
+
+/** Celsius to Fahrenheit, rounded — a bathing temperature is not a precise
+ *  figure and a decimal would imply it were. */
+export function toFahrenheit(celsius: number): number {
+  return Math.round((celsius * 9) / 5 + 32);
 }
 
 // Amenity keys are snake_case (SCHEMA.md §1); URL path segments use kebab-case.
@@ -565,17 +590,36 @@ interface TemperatureRange {
   cold_plunge_display?: string | null;
 }
 
-function formatTempRange(min?: number | null, max?: number | null): string | null {
+function formatTempRange(
+  min?: number | null,
+  max?: number | null,
+  country: Country = DEFAULT_COUNTRY,
+): string | null {
   if (min == null || max == null) return null;
+  if (COUNTRY_UNITS[country] === "imperial") {
+    const lo = toFahrenheit(min);
+    const hi = toFahrenheit(max);
+    return lo === hi ? `${lo}°F` : `${lo}–${hi}°F`;
+  }
   return min === max ? `${min}°C` : `${min}–${max}°C`;
 }
 
-export function saunaTemperatureLine(t: TemperatureRange): string | null {
-  return t.sauna_display ?? formatTempRange(t.sauna_min_c, t.sauna_max_c);
+// `*_display` is a hand-written string for venues with several heat sources at
+// materially different temperatures. It is prose in the venue's own country,
+// so it is passed through untouched rather than parsed and converted — there
+// is no safe way to rewrite a sentence's units without rewriting the sentence.
+export function saunaTemperatureLine(
+  t: TemperatureRange,
+  country: Country = DEFAULT_COUNTRY,
+): string | null {
+  return t.sauna_display ?? formatTempRange(t.sauna_min_c, t.sauna_max_c, country);
 }
 
-export function coldPlungeTemperatureLine(t: TemperatureRange): string | null {
-  return t.cold_plunge_display ?? formatTempRange(t.cold_plunge_min_c, t.cold_plunge_max_c);
+export function coldPlungeTemperatureLine(
+  t: TemperatureRange,
+  country: Country = DEFAULT_COUNTRY,
+): string | null {
+  return t.cold_plunge_display ?? formatTempRange(t.cold_plunge_min_c, t.cold_plunge_max_c, country);
 }
 
 export const SITE_NAME = "Where We Bathe";
