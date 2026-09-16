@@ -14,7 +14,7 @@ from dataclasses import asdict, dataclass
 from typing import Iterator
 from urllib.parse import urlsplit
 
-from admin.config import AMENITY_KEYS, DEFAULT_COUNTRY, FAILED_DIR, MODEL_ARCHITECT, MODEL_GATEKEEPER, MODEL_HARVESTER, PUBLISHED_DIR, ROOT, STAGING_DIR
+from admin.config import AMENITY_KEYS, COUNTRY_LOCALE, DEFAULT_COUNTRY, FAILED_DIR, MODEL_ARCHITECT, MODEL_GATEKEEPER, MODEL_HARVESTER, PUBLISHED_DIR, ROOT, STAGING_DIR
 from admin import schema
 from admin.pipeline import agents, drivetime, geocode, harvest, images, outreach_store, places, staging, verification
 from admin.pipeline.staging import render_mdx, split_frontmatter
@@ -347,7 +347,17 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False, allow_existing_
         else ""
     )
 
-    architect_input = json.dumps(harvester_data, indent=2) + places_block
+    # Locale, named explicitly rather than left for the agent to infer from the
+    # `country` field buried in the JSON (Gate 16). Both the Architect and the
+    # Gatekeeper branch on it, and an agent that misses it produces an entry
+    # that reads plausibly in the wrong English.
+    venue_country = harvester_data.get("country", DEFAULT_COUNTRY)
+    locale_block = (
+        f"\n\n---\nLocale: {COUNTRY_LOCALE.get(venue_country, 'en-AU')} "
+        f"(country {venue_country}) — apply this variant only, never a blend."
+    )
+
+    architect_input = json.dumps(harvester_data, indent=2) + places_block + locale_block
     try:
         (architect_fm, architect_body), _usage = agents.call_agent(
             model=MODEL_ARCHITECT,
@@ -373,6 +383,7 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False, allow_existing_
     gatekeeper_input = (
         f"{architect_mdx}\n\n---\nHarvester JSON (for the fact audit):\n{json.dumps(harvester_data, indent=2)}"
         + places_block
+        + locale_block
     )
     try:
         (gate_fm, gate_body), _usage = agents.call_agent(

@@ -257,6 +257,12 @@ SUBDIVISIONS = {
 
 COUNTRY_CURRENCY = {"AU": "AUD", "US": "USD"}
 
+# BCP 47 tag per country (Gate 16). Mirrors site/src/config.ts's COUNTRY_LOCALE.
+# Drives the locale block the Architect and Gatekeeper branch on, and <html lang>
+# on the site side. Country-neutral surfaces keep en-AU — the house voice belongs
+# to no one country, per CLAUDE.md rule 7.
+COUNTRY_LOCALE = {"AU": "en-AU", "US": "en-US"}
+
 # Coordinate envelopes, used to catch a geocoder returning a plausible-looking
 # point on the wrong continent. Generous by design: these reject a mistake, not
 # a borderline island.

@@ -82,6 +82,15 @@ Constructions: em dashes (—) anywhere; "not X but Y" / "X rather than Y" contr
 constructions; exclamation marks; "treat yourself" imperatives; rhetorical
 questions.
 
-Australian English throughout: -ise not -ize, -our not -or, -re (centre, metre),
-licence (noun) / license (verb), metric units, dates as 17 July 2026, temperatures
-as "39 degrees" in prose, "bathers or swimwear" not "bathing suit".
+Locale follows the venue's country, named in the `Locale` block of your input
+(`en-AU` for `AU`, `en-US` for `US`). Apply one, never a blend:
+
+- **en-AU** — -ise not -ize, -our not -or, -re (centre, metre), licence (noun) /
+  license (verb), metric units, dates as 17 July 2026, temperatures as "39
+  degrees" in prose, "bathers or swimwear" not "bathing suit".
+- **en-US** — -ize, -or, -er (center, meter), program and license throughout, US
+  customary units, dates as July 17, 2026, temperatures as "102 degrees" in
+  prose, "swimsuit" or "bathing suit", never "bathers".
+
+Only spelling, units, date form and those everyday nouns move. The register,
+the banned vocabulary and the honesty rules are identical in both.

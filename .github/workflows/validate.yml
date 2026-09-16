@@ -138,6 +138,11 @@ jobs:
           python3 -m admin.pipeline.validate_places
           python3 -m admin.pipeline.validate_places --self-test
 
+      - name: Locale (check 31)
+        run: |
+          python3 -m admin.pipeline.validate_locale
+          python3 -m admin.pipeline.validate_locale --self-test
+
       # --- Check 3: derived-data freshness -------------------------------
       # Rebuilds into the working tree and asserts nothing moved. This is the
       # check that catches a published venue edited without a rebuild — and, as
