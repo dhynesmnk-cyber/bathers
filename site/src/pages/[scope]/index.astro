@@ -22,6 +22,8 @@ import Icon from "../../components/Icon.astro";
 import {
   AMENITY_KEYS,
   AMENITY_NOTATION,
+  COUNTRY_NAME_IN_PHRASE,
+  DEFAULT_COUNTRY,
   CROSS_CUTTING_FACILITY_FILTERS,
   POOL_NATIONAL_FILTERS,
   amenityUrlSlug,
@@ -46,8 +48,18 @@ export async function getStaticPaths() {
   // State pages moved to the /places/ hierarchy 2026-09-08 (TRD.md §1) and are
   // 301'd in netlify.toml. This route now generates only the NATIONAL lists,
   // which are feature-scoped rather than geographic and keep their short slugs.
+  //
+  // "National" means Australia here, and since 2026-09-15 it says so (Gate 16).
+  // These pages were titled "in Australia" while filtering no country at all,
+  // so the first published Florida venue would have appeared in a list headed
+  // Australia. Other countries get their own filter pages under their own
+  // branch of /places/ — these short slugs stay Australian, which is what they
+  // have always meant and what is already indexed against them.
+  const national = venues.filter((v) => v.data.country === DEFAULT_COUNTRY);
+  const countryName = COUNTRY_NAME_IN_PHRASE[DEFAULT_COUNTRY];
+
   for (const amenityKey of AMENITY_KEYS) {
-    const matching = venues.filter((v) => v.data.amenities[amenityKey]);
+    const matching = national.filter((v) => v.data.amenities[amenityKey]);
     if (matching.length === 0) continue;
     paths.push({
       params: { scope: amenityUrlSlug(amenityKey) },
@@ -56,7 +68,7 @@ export async function getStaticPaths() {
   }
 
   for (const facilityFilter of CROSS_CUTTING_FACILITY_FILTERS) {
-    const matching = venues.filter((v) => v.data.facilities?.[facilityFilter.key]);
+    const matching = national.filter((v) => v.data.facilities?.[facilityFilter.key]);
     if (matching.length === 0) continue;
     paths.push({
       params: { scope: facilityFilter.slug },
@@ -65,7 +77,7 @@ export async function getStaticPaths() {
   }
 
   for (const poolFilter of POOL_NATIONAL_FILTERS) {
-    const matching = venues.filter((v) => v.data.facilities?.[poolFilter.key]);
+    const matching = national.filter((v) => v.data.facilities?.[poolFilter.key]);
     if (matching.length === 0) continue;
     paths.push({
       params: { scope: poolFilter.slug },
@@ -82,6 +94,7 @@ type Props =
 
 const props = Astro.props as Props;
 const { kind, venues } = props;
+const countryName = COUNTRY_NAME_IN_PHRASE[DEFAULT_COUNTRY];
 const venueCount = venues.length;
 const venueNoun = venueCount === 1 ? "venue" : "venues";
 
@@ -93,11 +106,11 @@ let backLink: { href: string; label: string } | null = null;
 
 if (kind === "amenity-national") {
   const full = AMENITY_NOTATION[props.amenityKey].full;
-  pageHeading = `${full} in Australia`;
-  pageTitle = `${full} — ${venueCount} ${venueNoun} across Australia`;
+  pageHeading = `${full} in ${countryName}`;
+  pageTitle = `${full} — ${venueCount} ${venueNoun} across ${countryName}`;
   description =
     FOREWORDS.national?.amenities?.[props.amenityKey] ||
-    `${full} at ${venueCount} bathhouses and hot springs across Australia, compared side by side.`;
+    `${full} at ${venueCount} bathhouses and hot springs across ${countryName}, compared side by side.`;
   canonicalPath = `/${amenityUrlSlug(props.amenityKey)}/`;
   backLink = { href: `/glossary/${props.amenityKey.replace(/_/g, "-")}/`, label: "What is this?" };
 } else {
@@ -105,10 +118,10 @@ if (kind === "amenity-national") {
   // nationals (indoor-pool / outdoor-pool / natural-spring) render identically;
   // the route slug is carried in props so this branch stays list-agnostic.
   const { label, facilityKey, slug } = props as { label: string; facilityKey: string; slug: string };
-  pageHeading = `${label} in Australia`;
-  pageTitle = `${label} — ${venueCount} ${venueNoun} across Australia`;
+  pageHeading = `${label} in ${countryName}`;
+  pageTitle = `${label} — ${venueCount} ${venueNoun} across ${countryName}`;
   description =
-    FOREWORDS.national?.facilities?.[facilityKey] || `${label} at ${venueCount} bathhouses and hot springs across Australia.`;
+    FOREWORDS.national?.facilities?.[facilityKey] || `${label} at ${venueCount} bathhouses and hot springs across ${countryName}.`;
   canonicalPath = `/${slug}/`;
   backLink = { href: `/glossary/${facilityKey.replace(/_/g, "-")}/`, label: "What is this?" };
 }

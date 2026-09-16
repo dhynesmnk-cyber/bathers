@@ -273,6 +273,14 @@ export const COUNTRY_NAMES: Record<Country, string> = {
   US: "United States",
 };
 
+/** The country's name as it reads after a preposition: "in Australia", but "in
+ *  the United States". COUNTRY_NAMES is the label form, correct on its own in a
+ *  list or a breadcrumb and wrong the moment a sentence is built around it. */
+export const COUNTRY_NAME_IN_PHRASE: Record<Country, string> = {
+  AU: "Australia",
+  US: "the United States",
+};
+
 export const SUBDIVISIONS: Record<Country, readonly string[]> = {
   AU: STATES,
   US: [

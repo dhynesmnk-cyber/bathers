@@ -6,7 +6,7 @@
 // threshold; thinner ones are skipped and logged, never a hard failure
 // (mirrors SCHEMA.md's "omit if thin" posture).
 import type { CollectionEntry } from "astro:content";
-import { AMENITY_NOTATION, CATEGORY_LABELS, formatMoney, priceRange, subdivisionName } from "../config";
+import { AMENITY_NOTATION, CATEGORY_LABELS, DEFAULT_COUNTRY, formatMoney, priceRange, subdivisionName, type Country } from "../config";
 
 export const COMPARISON_MIN_VENUES = 5;
 
@@ -181,14 +181,22 @@ export interface EligibleComparison extends Comparison {
 
 // Split the registry into pages that clear the threshold and ones skipped for
 // thin data (the caller logs the latter, per the done-condition).
-export function resolveComparisons(venues: Venue[]): {
+export function resolveComparisons(
+  venues: Venue[],
+  country: Country = DEFAULT_COUNTRY,
+): {
   eligible: EligibleComparison[];
   skipped: { slug: string; count: number }[];
 } {
+  // One country per comparison set (Gate 16). Every title here says
+  // "Australian", and a ranked price table that silently mixed AUD and USD
+  // rows would be wrong in a way a reader cannot see. A US set generates from
+  // the same registry once Florida clears COMPARISON_MIN_VENUES.
+  const scoped = venues.filter((v) => v.data.country === country);
   const eligible: EligibleComparison[] = [];
   const skipped: { slug: string; count: number }[] = [];
   for (const c of COMPARISONS) {
-    const selected = c.select(venues);
+    const selected = c.select(scoped);
     if (selected.length >= COMPARISON_MIN_VENUES) {
       eligible.push({ ...c, venues: selected });
     } else {

@@ -22,6 +22,7 @@ from pathlib import Path
 
 from admin.config import (
     AMENITY_KEYS,
+    DEFAULT_COUNTRY,
     PUBLISHED_DIR,
     SITE_DIR,
     SUBDIVISION_NAMES,
@@ -92,6 +93,24 @@ def run() -> list[str]:
         if duplicates:
             failures.append(f"{where}: duplicate area slug(s): {', '.join(duplicates)}")
 
+    # 1b. Subdivision slugs and country-wide filter slugs share the tier below a
+    # country (Gate 16: /places/north-america/united-states/florida/ and
+    # .../magnesium-pool/ are siblings). Same slot, same hazard as 1 above —
+    # a collision would silently drop whichever page Astro generated second.
+    for country in SUBDIVISION_NAMES:
+        if country == DEFAULT_COUNTRY:
+            continue  # its filters live at the top level, not under /places/
+        subdivision_slugs = {
+            subdivision_slug(country, code) for code in SUBDIVISION_NAMES[country]
+        }
+        clash = sorted(subdivision_slugs & filters)
+        if clash:
+            failures.append(
+                f"{country}: subdivision slug(s) collide with country-wide feature-filter "
+                f"slug(s) at the same URL level — one page would silently overwrite the "
+                f"other: {', '.join(clash)}"
+            )
+
     # 2. Every published venue's place must resolve to a declared one.
     for path in sorted(PUBLISHED_DIR.glob("*.mdx")):
         fm = parse_frontmatter(path)
@@ -158,10 +177,19 @@ def _self_test() -> int:
         clean = not any("collide" in f for f in run())
     finally:
         module._area_slugs_by_subdivision = original
-    ok = caught and caught_us and clean
+    # And the country-level tier: a filter slug that matches a subdivision slug.
+    original_filters = module._filter_slugs
+    try:
+        module._filter_slugs = lambda: original_filters() | {"florida"}
+        caught_country = any("subdivision slug" in f for f in run())
+    finally:
+        module._filter_slugs = original_filters
+
+    ok = caught and caught_us and clean and caught_country
     print(f"  {'ok  ' if caught else 'FAIL'} a colliding AU area slug is rejected")
     print(f"  {'ok  ' if caught_us else 'FAIL'} a colliding US area slug is rejected")
     print(f"  {'ok  ' if clean else 'FAIL'} normal area slugs in both countries pass")
+    print(f"  {'ok  ' if caught_country else 'FAIL'} a filter slug colliding with a subdivision slug is rejected")
     return 0 if ok else 1
 
 

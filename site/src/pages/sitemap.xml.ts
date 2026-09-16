@@ -9,6 +9,7 @@ import {
   AMENITY_KEYS,
   CATEGORIES,
   CROSS_CUTTING_FACILITY_FILTERS,
+  DEFAULT_COUNTRY,
   FACILITY_KEYS,
   POOL_NATIONAL_FILTERS,
   POOL_TYPES,
@@ -53,6 +54,29 @@ export const GET: APIRoute = async ({ site }) => {
 
     for (const country of regionCountries) {
       entries.push({ path: placePath(country) });
+
+      // Country-wide feature filters (Gate 16) — every country but the default
+      // one, whose equivalents are the top-level /magnesium-pool/ family added
+      // below. Mirrors the same conditions [state]/index.astro generates on.
+      if (country !== DEFAULT_COUNTRY) {
+        const inCountry = venues.filter((v) => v.data.country === country);
+        for (const amenityKey of AMENITY_KEYS) {
+          if (inCountry.some((v) => v.data.amenities[amenityKey])) {
+            entries.push({ path: placePath(country, amenityUrlSlug(amenityKey)) });
+          }
+        }
+        for (const poolType of POOL_TYPES) {
+          if (poolType.slug !== "other" && inCountry.some((v) => poolType.match(v.data.facilities))) {
+            entries.push({ path: placePath(country, poolType.slug) });
+          }
+        }
+        for (const f of CROSS_CUTTING_FACILITY_FILTERS) {
+          if (inCountry.some((v) => v.data.facilities?.[f.key])) {
+            entries.push({ path: placePath(country, f.slug) });
+          }
+        }
+      }
+
       for (const code of Object.keys(SUBDIVISION_NAMES[country])) {
         const inState = venues.filter(
           (v) => v.data.country === country && v.data.state_province === code,
