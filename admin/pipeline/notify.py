@@ -296,6 +296,25 @@ def config_report() -> tuple[list[str], list[str]]:
         problems.append(
             "neither SMTP_FROM nor SMTP_USERNAME is set, so the message would have no From header"
         )
+    # Zoho (and most mailbox providers) will only send as the authenticated
+    # mailbox or one of its verified aliases. A mismatch here is the nastiest
+    # failure in this file's neighbourhood: the SMTP conversation succeeds,
+    # `_send()` returns True, the outreach flow records a contact — and the
+    # message is dropped or bounced after the fact, so nothing in the admin
+    # ever says it did not arrive. Compared, not printed, so no value leaks.
+    if SMTP_FROM and SMTP_USERNAME:
+        from email.utils import parseaddr
+
+        from_addr = parseaddr(SMTP_FROM)[1].strip().lower()
+        if from_addr and from_addr != SMTP_USERNAME.strip().lower():
+            lines.append(
+                "  note  SMTP_FROM's address is NOT the same as SMTP_USERNAME — fine if it is a "
+                "verified alias, but if the provider will not send as it the message is accepted "
+                "and then silently dropped"
+            )
+        else:
+            lines.append("  ok    SMTP_FROM's address matches SMTP_USERNAME")
+
     if SMTP_PORT == 465:
         problems.append(
             "port 465 is implicit TLS, and _send() always calls starttls() — the connection will "
