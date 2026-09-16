@@ -145,6 +145,7 @@ const sorted = [...venues].sort((a: any, b: any) => a.data.name.localeCompare(b.
 ---
 
 <BaseLayout
+  country={country as Country}
   title={pageTitle}
   description={description}
   canonicalPath={placePath(country as Country, code, leafSlug)}

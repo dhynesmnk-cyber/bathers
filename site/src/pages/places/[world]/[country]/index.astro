@@ -44,6 +44,7 @@ const sorted = [...venues].sort((a: any, b: any) => a.data.name.localeCompare(b.
 ---
 
 <BaseLayout
+  country={country as Country}
   title={`Bathhouses & Hot Springs in ${name} — ${venues.length} ${plural(venues.length, "venue", "venues")}`}
   description={`Every bathhouse, sauna and hot spring we have written up in ${name} — ${venues.length} ${plural(venues.length, "venue", "venues")} across ${codes.length} ${codes.length === 1 ? "state" : "states"}, no sponsored listings.`}
   canonicalPath={placePath(country as Country)}

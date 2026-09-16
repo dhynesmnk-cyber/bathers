@@ -623,7 +623,24 @@ export function coldPlungeTemperatureLine(
 }
 
 export const SITE_NAME = "Where We Bathe";
-export const SITE_TAGLINE = "A field guide to Australian saunas, hot pools and bathhouses.";
+// Country-neutral since 2026-09-15 (Gate 16). This one constant reaches the
+// homepage meta description, the Organization and WebSite JSON-LD and the
+// footer, so naming a country here named it in four places at once — and named
+// the wrong one on every US page. Country framing belongs on the country pages,
+// which is where the /places/ tree already puts it.
+export const SITE_TAGLINE = "A field guide to saunas, hot pools and bathhouses.";
+
+/** BCP 47 tag per country, for <html lang> and og:locale. A page that belongs
+ *  to no country keeps the house voice's en-AU. */
+export const COUNTRY_LOCALE: Record<Country, string> = {
+  AU: "en-AU",
+  US: "en-US",
+};
+
+export const OG_LOCALE: Record<Country, string> = {
+  AU: "en_AU",
+  US: "en_US",
+};
 
 // Footer contact/social links (2026-07-27 addition, DESIGN.md §5d).
 export const SITE_CONTACT_EMAIL = "sebastian@wherewebathe.com";

@@ -88,6 +88,7 @@ const path = (leaf?: string) => placePath(country as Country, code, leaf);
 ---
 
 <BaseLayout
+  country={country as Country}
   title={`Bathhouses & Hot Springs in ${stateName} — ${venues.length} ${noun}`}
   description={
     FOREWORDS[forewordKey(country as Country, code)]?.meta_description ||

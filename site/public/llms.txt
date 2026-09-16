@@ -1,8 +1,8 @@
 # Where We Bathe
 
-> A free, ad-free directory of Australian bathhouses, saunas and thermal springs — magnesium pools, cold plunges, hot springs — catalogued state by state, with no sponsored listings.
+> A free, ad-free directory of bathhouses, saunas and thermal springs — magnesium pools, cold plunges, hot springs — catalogued country by country and state by state, with no sponsored listings.
 
-Where We Bathe documents Australian venues built around heat, cold and water. Each entry begins as the venue's own published account, then is checked and tightened by hand before publication; every factual figure traces back to the venue's own materials, and no venue can pay for placement or ranking. How the directory is made, and how strongly each fact is verified, is described at `/methodology/`.
+Where We Bathe documents venues built around heat, cold and water. Each entry begins as the venue's own published account, then is checked and tightened by hand before publication; every factual figure traces back to the venue's own materials, and no venue can pay for placement or ranking. How the directory is made, and how strongly each fact is verified, is described at `/methodology/`.
 
 ## Structure
 

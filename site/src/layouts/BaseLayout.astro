@@ -5,7 +5,7 @@ import CornerMenu from "../components/CornerMenu.astro";
 import Footer from "../components/Footer.astro";
 import GrainOverlay from "../components/GrainOverlay.astro";
 import SiteLogo from "../components/SiteLogo.astro";
-import { AMENITY_KEYS, AMENITY_NOTATION, CATEGORY_LABELS, GOATCOUNTER_SITE, SITE_NAME, SITE_TAGLINE, subdivisionName } from "../config";
+import { AMENITY_KEYS, AMENITY_NOTATION, CATEGORY_LABELS, COUNTRY_LOCALE, DEFAULT_COUNTRY, GOATCOUNTER_SITE, OG_LOCALE, SITE_NAME, SITE_TAGLINE, subdivisionName, type Country } from "../config";
 import "../styles/global.css";
 
 interface Props {
@@ -16,9 +16,12 @@ interface Props {
   imageAlt?: string;
   type?: "website" | "article";
   noindex?: boolean;
+  /** The country this page is about, where it is about one. Drives <html lang>
+   *  and og:locale. Pages that belong to no country keep the house default. */
+  country?: Country;
 }
 
-const { title, description, canonicalPath, image, imageAlt, type = "website", noindex = false } = Astro.props;
+const { title, description, canonicalPath, image, imageAlt, type = "website", noindex = false, country = DEFAULT_COUNTRY } = Astro.props;
 const canonicalHref = canonicalPath ?? Astro.url.pathname;
 // og:image:alt describes the share card/photo for screen readers and crawlers
 // (Gate E4b). Falls back to the page description, then the title — every page
@@ -70,7 +73,7 @@ const searchIndex = searchVenues.map((v) => ({
 ---
 
 <!doctype html>
-<html lang="en-AU">
+<html lang={COUNTRY_LOCALE[country]}>
   <head>
     <script is:inline>
       (function () {
@@ -92,6 +95,7 @@ const searchIndex = searchVenues.map((v) => ({
     {noindex && <meta name="robots" content="noindex, follow" />}
     <link rel="canonical" href={canonicalUrl} />
     <meta property="og:type" content={type} />
+    <meta property="og:locale" content={OG_LOCALE[country]} />
     <meta property="og:site_name" content={SITE_NAME} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
