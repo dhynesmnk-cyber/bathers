@@ -211,14 +211,22 @@ def send_outreach_email(
     who reads this as an invoice, or as pay-to-be-listed, would be right to be
     annoyed and wrong about the facts.
 
-    The closing opt-out line (2026-09-15) is not decoration: this goes to
-    Australian businesses and mentions a paid option, so Australia's Spam Act
-    wants a functional opt-out on it. Consent itself is the inferred kind — the
-    addresses are conspicuously published by those businesses and the message
-    concerns their own listing — but "ignore it and nothing changes" addresses
-    pressure, not opt-out. A reply of "no thanks" is recorded through the
-    existing `declined` state (responded -> declined), so honouring it needs no
-    new mechanism. Keep the line if you rewrite this email.
+    The closing opt-out line (2026-09-15) is not decoration: this is commercial
+    electronic mail that mentions a paid option, so it wants a functional
+    opt-out. Consent itself is the inferred kind — the addresses are
+    conspicuously published by those businesses and the message concerns their
+    own listing — but "ignore it and nothing changes" addresses pressure, not
+    opt-out. A reply of "no thanks" is recorded through the existing `declined`
+    state (responded -> declined), so honouring it needs no new mechanism. Keep
+    the line if you rewrite this email.
+
+    Written as Australia's Spam Act when only Australian venues existed; from
+    Gate 16 (2026-09-15) this also reaches US operators, where CAN-SPAM asks for
+    the same opt-out and additionally for a physical postal address on
+    commercial mail. The line above satisfies the opt-out half in both
+    jurisdictions. **The postal-address requirement is not met and is the
+    owner's call** — it needs a real address, which is not something this file
+    can invent.
     """
     site = SITE_URL or "https://wherewebathe.com"
     greeting = f"Hello {operator_name}," if operator_name.strip() else "Hello,"
