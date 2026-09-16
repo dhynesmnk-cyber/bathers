@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import re
 import sys
-from pathlib import Path
 
 from admin.config import (
     AMENITY_KEYS,
@@ -31,11 +30,11 @@ from admin.config import (
     subdivision_slug,
     world_region_for_country,
 )
+from admin.pipeline import config_ts
 from admin.pipeline.data_store import parse_frontmatter
 
 DIST = SITE_DIR / "dist"
 REGIONS_TS = SITE_DIR / "src" / "data" / "regions.ts"
-CONFIG_TS = SITE_DIR / "src" / "config.ts"
 
 
 def _area_slugs_by_subdivision() -> dict[tuple[str, str], list[str]]:
@@ -132,16 +131,13 @@ def _filter_slugs() -> set[str]:
 
     Pool types and cross-cutting facilities live only in site/src/config.ts, so
     they are read out of it rather than copied here — a hardcoded mirror would
-    be exactly the drift this module is meant to prevent.
+    be exactly the drift this module is meant to prevent. The reader itself now
+    lives in config_ts, shared with validate_discoverability: a check against
+    duplication should not be built by duplicating a parser.
     """
     slugs = {key.replace("_", "-") for key in AMENITY_KEYS}
-    text = CONFIG_TS.read_text(encoding="utf-8")
     for const in ("CROSS_CUTTING_FACILITY_FILTERS", "POOL_TYPES"):
-        block = text.split(f"export const {const}", 1)
-        if len(block) < 2:
-            continue
-        body = block[1].split("] as const;", 1)[0]
-        slugs |= set(re.findall(r'slug:\s*"([a-z0-9-]+)"', body))
+        slugs |= config_ts.slugs(const)
     return slugs
 
 
