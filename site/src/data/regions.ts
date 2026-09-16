@@ -34,6 +34,7 @@ export const REGIONS: Region[] = [
   // VIC — the only state with live coverage today (20 of 25 venues).
   { slug: "melbourne", name: "Melbourne", country: "AU", subdivision: "VIC", cities: [
     "Melbourne", "North Melbourne", "South Yarra", "Collingwood", "Essendon", "Port Melbourne",
+    "Southbank", "Northcote", "Braybrook", "Brunswick", "Fitzroy", "Richmond", "Prahran",
   ] },
   { slug: "mornington-peninsula", name: "Mornington Peninsula", country: "AU", subdivision: "VIC", cities: [
     "Sorrento", "Fingal", "Mornington", "Seaford", "Rye", "Rosebud", "Portsea",
@@ -42,7 +43,8 @@ export const REGIONS: Region[] = [
     "Daylesford", "Hepburn Springs", "Hepburn",
   ] },
   { slug: "geelong-surf-coast", name: "Geelong & Surf Coast", country: "AU", subdivision: "VIC", cities: [
-    "Geelong", "Torquay", "Ocean Grove", "Barwon Heads",
+    "Geelong", "Torquay", "Ocean Grove", "Barwon Heads", "Point Lonsdale", "Queenscliff",
+    "Anglesea",
   ] },
   { slug: "great-ocean-road", name: "Great Ocean Road", country: "AU", subdivision: "VIC", cities: [
     "Warrnambool", "Lorne", "Apollo Bay", "Port Fairy",
@@ -53,6 +55,12 @@ export const REGIONS: Region[] = [
   { slug: "yarra-ranges", name: "Yarra Ranges", country: "AU", subdivision: "VIC", cities: [
     "Narbethong", "Marysville", "Healesville", "Warburton",
   ] },
+  // Added 2026-09-16: Beechworth sat in no region at all, and none of the
+  // existing seven is honest about where it is — the Ovens Valley is its own
+  // drive, not an outer edge of the Yarra Ranges.
+  { slug: "high-country", name: "Victorian High Country", country: "AU", subdivision: "VIC", cities: [
+    "Beechworth", "Bright", "Myrtleford", "Mount Beauty", "Wangaratta", "Falls Creek",
+  ], locative: "in the Victorian High Country" },
 
   // TAS — 3 venues, both Hobart and Cradle Mountain already covered.
   { slug: "hobart", name: "Hobart", country: "AU", subdivision: "TAS", cities: ["Hobart"] },
@@ -61,7 +69,9 @@ export const REGIONS: Region[] = [
   // NSW — 1 venue (Pilliga); Sydney and the Snowy Mountains are named
   // coverage-gap targets (TRD.md §8 coverage note) with no venue yet.
   { slug: "sydney", name: "Sydney", country: "AU", subdivision: "NSW", cities: [] },
-  { slug: "north-west-nsw", name: "North West NSW", country: "AU", subdivision: "NSW", cities: ["Pilliga", "Narrabri", "Moree"] },
+  { slug: "north-west-nsw", name: "North West NSW", country: "AU", subdivision: "NSW", cities: [
+    "Pilliga", "Narrabri", "Moree", "Boomi", "Burren Junction", "Walgett", "Lightning Ridge",
+  ] },
   { slug: "snowy-mountains", name: "Snowy Mountains", country: "AU", subdivision: "NSW", cities: ["Yarrangobilly"] },
 
   // QLD — 1 venue (Eulo); Brisbane/Gold Coast and Far North QLD are named

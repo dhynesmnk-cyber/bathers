@@ -166,6 +166,9 @@ jobs:
 #                crawler is not yet written.
 #   Check 6    — register lint: advisory by design ("warnings, not failures — a
 #                human judges them"), so it has no exit code to gate on.
-#   Checks 8-11 — Gate 6's noindex/national-route/region/abbreviation greps: they
+#   Checks 8, 9, 11 — Gate 6's noindex/national-route/abbreviation greps: they
 #                live in the /validate prose, not yet in a module with an exit
 #                code. Folding them in is the obvious next tightening.
+#   (Check 10 was folded into validate_places on 2026-09-16 and so DOES run
+#    here now. It had been prose since Gate 6, which is how seven published
+#    venues sat in no region and on no area page without anything going red.)

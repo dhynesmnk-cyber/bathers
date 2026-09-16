@@ -58,6 +58,75 @@ def _area_slugs_by_subdivision() -> dict[tuple[str, str], list[str]]:
     return out
 
 
+def _region_cities() -> dict[tuple[str, str], list[tuple[str, list[str]]]]:
+    """(country, subdivision) -> [(region slug, its cities)], from regions.ts."""
+    text = REGIONS_TS.read_text(encoding="utf-8")
+    out: dict[tuple[str, str], list[tuple[str, list[str]]]] = {}
+    for slug, country, subdivision, cities in re.findall(
+        r'\{\s*slug:\s*"([a-z0-9-]+)",\s*name:\s*"[^"]+",\s*country:\s*"([A-Z]{2})",'
+        r'\s*subdivision:\s*"([A-Z]{2,3})",\s*cities:\s*\[(.*?)\]',
+        text,
+        re.S,
+    ):
+        names = [c.strip().strip('"') for c in cities.split(",") if c.strip().strip('"')]
+        out.setdefault((country, subdivision), []).append((slug, names))
+    return out
+
+
+def _check_region_coverage() -> list[str]:
+    """Every published venue's city resolves to exactly one region, and no city
+    is claimed by two regions of the same subdivision.
+
+    This was /validate check 10, written as prose and never mechanised — which
+    is precisely how seven published venues (Boomi, Burren Junction, Braybrook,
+    Southbank, Point Lonsdale, Northcote, Beechworth) sat in no region at all,
+    on no area page, for as long as they did. A check nobody runs is a check
+    nobody fails.
+
+    An empty `cities` list is fine: several regions are scaffolded ahead of the
+    venues that will fill them, which is deliberate and predates this.
+    """
+    failures: list[str] = []
+    by_sub = _region_cities()
+
+    for (country, subdivision), regions in by_sub.items():
+        seen: dict[str, str] = {}
+        for slug, cities in regions:
+            for city in cities:
+                key = city.lower()
+                if key in seen and seen[key] != slug:
+                    failures.append(
+                        f"{country}/{subdivision}: '{city}' is claimed by both "
+                        f"'{seen[key]}' and '{slug}' — a venue there would resolve "
+                        f"to two regions"
+                    )
+                seen[key] = slug
+
+    for path in sorted(PUBLISHED_DIR.glob("*.mdx")):
+        fm = parse_frontmatter(path)
+        country = fm.get("country", DEFAULT_COUNTRY)
+        subdivision = fm.get("state_province")
+        city = (fm.get("city") or "").strip().lower()
+        if not city:
+            continue
+        hits = [
+            slug
+            for slug, cities in by_sub.get((country, subdivision), [])
+            if any(c.lower() == city for c in cities)
+        ]
+        if not hits:
+            failures.append(
+                f"{path.stem}: '{fm.get('city')}' ({country}/{subdivision}) is in no "
+                f"region — the venue appears on no area page"
+            )
+        elif len(hits) > 1:
+            failures.append(
+                f"{path.stem}: '{fm.get('city')}' resolves to {len(hits)} regions "
+                f"({', '.join(hits)}) — it must resolve to exactly one"
+            )
+    return failures
+
+
 def _filter_slugs() -> set[str]:
     """Every slug the leaf route can emit for a feature filter.
 
@@ -110,6 +179,9 @@ def run() -> list[str]:
                 f"slug(s) at the same URL level — one page would silently overwrite the "
                 f"other: {', '.join(clash)}"
             )
+
+    # 1c. Region coverage — /validate check 10, mechanised 2026-09-16.
+    failures.extend(_check_region_coverage())
 
     # 2. Every published venue's place must resolve to a declared one.
     for path in sorted(PUBLISHED_DIR.glob("*.mdx")):
@@ -177,6 +249,26 @@ def _self_test() -> int:
         clean = not any("collide" in f for f in run())
     finally:
         module._area_slugs_by_subdivision = original
+    # Region coverage, both directions: a venue in no region, and a city two
+    # regions both claim.
+    original_cities = module._region_cities
+    try:
+        stripped = {
+            k: [(s, [c for c in cities if c.lower() != "southbank"]) for s, cities in v]
+            for k, v in original_cities().items()
+        }
+        module._region_cities = lambda: stripped
+        caught_orphan = any("is in no region" in f for f in run())
+
+        doubled = {
+            k: [(s, cities + ["Daylesford"] if s == "melbourne" else cities) for s, cities in v]
+            for k, v in original_cities().items()
+        }
+        module._region_cities = lambda: doubled
+        caught_overlap = any("claimed by both" in f for f in run())
+    finally:
+        module._region_cities = original_cities
+
     # And the country-level tier: a filter slug that matches a subdivision slug.
     original_filters = module._filter_slugs
     try:
@@ -185,11 +277,13 @@ def _self_test() -> int:
     finally:
         module._filter_slugs = original_filters
 
-    ok = caught and caught_us and clean and caught_country
+    ok = caught and caught_us and clean and caught_country and caught_orphan and caught_overlap
     print(f"  {'ok  ' if caught else 'FAIL'} a colliding AU area slug is rejected")
     print(f"  {'ok  ' if caught_us else 'FAIL'} a colliding US area slug is rejected")
     print(f"  {'ok  ' if clean else 'FAIL'} normal area slugs in both countries pass")
     print(f"  {'ok  ' if caught_country else 'FAIL'} a filter slug colliding with a subdivision slug is rejected")
+    print(f"  {'ok  ' if caught_orphan else 'FAIL'} a venue whose city is in no region is rejected")
+    print(f"  {'ok  ' if caught_overlap else 'FAIL'} a city claimed by two regions is rejected")
     return 0 if ok else 1
 
 
