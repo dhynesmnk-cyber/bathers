@@ -7,6 +7,7 @@ import html
 import logging
 import smtplib
 from email.message import EmailMessage
+from email.utils import formatdate, make_msgid, parseaddr
 from typing import Any
 
 _logger = logging.getLogger("admin.notify")
@@ -49,6 +50,18 @@ def _send(to_addr: str, subject: str, body_text: str, body_html: str | None = No
     message["From"] = SMTP_FROM or SMTP_USERNAME
     message["To"] = to_addr
     message["Subject"] = subject
+    # Date and Message-ID (2026-09-16). Neither EmailMessage nor
+    # smtplib.send_message() adds these, so until now every message left here
+    # without them: Date is required by RFC 5322, and both absences are
+    # long-standing spam heuristics (SpamAssassin's MISSING_DATE and
+    # MISSING_MID). A relay usually patches them in, which means the headers
+    # were the relay's rather than ours — and "usually" is not a foundation for
+    # mail that has to reach small-business inboxes. The Message-ID domain is
+    # taken from the From address so it aligns with the sending domain, which
+    # is itself something filters check.
+    message["Date"] = formatdate(localtime=True)
+    from_domain = parseaddr(str(message["From"]))[1].rpartition("@")[2] or None
+    message["Message-ID"] = make_msgid(domain=from_domain)
     message.set_content(body_text)
     if body_html:
         # multipart/alternative via stdlib email — no new dependency. Mail
@@ -303,8 +316,6 @@ def config_report() -> tuple[list[str], list[str]]:
     # message is dropped or bounced after the fact, so nothing in the admin
     # ever says it did not arrive. Compared, not printed, so no value leaks.
     if SMTP_FROM and SMTP_USERNAME:
-        from email.utils import parseaddr
-
         from_addr = parseaddr(SMTP_FROM)[1].strip().lower()
         if from_addr and from_addr != SMTP_USERNAME.strip().lower():
             lines.append(
