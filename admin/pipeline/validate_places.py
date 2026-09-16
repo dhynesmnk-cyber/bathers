@@ -143,17 +143,25 @@ def _self_test() -> int:
     """Proves the collision check actually catches a collision — the failure it
     exists for produces no build error on its own."""
     module = sys.modules[__name__]
-    original = module._area_slugs_by_state
+    original = module._area_slugs_by_subdivision
     try:
-        module._area_slugs_by_state = lambda: {"VIC": ["magnesium-pool"]}
+        module._area_slugs_by_subdivision = lambda: {("AU", "VIC"): ["magnesium-pool"]}
         caught = any("collide" in f for f in run())
-        module._area_slugs_by_state = lambda: {"VIC": ["mornington-peninsula"]}
+        # And the same collision under a second country, which is the case the
+        # bare-code keying could not have distinguished.
+        module._area_slugs_by_subdivision = lambda: {("US", "FL"): ["cold-plunge"]}
+        caught_us = any("collide" in f for f in run())
+        module._area_slugs_by_subdivision = lambda: {
+            ("AU", "VIC"): ["mornington-peninsula"],
+            ("US", "FL"): ["north-central-florida"],
+        }
         clean = not any("collide" in f for f in run())
     finally:
-        module._area_slugs_by_state = original
-    ok = caught and clean
-    print(f"  {'ok  ' if caught else 'FAIL'} a colliding area slug is rejected")
-    print(f"  {'ok  ' if clean else 'FAIL'} a normal area slug passes")
+        module._area_slugs_by_subdivision = original
+    ok = caught and caught_us and clean
+    print(f"  {'ok  ' if caught else 'FAIL'} a colliding AU area slug is rejected")
+    print(f"  {'ok  ' if caught_us else 'FAIL'} a colliding US area slug is rejected")
+    print(f"  {'ok  ' if clean else 'FAIL'} normal area slugs in both countries pass")
     return 0 if ok else 1
 
 
