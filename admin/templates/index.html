@@ -84,15 +84,17 @@
                   <span class="mono field-label">Country</span>
                   <select id="field-country" class="text-input" data-field="country">
                     {% for code, label in country_names.items() %}
-                    <option value="{{ code }}">{{ label }}</option>
+                    <option value="{{ code }}" data-currency="{{ country_currency[code] }}">{{ label }}</option>
                     {% endfor %}
                   </select>
                 </label>
                 <label class="field">
                   <span class="mono field-label">State / province</span>
                   <select id="field-state-province" class="text-input" data-field="state_province">
-                    {% for code in subdivisions[default_country] %}
-                    <option value="{{ code }}">{{ code }}</option>
+                    {% for country_code, codes in subdivisions.items() %}
+                    {% for code in codes %}
+                    <option value="{{ code }}" data-country="{{ country_code }}">{{ code }}</option>
+                    {% endfor %}
                     {% endfor %}
                   </select>
                 </label>
@@ -110,6 +112,16 @@
                   <span class="mono field-label">City / suburb</span>
                   <input id="field-city" class="text-input" type="text" data-field="city" />
                 </label>
+                <label class="field">
+                  <span class="mono field-label">Postcode / ZIP</span>
+                  <input id="field-zipcode" class="text-input" type="text" data-field="zipcode" />
+                </label>
+                <label class="field">
+                  <span class="mono field-label">Currency</span>
+                  <input id="field-currency" class="text-input" type="text" data-field="currency" readonly />
+                </label>
+              </div>
+              <div class="field-row">
                 <label class="field">
                   <span class="mono field-label">Address</span>
                   <input id="field-address" class="text-input" type="text" data-field="address" />

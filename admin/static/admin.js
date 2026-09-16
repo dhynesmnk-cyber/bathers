@@ -41,6 +41,39 @@
   const fieldCategory = el("field-category");
   const fieldCity = el("field-city");
   const fieldCountry = el("field-country");
+  const fieldZipcode = el("field-zipcode");
+  const fieldCurrency = el("field-currency");
+
+  // Every country's subdivisions are rendered into the select by the template
+  // and read out once here. The list is never duplicated in this file: it lives
+  // in admin/config.py, and a JS copy would be one more place for it to drift.
+  const ALL_SUBDIVISIONS = Array.from(fieldStateProvince.options).map((o) => ({
+    value: o.value,
+    country: o.dataset.country,
+  }));
+
+  // Until 2026-09-15 the select was rendered for the default country alone and
+  // never repopulated, so picking US left the Australian states in place and no
+  // US venue could be staged at all.
+  function syncSubdivisionOptions(country, keep) {
+    const wanted = ALL_SUBDIVISIONS.filter((o) => o.country === country);
+    fieldStateProvince.innerHTML = "";
+    for (const o of wanted) {
+      const opt = document.createElement("option");
+      opt.value = o.value;
+      opt.textContent = o.value;
+      opt.dataset.country = o.country;
+      fieldStateProvince.appendChild(opt);
+    }
+    fieldStateProvince.value = wanted.some((o) => o.value === keep) ? keep : "";
+  }
+
+  // Currency is the country's, not a free choice — the schema rejects any other
+  // pairing, so offering one would only be a way to fail validation.
+  function syncCurrency(country) {
+    const opt = Array.from(fieldCountry.options).find((o) => o.value === country);
+    fieldCurrency.value = opt ? opt.dataset.currency || "" : "";
+  }
   const fieldAddress = el("field-address");
   const fieldWebsite = el("field-website");
   const fieldSummary = el("field-summary");
@@ -254,10 +287,14 @@
   function populateFields(entry) {
     const fm = entry.frontmatter || {};
     fieldName.value = fm.name || "";
-    fieldStateProvince.value = fm.state_province || "";
     fieldCategory.value = fm.category || "";
     fieldCity.value = fm.city || "";
     fieldCountry.value = fm.country || "AU";
+    // Country before subdivision: the options are rebuilt from it, so setting
+    // state_province first would write into a list about to be replaced.
+    syncSubdivisionOptions(fieldCountry.value, fm.state_province || "");
+    syncCurrency(fieldCountry.value);
+    fieldZipcode.value = fm.zipcode || "";
     fieldAddress.value = fm.address || "";
     fieldWebsite.value = fm.website || "";
     fieldSummary.value = fm.summary || "";
@@ -496,6 +533,8 @@
     category: fieldCategory,
     city: fieldCity,
     country: fieldCountry,
+    zipcode: fieldZipcode,
+    currency: fieldCurrency,
     address: fieldAddress,
     website: fieldWebsite,
     summary: fieldSummary,
@@ -578,7 +617,15 @@
   fieldStateProvince.addEventListener("change", () => queuePatch("state_province", fieldStateProvince.value));
   fieldCategory.addEventListener("change", () => queuePatch("category", fieldCategory.value));
   fieldCity.addEventListener("input", () => queuePatch("city", fieldCity.value));
-  fieldCountry.addEventListener("change", () => queuePatch("country", fieldCountry.value));
+  fieldCountry.addEventListener("change", () => {
+    const country = fieldCountry.value;
+    syncSubdivisionOptions(country, fieldStateProvince.value);
+    syncCurrency(country);
+    queuePatch("country", country);
+    queuePatch("state_province", fieldStateProvince.value);
+    queuePatch("currency", fieldCurrency.value);
+  });
+  fieldZipcode.addEventListener("input", () => queuePatch("zipcode", fieldZipcode.value));
   fieldAddress.addEventListener("input", () => queuePatch("address", fieldAddress.value));
   fieldWebsite.addEventListener("input", () => queuePatch("website", fieldWebsite.value));
   fieldSummary.addEventListener("input", () => queuePatch("summary", fieldSummary.value));
