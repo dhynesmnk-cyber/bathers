@@ -108,8 +108,15 @@ def backfill(
     slugs: list[str] | None = None,
     overwrite: bool = False,
     use_playwright: bool = False,
-) -> tuple[int, int]:
-    """(updated, missed). Prints one line per venue either way."""
+) -> tuple[int, int, int]:
+    """(recorded, missed, already_on_record). Prints one line per venue.
+
+    `already_on_record` is reported rather than inferred (2026-09-15): venues
+    that already carry an address are skipped, and when that skip was silent a
+    second run over 39 venues printed "0 address(es) found" and 8 misses, which
+    is indistinguishable from a run that failed outright. It is the normal
+    outcome of running this twice, so it has to say so.
+    """
     wanted = set(slugs or [])
     if wanted:
         # A typo'd slug would otherwise just quietly do nothing, which on a
@@ -119,6 +126,7 @@ def backfill(
             print(f"  ??   {slug}: no published venue with that slug")
     updated = 0
     missed = 0
+    already = 0
     first = True
     unreachable: list[str] = []
 
@@ -129,6 +137,7 @@ def backfill(
         data, _ = split_frontmatter(path.read_text(encoding="utf-8"), slug)
         existing = outreach_store.get(slug)
         if existing is not None and existing.published_email and not overwrite:
+            already += 1
             continue
         url = data.get("website") or data.get("source_url")
         if not url:
@@ -172,6 +181,12 @@ def backfill(
         if not dry_run:
             outreach_store.set_published_email(slug, email)
 
+    if already:
+        print(
+            f"\n  {already} venue(s) already have an address on record and were skipped."
+            "\n  Pass --overwrite to re-read them."
+        )
+
     if unreachable:
         # Carry --dry-run into the suggested command when we are in one. Without
         # this the hint silently promotes a dry run to a live write, which reads
@@ -189,7 +204,7 @@ def backfill(
     # No rebuild: nothing published changed. The addresses went into the
     # gitignored outreach.db, which is exactly why this backfill leaves no
     # commit behind and cannot drift the derived data.
-    return updated, missed
+    return updated, missed, already
 
 
 def _self_test() -> int:
@@ -274,10 +289,22 @@ def main() -> None:
         raise SystemExit(_self_test())
 
     slugs = [s.strip() for s in args.slugs.split(",") if s.strip()] if args.slugs else None
-    updated, missed = backfill(
+    updated, missed, already = backfill(
         dry_run=args.dry_run, slugs=slugs, overwrite=args.overwrite, use_playwright=args.playwright
     )
-    print(f"{updated} address(es) found, {missed} venue(s) without one")
+    verb = "found" if args.dry_run else "recorded"
+    summary = [f"{updated} new address(es) {verb}"]
+    if already:
+        summary.append(f"{already} already on record")
+    summary.append(f"{missed} venue(s) without one")
+    print(" · ".join(summary))
+    if not updated and already:
+        # The reassuring case, spelled out: this is what a second run looks
+        # like, and it is not a failure.
+        print(
+            "Nothing new — every venue that publishes an address already has it recorded. "
+            "The venues listed above either publish none or could not be read."
+        )
     if args.dry_run:
         # Say what is still true after this run, not just what the flag was: a
         # dry run that found 30 addresses looks like success until you notice
@@ -289,8 +316,6 @@ def main() -> None:
         )
     elif updated:
         print(f"recorded in data/outreach.db — the outreach screen will show {updated} address(es)")
-    if not updated and not missed and not slugs:
-        print("every venue already carries a contact address — pass --overwrite to re-read them")
 
 
 if __name__ == "__main__":

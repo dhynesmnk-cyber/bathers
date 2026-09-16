@@ -7,6 +7,7 @@ import html
 import logging
 import smtplib
 from email.message import EmailMessage
+from email.utils import formatdate, make_msgid, parseaddr
 from typing import Any
 
 _logger = logging.getLogger("admin.notify")
@@ -23,6 +24,13 @@ from admin.config import (
     VERIFIABLE_FIELD_LABELS,
 )
 from admin.pipeline.claims_store import ClaimRequest
+
+# The outreach email's opt-out line (2026-09-15). Defined once because the
+# plain-text and HTML bodies below are hand-maintained twins with nothing
+# asserting they agree — and this is the one sentence in the email that is there
+# for a legal reason (see send_outreach_email's docstring), so it is the worst
+# candidate for silently existing in only one of them.
+OUTREACH_OPT_OUT = 'If you would rather I did not write again, reply with "no thanks" and I won\'t.'
 
 PLAN_LABELS = {"one_off": "one-off $25 processing fee", "subscription": "$5/month unlimited-changes subscription"}
 
@@ -42,6 +50,18 @@ def _send(to_addr: str, subject: str, body_text: str, body_html: str | None = No
     message["From"] = SMTP_FROM or SMTP_USERNAME
     message["To"] = to_addr
     message["Subject"] = subject
+    # Date and Message-ID (2026-09-16). Neither EmailMessage nor
+    # smtplib.send_message() adds these, so until now every message left here
+    # without them: Date is required by RFC 5322, and both absences are
+    # long-standing spam heuristics (SpamAssassin's MISSING_DATE and
+    # MISSING_MID). A relay usually patches them in, which means the headers
+    # were the relay's rather than ours — and "usually" is not a foundation for
+    # mail that has to reach small-business inboxes. The Message-ID domain is
+    # taken from the From address so it aligns with the sending domain, which
+    # is itself something filters check.
+    message["Date"] = formatdate(localtime=True)
+    from_domain = parseaddr(str(message["From"]))[1].rpartition("@")[2] or None
+    message["Message-ID"] = make_msgid(domain=from_domain)
     message.set_content(body_text)
     if body_html:
         # multipart/alternative via stdlib email — no new dependency. Mail
@@ -190,6 +210,15 @@ def send_outreach_email(
     email says so plainly before it mentions the paid claim option. An operator
     who reads this as an invoice, or as pay-to-be-listed, would be right to be
     annoyed and wrong about the facts.
+
+    The closing opt-out line (2026-09-15) is not decoration: this goes to
+    Australian businesses and mentions a paid option, so Australia's Spam Act
+    wants a functional opt-out on it. Consent itself is the inferred kind — the
+    addresses are conspicuously published by those businesses and the message
+    concerns their own listing — but "ignore it and nothing changes" addresses
+    pressure, not opt-out. A reply of "no thanks" is recorded through the
+    existing `declined` state (responded -> declined), so honouring it needs no
+    new mechanism. Keep the line if you rewrite this email.
     """
     site = SITE_URL or "https://wherewebathe.com"
     greeting = f"Hello {operator_name}," if operator_name.strip() else "Hello,"
@@ -217,6 +246,8 @@ If you would also like to send through changes yourself in future, there is a
 paid option at {site}/claim/{slug}/. That is entirely separate. Confirming these
 details costs nothing and your listing does not change if you ignore it.
 
+{OUTREACH_OPT_OUT}
+
 Thanks,
 Where We Bathe
 {site}
@@ -236,6 +267,7 @@ and the page will say so.</p>
 <p>If you would also like to send through changes yourself in future, there is a paid option at
 <a href="{site}/claim/{slug}/">{site}/claim/{slug}/</a>. That is entirely separate. Confirming these
 details costs nothing and your listing does not change if you ignore it.</p>
+<p>{html.escape(OUTREACH_OPT_OUT)}</p>
 <p>Thanks,<br />Where We Bathe<br /><a href="{site}">{site}</a></p>
 """
     return _send(operator_email, f"{venue_name} — the details we publish about you", body_text, body_html)
@@ -277,6 +309,23 @@ def config_report() -> tuple[list[str], list[str]]:
         problems.append(
             "neither SMTP_FROM nor SMTP_USERNAME is set, so the message would have no From header"
         )
+    # Zoho (and most mailbox providers) will only send as the authenticated
+    # mailbox or one of its verified aliases. A mismatch here is the nastiest
+    # failure in this file's neighbourhood: the SMTP conversation succeeds,
+    # `_send()` returns True, the outreach flow records a contact — and the
+    # message is dropped or bounced after the fact, so nothing in the admin
+    # ever says it did not arrive. Compared, not printed, so no value leaks.
+    if SMTP_FROM and SMTP_USERNAME:
+        from_addr = parseaddr(SMTP_FROM)[1].strip().lower()
+        if from_addr and from_addr != SMTP_USERNAME.strip().lower():
+            lines.append(
+                "  note  SMTP_FROM's address is NOT the same as SMTP_USERNAME — fine if it is a "
+                "verified alias, but if the provider will not send as it the message is accepted "
+                "and then silently dropped"
+            )
+        else:
+            lines.append("  ok    SMTP_FROM's address matches SMTP_USERNAME")
+
     if SMTP_PORT == 465:
         problems.append(
             "port 465 is implicit TLS, and _send() always calls starttls() — the connection will "
