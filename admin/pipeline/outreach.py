@@ -73,7 +73,7 @@ def send_outreach(slug: str, *, operator_email: str, operator_name: str = "", no
     explicitly rather than assuming.
     """
     frontmatter = venue_frontmatter(slug)
-    sent = notify.send_outreach_email(
+    sent, reason = notify.send_outreach_email(
         slug=slug,
         venue_name=frontmatter.get("name", slug),
         operator_email=operator_email,
@@ -82,9 +82,13 @@ def send_outreach(slug: str, *, operator_email: str, operator_name: str = "", no
         frontmatter=frontmatter,
     )
     if not sent:
+        # Until 2026-09-17 this named SMTP_HOST for every failure, including a
+        # provider rejecting the recipient with SMTP_HOST set perfectly well.
+        # Naming a specific wrong cause is worse than naming none: it sends
+        # whoever reads it to check a setting that was never broken.
         raise OutreachError(
-            "no email was sent — SMTP is not configured (SMTP_HOST). Record a "
-            "phone or in-person contact instead if you reached them another way."
+            f"no email was sent — {reason}. Record a phone or in-person contact "
+            "instead if you reached them another way."
         )
     return outreach_store.transition(
         slug, "contacted", channel="email", note=note or None,

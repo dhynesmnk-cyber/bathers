@@ -45,15 +45,33 @@ PLAN_LABELS = {"one_off": "one-off $25 processing fee", "subscription": "$5/mont
 
 
 def _send(to_addr: str, subject: str, body_text: str, body_html: str | None = None) -> bool:
-    """Returns whether the message actually went out.
+    """Did the message go out? For callers that only need the yes/no.
 
-    The claim-flow callers ignore this and always have (a failed notification
-    must never 500 a public submission endpoint). Gate 13's outreach flow does
-    not: it records a state transition saying an operator was contacted, and
-    that must not be written when nothing was sent.
+    The claim-flow callers ignore even this and always have (a failed
+    notification must never 500 a public submission endpoint). Gate 13's
+    outreach flow needs the reason as well, so it calls `_send_with_reason`
+    below.
+    """
+    return _send_with_reason(to_addr, subject, body_text, body_html)[0]
+
+
+def _send_with_reason(
+    to_addr: str, subject: str, body_text: str, body_html: str | None = None
+) -> tuple[bool, str]:
+    """(sent, reason) — the reason being why it did not go, when it did not.
+
+    Gate 13's outreach flow records a state transition saying an operator was
+    contacted, so it must not write one when nothing was sent. Until 2026-09-17
+    it learned only that the send failed and reported the one cause it knew
+    about — "SMTP is not configured (SMTP_HOST)" — for every failure. A real
+    send rejected by the provider (2026-09-17: a Resend sandbox account
+    refusing any recipient but the account owner, with a perfectly good
+    SMTP_HOST) was announced as a missing setting, which is worse than no
+    diagnosis: it names a specific wrong cause, and sends whoever reads it to
+    check a thing that was never broken.
     """
     if not SMTP_HOST:
-        return False  # unconfigured in local dev — no-op rather than error the caller
+        return False, "SMTP is not configured — SMTP_HOST is unset"
 
     message = EmailMessage()
     message["From"] = SMTP_FROM or SMTP_USERNAME
@@ -89,10 +107,38 @@ def _send(to_addr: str, subject: str, body_text: str, body_html: str | None = No
             if SMTP_USERNAME:
                 smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
             smtp.send_message(message)
-        return True
+        return True, ""
     except (OSError, smtplib.SMTPException) as exc:
         _logger.error("failed to send %r to %s: %s", subject, to_addr, exc)
-        return False
+        return False, _failure_reason(exc)
+
+
+def _failure_reason(exc: Exception) -> str:
+    """One line a human can act on, from whatever smtplib raised.
+
+    The provider's own words are the most useful thing here — a 550 explaining
+    that the account is in sandbox mode says exactly what to do, and no
+    paraphrase of ours would improve on it — so the SMTP codes carry their
+    message through rather than being mapped to our own wording.
+    """
+    if isinstance(exc, smtplib.SMTPRecipientsRefused):
+        parts = [
+            f"{addr} ({code}): "
+            f"{(msg.decode(errors='replace') if isinstance(msg, bytes) else str(msg)).strip().rstrip('.')}"
+            for addr, (code, msg) in exc.recipients.items()
+        ]
+        return f"the mail server refused the recipient: {'; '.join(parts)}"
+    # Before SMTPResponseException, which it subclasses — the other order
+    # never reaches this branch.
+    if isinstance(exc, smtplib.SMTPAuthenticationError):
+        return "the mail server rejected the credentials (SMTP_USERNAME / SMTP_PASSWORD)"
+    if isinstance(exc, smtplib.SMTPResponseException):
+        detail = exc.smtp_error
+        text = detail.decode(errors="replace") if isinstance(detail, bytes) else str(detail)
+        return f"the mail server rejected the message ({exc.smtp_code}): {text.strip().rstrip('.')}"
+    if isinstance(exc, OSError):
+        return f"could not reach {SMTP_HOST} on port {SMTP_PORT} — {exc}"
+    return f"the send failed — {exc}"
 
 
 def _format_diff(diff: dict[str, Any]) -> str:
@@ -209,8 +255,10 @@ def send_outreach_email(
     operator_name: str,
     fields: list[str],
     frontmatter: dict[str, Any],
-) -> bool:
+) -> tuple[bool, str]:
     """Ask an operator to confirm or correct what we publish about their venue.
+
+    Returns (sent, reason); the reason is why it did not go, when it did not.
 
     Deliberately quotes the current values back rather than linking and asking
     them to check: a wrong price is easy to spot in a list and easy to reply to.
@@ -292,7 +340,9 @@ details costs nothing and your listing does not change if you ignore it.</p>
 <p>Thanks,<br />Where We Bathe<br /><a href="{site}">{site}</a></p>
 <p>{html.escape(OUTREACH_POSTAL_ADDRESS)}</p>
 """
-    return _send(operator_email, f"{venue_name} — the details we publish about you", body_text, body_html)
+    return _send_with_reason(
+        operator_email, f"{venue_name} — the details we publish about you", body_text, body_html
+    )
 
 
 # --- SMTP preflight (Gate 13, 2026-09-15) --------------------------------
@@ -378,10 +428,13 @@ def connection_check() -> tuple[bool, str]:
         return False, f"could not reach {SMTP_HOST} on port {SMTP_PORT}: {exc}"
 
 
-def send_test_email(to_addr: str) -> bool:
-    """A plain message proving the path works, end to end."""
+def send_test_email(to_addr: str) -> tuple[bool, str]:
+    """A plain message proving the path works, end to end.
+
+    Only to this one address, though — see the note `main` prints on success.
+    """
     site = SITE_URL or "https://wherewebathe.com"
-    return _send(
+    return _send_with_reason(
         to_addr,
         "Where We Bathe — SMTP test",
         "This is a test from the Where We Bathe admin.\n\n"
@@ -395,7 +448,7 @@ def send_test_email(to_addr: str) -> bool:
     )
 
 
-def send_outreach_preview(to_addr: str, slug: str) -> bool:
+def send_outreach_preview(to_addr: str, slug: str) -> tuple[bool, str]:
     """The real outreach email for `slug`, sent to you instead of the operator.
 
     Goes nowhere near the state machine: no transition, no `outreach_log` entry,
@@ -438,13 +491,15 @@ def _self_test() -> int:
     problems: list[str] = []
     captured: dict[str, str] = {}
 
-    def fake_send(to_addr: str, subject: str, body_text: str, body_html: str | None = None) -> bool:
+    def fake_send(
+        to_addr: str, subject: str, body_text: str, body_html: str | None = None
+    ) -> tuple[bool, str]:
         captured["text"] = body_text
         captured["html"] = body_html or ""
-        return True
+        return True, ""
 
-    global _send
-    real_send, _send = _send, fake_send
+    global _send_with_reason
+    real_send, _send_with_reason = _send_with_reason, fake_send
     try:
         send_outreach_email(
             slug="sample-venue",
@@ -455,7 +510,32 @@ def _self_test() -> int:
             frontmatter={"cost": "$40"},
         )
     finally:
-        _send = real_send
+        _send_with_reason = real_send
+
+    # The failure reason must name the real cause (2026-09-17). A provider
+    # rejection reported as "SMTP_HOST is unset" is the bug this replaced: it
+    # named a specific wrong cause and sent the reader to check a setting that
+    # was never broken.
+    sandbox_550 = smtplib.SMTPRecipientsRefused(
+        {"operator@example.com": (550, b"You can only send testing emails to your own address")}
+    )
+    reason = _failure_reason(sandbox_550)
+    for label, ok in (
+        ("a refused recipient names the recipient", "operator@example.com" in reason),
+        ("a refused recipient carries the server's own words", "only send testing emails" in reason),
+        ("a refused recipient is NOT blamed on SMTP_HOST", "SMTP_HOST" not in reason),
+        (
+            "rejected credentials are named as credentials",
+            "credentials" in _failure_reason(smtplib.SMTPAuthenticationError(535, b"nope")),
+        ),
+        (
+            "an unreachable host names the host and port",
+            SMTP_HOST in _failure_reason(OSError("refused")) or not SMTP_HOST,
+        ),
+    ):
+        print(f"  {'ok  ' if ok else 'FAIL'} {label}")
+        if not ok:
+            problems.append(label)
 
     for line, label in ((OUTREACH_OPT_OUT, "opt-out"), (OUTREACH_POSTAL_ADDRESS, "postal address")):
         for twin in ("text", "html"):
@@ -507,12 +587,22 @@ def main() -> None:
         return
 
     if args.as_outreach:
-        sent = send_outreach_preview(args.to, args.as_outreach)
+        sent, reason = send_outreach_preview(args.to, args.as_outreach)
         what = f"outreach email for {args.as_outreach}"
     else:
-        sent = send_test_email(args.to)
+        sent, reason = send_test_email(args.to)
         what = "test message"
-    print(f"{what}: {'sent' if sent else 'NOT SENT — see the log above'}")
+    print(f"{what}: {'sent' if sent else f'NOT SENT — {reason}'}")
+    if sent:
+        # A send to your own address proves less than it looks like it does:
+        # a provider still in sandbox mode accepts exactly that one recipient
+        # and refuses every other (2026-09-17). Say so, rather than let a green
+        # test stand in for a capability nobody has verified.
+        print(
+            "  note: this only proves sending to this address. Some providers allow the "
+            "account's own address while in sandbox mode and refuse all others — send to "
+            "an outside address, or check the provider's dashboard, before a real batch."
+        )
     raise SystemExit(0 if sent else 1)
 
 
