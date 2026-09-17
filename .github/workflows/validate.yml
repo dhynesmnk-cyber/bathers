@@ -103,6 +103,9 @@ jobs:
           python3 -m admin.pipeline.validate_outreach
           python3 -m admin.pipeline.validate_outreach --self-test
 
+      - name: "Check 33 — outreach email compliance lines"
+        run: python3 -m admin.pipeline.notify --self-test
+
       - name: "Check 28 — coverage floor"
         run: |
           python3 -m admin.pipeline.validate_coverage
