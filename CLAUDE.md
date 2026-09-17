@@ -10,7 +10,7 @@ You are building the project specified in TRD.md. Read TRD.md, SCHEMA.md, UX.md,
 4. **File pathing:** all cross-cutting paths (content dirs, DB path, temp dirs) are defined once — `admin/config.py` for Python, `site/src/config.ts` for Astro — and imported everywhere else. No hardcoded relative paths in feature code. All Python file operations use `pathlib` and are safe to run from the repo root.
 5. **Never touch:** `.env` (read-only, never commit, never print its values), anything in `temp_data/` manually, git history (no rebase/force-push), the `_published` directory by hand (only the approve action writes there).
 6. **Honesty in generated content:** the pipeline's Architect agent writes documented profiles, never fabricated first-hand visits. If you write or edit prompts, preserve this rule.
-7. Australian English in all user-facing copy, including the admin UI.
+7. **Locale follows the content's country** (amended 2026-09-15, Gate 16). Australian English for AU content, US English for US content — the Gatekeeper carries both variants and is told which one applies. Shared, country-neutral surfaces (the tagline, the glossary, the admin UI, the methodology page) stay Australian English: it is the house voice, and a page that belongs to no country has no reason to leave it. Until 2026-09-15 this rule was "Australian English in all user-facing copy"; it changed because the directory now publishes in a second country, not because the house voice moved.
 
 ## Stack constraints (recap — full detail in TRD.md §2)
 
@@ -105,6 +105,32 @@ WA first, then SA/NT/ACT to the floor, then the named remote thermal springs fro
 `gsc.py` replaced with a real Search Console integration feeding the opportunity queue as a ranked prompt only, never auto-creating articles; a tracked monthly AI-citation audit; a published commercial-relationships policy; whichever revenue lines the owner rules in; one chosen distribution channel actually running.
 
 **Done when:** the opportunity queue shows demand-derived candidates and the brief gate still governs each; the citation audit has three months of recorded results; the policy is live and linked from the methodology page; first revenue is recorded; the distribution channel has run a full cycle.
+
+---
+
+**2026-09-15: United States expansion approved.** Gates 1–15 established an Australian directory. The
+country-aware data model, the `/places/<world>/<country>/<subdivision>/` URL tree and the `US` country
+registry all landed on 2026-09-08 (TRD.md §1) in anticipation of this, but no US venue was ever published
+and three layers of Australia-only residue remain. Gate 16 is new scope, sequenced and blocking per rule 1
+exactly like the gates before it. The approved plan is the working reference; the contract below is
+operational.
+
+### Gate 16 — United States, beginning with Florida
+Country-scoped page sets (amenity, category, comparison), so an existing AU URL keeps its meaning and its
+indexing rather than being widened or redirected; per-country locale for copy, units and currency —
+metric stays the storage form, °F/miles the US display form; country-aware geocoding, venue discovery,
+Places verification, drive-time origins and forewords; a unified place gazetteer and a Florida region
+taxonomy; the admin editor able to stage a non-AU venue at all; and Florida published to Gate 14's
+coverage floor at full Gate-7 fact-model shape at publish time, with outreach opened per venue.
+
+**Done when:** `/validate` passes with US venues present; no `STATE_NAMES[...]` lookup remains unguarded by
+country anywhere; a Florida venue geocodes, drive-times from a US origin, and renders correct JSON-LD
+(`addressRegion` a real subdivision name, `addressCountry: "US"`, breadcrumbs resolving at every level);
+`/places/north-america/united-states/florida/` and its leaf filters appear in `sitemap.xml`; a deliberately
+AU-spelled US draft fails the new locale check and a `state_province: "WA"` under `country: "US"` resolves
+to Washington, never Western Australia; Florida carries ≥5 published venues with the full Florida set
+published; every published US venue is in the outreach state machine; `npm run build` passes with zero
+warnings.
 
 ## Working style
 

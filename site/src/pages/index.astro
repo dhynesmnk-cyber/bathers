@@ -6,7 +6,7 @@ import Icon from "../components/Icon.astro";
 import MarginAnimal from "../components/MarginAnimal.astro";
 import SearchBox from "../components/SearchBox.astro";
 import PromoClaimModal from "../components/PromoClaimModal.astro";
-import { AMENITY_KEYS, AMENITY_NOTATION, COUNTRY_NAMES, POOL_NATIONAL_FILTERS, SITE_NAME, SITE_TAGLINE, STATE_NAMES, STATES, SUBDIVISION_NAMES, WORLD_REGIONS, amenityUrlSlug, placePath } from "../config";
+import { AMENITY_KEYS, AMENITY_NOTATION, COUNTRY_NAMES, POOL_NATIONAL_FILTERS, SITE_NAME, SITE_TAGLINE, SUBDIVISION_NAMES, WORLD_REGIONS, amenityUrlSlug, placePath } from "../config";
 
 const venues = await getCollection("spas");
 
@@ -30,12 +30,6 @@ const byCountry = WORLD_REGIONS.flatMap((region) =>
     }),
 );
 const multiCountry = byCountry.length > 1;
-
-// The homepage list still groups venues by subdivision for the results area.
-const byState = STATES.map((state) => ({
-  state,
-  venues: venues.filter((v) => v.data.state_province === state),
-})).filter((group) => group.venues.length > 0);
 
 // Homepage chooser (DESIGN.md §5/§6/§7, 2026-07-23 exception) — features
 // (formerly labelled "amenities" in copy; schema/field names unchanged, see
@@ -77,7 +71,7 @@ const allVenues = venues.map((v) => ({
 ---
 
 <BaseLayout
-  title={`${SITE_NAME} — Australian saunas, hot pools and bathhouses`}
+  title={`${SITE_NAME} — saunas, hot pools and bathhouses`}
   description={SITE_TAGLINE}
 >
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
@@ -92,9 +86,9 @@ const allVenues = venues.map((v) => ({
         There is a particular kind of quiet that arrives with heat: the first
         minutes in a sauna, a magnesium pool at 39 degrees, the sharp clarity
         of a cold plunge straight after. Where We Bathe is a free directory of the
-        Australian venues built around that ritual — saunas, hot pools, cold
-        plunges — researched properly, then set out plainly: how hot, how
-        cold, and for how long.
+        venues built around that ritual — saunas, hot pools, cold plunges —
+        researched properly, then set out plainly: how hot, how cold, and for
+        how long.
       </p>
       <p>
         There are no ads here and no sponsored listings. Nothing ranks
@@ -130,7 +124,7 @@ const allVenues = venues.map((v) => ({
               type="text"
               id="near-me-input"
               class="near-me-input"
-              placeholder="Suburb or postcode…"
+              placeholder="Town, suburb or postcode…"
               autocomplete="off"
             />
             <button type="submit" id="near-me-submit" class="near-me-btn">Find</button>
@@ -255,8 +249,17 @@ const allVenues = venues.map((v) => ({
 </BaseLayout>
 
 <script>
-  import { AMENITY_KEYS, AMENITY_NOTATION, POOL_TYPES, haversineDistanceKm, formatDistanceKm } from "../config";
-  import { AU_PLACES } from "../data/au-places";
+  import {
+    AMENITY_KEYS,
+    AMENITY_NOTATION,
+    COUNTRY_UNITS,
+    KM_PER_MILE,
+    POOL_TYPES,
+    formatDistanceKm,
+    haversineDistanceKm,
+    type Country,
+  } from "../config";
+  import { PLACES } from "../data/places";
 
   interface VenueRow {
     slug: string;
@@ -357,13 +360,53 @@ const allVenues = venues.map((v) => ({
         .toLowerCase();
     }
 
-    function resolvePlace(query: string) {
-      const q = normalizePlace(query.trim());
-      if (!q) return null;
-      if (/^\d+$/.test(q)) return AU_PLACES.find((p) => p.postcode === q) ?? null;
-      const exact = AU_PLACES.find((p) => normalizePlace(p.name) === q);
-      if (exact) return exact;
-      return AU_PLACES.find((p) => normalizePlace(p.name).includes(q)) ?? null;
+    // Resolution order matters, because place names are not unique across
+    // countries: there is a Melbourne in Victoria and a Melbourne in Florida,
+    // and a bare name match used to silently pick whichever sat higher in the
+    // list. A trailing subdivision ("melbourne fl") settles it; an ambiguous
+    // bare name reports the ambiguity instead of guessing.
+    function matchesName(p: (typeof PLACES)[number], q: string) {
+      return normalizePlace(p.name) === q;
+    }
+
+    function resolvePlace(query: string): (typeof PLACES)[number] | "ambiguous" | null {
+      const raw = normalizePlace(query.trim()).replace(/,/g, " ").replace(/\s+/g, " ").trim();
+      if (!raw) return null;
+
+      // Postcode / ZIP, exact.
+      if (/^\d+$/.test(raw)) {
+        const hit = PLACES.find((p) => p.postcode === raw);
+        if (hit) return hit;
+        // A US ZIP's first three digits are its sectional centre, which really
+        // does denote a region — so "33139" still finds Miami. AU postcodes
+        // carry no such structure, so this is US-only on purpose.
+        if (raw.length === 5) {
+          const near = PLACES.find((p) => p.country === "US" && p.postcode.slice(0, 3) === raw.slice(0, 3));
+          if (near) return near;
+        }
+        return null;
+      }
+
+      // "<name> <subdivision>" — the disambiguating form.
+      const parts = raw.split(" ");
+      if (parts.length > 1) {
+        const tail = parts[parts.length - 1].toUpperCase();
+        const head = parts.slice(0, -1).join(" ");
+        const scoped = PLACES.find((p) => p.subdivision === tail && matchesName(p, head));
+        if (scoped) return scoped;
+      }
+
+      const exact = PLACES.filter((p) => matchesName(p, raw));
+      if (exact.length === 1) return exact[0];
+      if (exact.length > 1) return "ambiguous";
+
+      const partial = PLACES.filter((p) => normalizePlace(p.name).includes(raw));
+      if (partial.length === 1) return partial[0];
+      if (partial.length > 1) {
+        const names = new Set(partial.map((p) => normalizePlace(p.name)));
+        return names.size === 1 ? "ambiguous" : partial[0];
+      }
+      return null;
     }
 
     function showNearMeMessage(text: string, tone?: "error") {
@@ -374,7 +417,16 @@ const allVenues = venues.map((v) => ({
     }
 
     const RADIUS_KM = 50;
-    let currentPlace: { name: string; latitude: number; longitude: number } | null = null;
+    // Distances read in the units of the place searched FROM, not the site's
+    // default: someone searching from Tampa is told miles, someone searching
+    // from Torquay is told kilometres. The radius itself stays 50 km either
+    // way — it is a search parameter, not a figure anyone reads off a page.
+    let currentPlace: { name: string; country: Country; latitude: number; longitude: number } | null =
+      null;
+    const radiusLabel = () =>
+      currentPlace && COUNTRY_UNITS[currentPlace.country] === "imperial"
+        ? `${Math.round(RADIUS_KM / KM_PER_MILE)} miles`
+        : `${RADIUS_KM}km`;
 
     function render() {
       const hasFilter = active.size > 0 || activePoolType !== null;
@@ -425,7 +477,7 @@ const allVenues = venues.map((v) => ({
           venueContents!.appendChild(el);
           const slot = el.querySelector<HTMLElement>("[data-distance-slot]");
           if (slot) {
-            slot.textContent = ` — ${formatDistanceKm(distanceKm)} away`;
+            slot.textContent = ` — ${formatDistanceKm(distanceKm, currentPlace!.country)} away`;
             slot.hidden = false;
           }
         }
@@ -433,9 +485,9 @@ const allVenues = venues.map((v) => ({
         hiddenAll.forEach((el) => (el.hidden = true));
 
         if (ranked.length === 0) {
-          showNearMeMessage(`No venues within ${RADIUS_KM}km of ${currentPlace!.name}.`);
+          showNearMeMessage(`No venues within ${radiusLabel()} of ${currentPlace!.name}.`);
         } else {
-          showNearMeMessage(`Showing venues within ${RADIUS_KM}km of ${currentPlace!.name}.`);
+          showNearMeMessage(`Showing venues within ${radiusLabel()} of ${currentPlace!.name}.`);
         }
       } else {
         const visibleSlugs = new Set(visible.map((el) => el.dataset.venueSlug));
@@ -460,6 +512,13 @@ const allVenues = venues.map((v) => ({
 
     function submitNearMe(query: string) {
       const place = resolvePlace(query);
+      if (place === "ambiguous") {
+        showNearMeMessage(
+          "More than one place goes by that name — add the state, like \u201cMelbourne VIC\u201d.",
+          "error",
+        );
+        return;
+      }
       if (!place) {
         showNearMeMessage("Couldn't find that place — try a bigger nearby town, or a postcode.", "error");
         return;

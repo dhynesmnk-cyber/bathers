@@ -18,7 +18,7 @@ import json
 import re
 from pathlib import Path
 
-from admin.config import ROOT
+from admin.config import COUNTRIES, ROOT
 
 DIST = ROOT / "site" / "dist"
 _LD = re.compile(r'<script type="application/ld\+json"[^>]*>(.*?)</script>', re.S)
@@ -54,8 +54,28 @@ def _check(obj: dict, page: str, errors: list[str]) -> None:
     # nested-shape checks
     if t == "LocalBusiness":
         addr = obj.get("address")
-        if isinstance(addr, dict) and addr.get("@type") != "PostalAddress":
-            errors.append(f"{page}: LocalBusiness.address is not a PostalAddress")
+        if isinstance(addr, dict):
+            if addr.get("@type") != "PostalAddress":
+                errors.append(f"{page}: LocalBusiness.address is not a PostalAddress")
+            # addressRegion was rendered from an AU-only lookup table until
+            # 2026-09-15, so any non-AU venue would have emitted nothing here.
+            # A missing field is invisible in a passing build, which is exactly
+            # why it is asserted rather than assumed.
+            for field in ("addressLocality", "addressRegion", "addressCountry"):
+                value = addr.get(field)
+                if not isinstance(value, str) or not value.strip():
+                    errors.append(f"{page}: PostalAddress.{field} is missing or empty")
+            country = addr.get("addressCountry")
+            if isinstance(country, str) and country not in COUNTRIES:
+                errors.append(
+                    f"{page}: PostalAddress.addressCountry '{country}' is not a declared country"
+                )
+        # A bare "$39–$59" is ambiguous once the directory holds two currencies.
+        if obj.get("priceRange") and not obj.get("priceCurrency"):
+            errors.append(f"{page}: LocalBusiness has priceRange but no priceCurrency")
+        area = obj.get("areaServed")
+        if isinstance(area, dict) and not area.get("name"):
+            errors.append(f"{page}: LocalBusiness.areaServed has no name")
         for feat in obj.get("amenityFeature", []) or []:
             if feat.get("@type") != "LocationFeatureSpecification" or not feat.get("name"):
                 errors.append(f"{page}: amenityFeature item malformed")

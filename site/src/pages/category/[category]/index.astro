@@ -5,11 +5,14 @@
 import { getCollection } from "astro:content";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import VenueEntry from "../../../components/VenueEntry.astro";
-import { CATEGORIES, CATEGORY_LABELS, STATE_NAMES, categoryUrlSlug } from "../../../config";
+import { CATEGORIES, CATEGORY_LABELS, COUNTRY_NAME_IN_PHRASE, DEFAULT_COUNTRY, categoryUrlSlug } from "../../../config";
 import forewords from "../../../data/forewords.json";
 
 export async function getStaticPaths() {
-  const venues = await getCollection("spas");
+  const all = await getCollection("spas");
+  // Australian, and says so (Gate 16) — these were titled "in Australia" while
+  // filtering no country, so a Florida venue would have joined the list.
+  const venues = all.filter((v) => v.data.country === DEFAULT_COUNTRY);
   const categories = CATEGORIES.filter((category) => venues.some((v) => v.data.category === category));
   return categories.map((category) => ({
     params: { category: categoryUrlSlug(category) },
@@ -23,7 +26,7 @@ const venueNoun = venueCount === 1 ? "venue" : "venues";
 const foreword: string = (forewords as Record<string, Record<string, string>>).categories?.[category] ?? "";
 const description: string =
   (forewords as Record<string, Record<string, string>>).category_meta_descriptions?.[category] ||
-  `${CATEGORY_LABELS[category]} in Australia — ${venueCount} ${venueNoun}.`;
+  `${CATEGORY_LABELS[category]} in ${COUNTRY_NAME_IN_PHRASE[DEFAULT_COUNTRY]} — ${venueCount} ${venueNoun}.`;
 const pageTitle = `${CATEGORY_LABELS[category]} — ${venueCount} ${venueNoun}`;
 ---
 

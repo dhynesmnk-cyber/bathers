@@ -6,7 +6,7 @@
 // threshold; thinner ones are skipped and logged, never a hard failure
 // (mirrors SCHEMA.md's "omit if thin" posture).
 import type { CollectionEntry } from "astro:content";
-import { AMENITY_NOTATION, CATEGORY_LABELS, STATE_NAMES, priceRange } from "../config";
+import { AMENITY_NOTATION, CATEGORY_LABELS, DEFAULT_COUNTRY, formatMoney, priceRange, subdivisionName, type Country } from "../config";
 
 export const COMPARISON_MIN_VENUES = 5;
 
@@ -44,13 +44,8 @@ const categoryCell = (v: Venue) => CATEGORY_LABELS[v.data.category];
 const dropIn = (v: Venue) => v.data.price?.adult_drop_in ?? null;
 const priceCell = (v: Venue) => {
   const n = dropIn(v);
-  if (n != null) {
-    const currency = v.data.currency ?? 'AUD';
-    const symbol = currency === 'AUD' || currency === 'USD' ? '$' : '$';
-    const currencySuffix = currency !== 'AUD' ? ` ${currency}` : '';
-    return `${symbol}${n % 1 === 0 ? n : n.toFixed(2)}${currencySuffix}`;
-  }
-  return v.data.cost ? priceRange(v.data.cost) : null;
+  if (n != null) return formatMoney(n, v.data.currency, v.data.country);
+  return v.data.cost ? priceRange(v.data.cost, v.data.currency, v.data.country) : null;
 };
 const amenityCell = (v: Venue) =>
   (["magnesium_pool", "infrared_sauna", "traditional_sauna", "cold_plunge", "led_therapy"] as const)
@@ -186,14 +181,22 @@ export interface EligibleComparison extends Comparison {
 
 // Split the registry into pages that clear the threshold and ones skipped for
 // thin data (the caller logs the latter, per the done-condition).
-export function resolveComparisons(venues: Venue[]): {
+export function resolveComparisons(
+  venues: Venue[],
+  country: Country = DEFAULT_COUNTRY,
+): {
   eligible: EligibleComparison[];
   skipped: { slug: string; count: number }[];
 } {
+  // One country per comparison set (Gate 16). Every title here says
+  // "Australian", and a ranked price table that silently mixed AUD and USD
+  // rows would be wrong in a way a reader cannot see. A US set generates from
+  // the same registry once Florida clears COMPARISON_MIN_VENUES.
+  const scoped = venues.filter((v) => v.data.country === country);
   const eligible: EligibleComparison[] = [];
   const skipped: { slug: string; count: number }[] = [];
   for (const c of COMPARISONS) {
-    const selected = c.select(venues);
+    const selected = c.select(scoped);
     if (selected.length >= COMPARISON_MIN_VENUES) {
       eligible.push({ ...c, venues: selected });
     } else {
@@ -251,10 +254,5 @@ export function comparisonFingerprint(columns: Column[], venues: Venue[]): Finge
 // venue-side "featured in" links all agree.
 export const comparePath = (slug: string) => `/compare/${slug}/`;
 export function stateHeading(v: Venue): string {
-  const stateOrProvince = v.data.state_province;
-  if (v.data.country && v.data.country !== 'AU') {
-    // For non-AU venues, we don't have STATE_NAMES, so just return state_province
-    return stateOrProvince;
-  }
-  return STATE_NAMES[v.data.state_province];
+  return subdivisionName(v.data.country, v.data.state_province);
 }

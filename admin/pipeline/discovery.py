@@ -13,7 +13,7 @@ import time
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
-from admin.config import PUBLISHED_DIR, STAGING_DIR
+from admin.config import COUNTRY_NAMES, DEFAULT_COUNTRY, PUBLISHED_DIR, STAGING_DIR
 from admin.pipeline import places
 from admin.pipeline.staging import split_frontmatter
 
@@ -53,10 +53,16 @@ def _known_domains() -> set[str]:
     return domains
 
 
-def discover_venues(region: str, keywords: list[str] | None = None) -> list[DiscoveryCandidate]:
-    """Searches Places Text Search for `<keyword> in <region>, Australia` for
+def discover_venues(
+    region: str, keywords: list[str] | None = None, country: str = DEFAULT_COUNTRY
+) -> list[DiscoveryCandidate]:
+    """Searches Places Text Search for `<keyword> in <region>, <country>` for
     each keyword, paginating up to MAX_PAGES per keyword, deduped by place_id
-    and by website domain against everything already published/staged."""
+    and by website domain against everything already published/staged.
+
+    The country was hardcoded to Australia until 2026-09-15 (Gate 16). It has
+    to be named: "sauna in Springfield" without one is a question with fifty
+    answers, and Places will happily pick the wrong Springfield."""
     if not places.GOOGLE_PLACES_API_KEY:
         return []
 
@@ -66,7 +72,7 @@ def discover_venues(region: str, keywords: list[str] | None = None) -> list[Disc
     results: list[DiscoveryCandidate] = []
 
     for term in terms:
-        query = f"{term} in {region}, Australia"
+        query = f"{term} in {region}, {COUNTRY_NAMES.get(country, country)}"
         page_token: str | None = None
         for page_num in range(MAX_PAGES):
             if page_num > 0 and page_token:

@@ -143,11 +143,29 @@ def run() -> list[str]:
         if col not in ddl_cols:
             failures.append(f"SQLite DDL is missing column '{col}' that upsert writes")
 
-    # Prose surfaces: the structured price field must be described where the
-    # Architect/Gatekeeper and the review preview reference pricing.
+    # Prose surfaces: the structured price sub-fields must be named, by their
+    # real names, wherever the Architect/Gatekeeper and the review preview
+    # reference pricing.
+    #
+    # This used to test for the substring "price", which `adult_drop_in_aud`
+    # satisfies — so when the schema dropped the `_aud` suffix and these three
+    # surfaces kept it, the diff stayed green while the Architect was being
+    # told to emit a key `.strict()` rejects and the review preview read two
+    # keys that never exist. Matching the full names is the whole point.
+    # Presence alone is not enough: a stale name can sit beside a correct one
+    # and the file still "mentions" the field. The retired spelling has to be
+    # absent as well, which is the half that would actually have caught this.
     for rel in ("PROMPTS/architect.md", "PROMPTS/gatekeeper.md", "admin/mdx_preview.py"):
-        if "price" not in (ROOT / rel).read_text(encoding="utf-8"):
-            failures.append(f"{rel} does not mention the structured 'price' field")
+        text = (ROOT / rel).read_text(encoding="utf-8")
+        for field in ("adult_drop_in", "standard_session"):
+            if not re.search(rf"\b{field}\b(?!_)", text):
+                failures.append(f"{rel} does not name the structured price field '{field}'")
+            if re.search(rf"\b{field}_aud\b", text):
+                failures.append(
+                    f"{rel} still uses the retired '{field}_aud' spelling — the schema "
+                    f"dropped the suffix when it went international, and zod's .strict() "
+                    f"rejects the old key"
+                )
 
     # The Harvester's key list is diffed above, but a key can be present in the
     # literal with no rule governing it. `contact_email` is the one field here

@@ -289,9 +289,92 @@ def opportunities() -> list[dict[str, Any]]:
             # Single source of truth (draftable_keys): approved brief, not written,
             # not dismissed — the exact predicate the article_pipeline gate enforces.
             "draftable": key in draftable,
+            "source": "registry",
+            "demand": None,  # filled below where Search Console has a figure
         })
-    out.sort(key=lambda o: (o["written"], o["status"] != "candidate", o["query_key"]))
+
+    _merge_demand(out)
+    # Demand rows have no query_key, so they sort last and by strength — and the
+    # key must not compare None against a string, which is what a bare
+    # o["query_key"] would do the moment the feed returns an unmatched query.
+    out.sort(
+        key=lambda o: (
+            o["source"] != "registry",
+            o["written"],
+            o["status"] != "candidate",
+            -(o["demand"]["impressions"] if o["source"] == "gsc" and o["demand"] else 0),
+            o["query_key"] or "",
+        )
+    )
     return out
+
+
+def _merge_demand(out: list[dict[str, Any]]) -> None:
+    """Fold Search Console demand into the queue (Gate 15).
+
+    Two things happen, and the difference matters:
+
+    - A query that maps onto a comparison the registry already knows about
+      annotates that row with its impressions. It does not change the row's
+      status; a real article is still a real article whether or not anyone
+      searched for it this quarter.
+    - A query that maps onto nothing becomes a new row — a content gap the
+      registry cannot see, because the registry is derived from venues the site
+      already has rather than from what people actually ask.
+
+    **A demand row is never draftable.** It carries no `query_key` the drafting
+    gate recognises and no brief, and `draftable` is pinned False here rather
+    than computed, so no arrangement of data can make one draft itself. Demand
+    surfaces an intent for a human to brief; the brief gate still governs. That
+    rule is older than this feed and is not relaxed by it.
+
+    A missing or unconfigured feed leaves the queue exactly as it was.
+    """
+    try:
+        from admin.pipeline import gsc
+
+        rows = gsc.demand_signal()
+    except Exception:  # noqa: BLE001 — the queue must survive a broken feed
+        return
+    if not rows:
+        return
+
+    by_key = {o["query_key"]: o for o in out}
+    for row in rows:
+        if row.matched_query_key and row.matched_query_key in by_key:
+            existing = by_key[row.matched_query_key]["demand"]
+            # One comparison can match several queries; keep the strongest.
+            if existing is None or row.impressions > existing["impressions"]:
+                by_key[row.matched_query_key]["demand"] = {
+                    "query": row.query,
+                    "impressions": row.impressions,
+                    "clicks": row.clicks,
+                    "avg_position": row.avg_position,
+                }
+            continue
+
+        out.append({
+            "query_key": None,
+            "title": row.query,
+            "kind": "demand",
+            "venue_count": None,
+            "populated": 0,
+            "total": 0,
+            "completeness": 0.0,
+            "written": False,
+            "status": "demand",
+            "reason": "search demand with no comparison behind it — brief it or ignore it",
+            "disposition": None,
+            "brief": None,
+            "draftable": False,
+            "source": "gsc",
+            "demand": {
+                "query": row.query,
+                "impressions": row.impressions,
+                "clicks": row.clicks,
+                "avg_position": row.avg_position,
+            },
+        })
 
 
 def main() -> None:
@@ -307,10 +390,15 @@ def main() -> None:
     if args.opportunities:
         for o in opportunities():
             b = o["brief"]
+            # A demand row has no query_key — format its query instead, and never
+            # pass None to a width-formatted field.
+            label = o["query_key"] or f"“{o['title']}”"
+            demand = o.get("demand")
             print(
-                f"  {o['status']:<10} {o['query_key']:<28} "
+                f"  {o['status']:<10} {label:<28} "
                 f"{o['populated']}/{o['total']} figs  "
                 f"brief={b['status'] if b else '-'}"
+                + (f"  {demand['impressions']} impr" if demand else "")
                 + (f"  ({o['reason']})" if o["reason"] else "")
             )
     if args.briefs:

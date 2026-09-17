@@ -75,7 +75,7 @@ export const SESSION_GENDER_LABELS: Record<(typeof SESSION_GENDER_KEYS)[number],
 
 // ---------------------------------------------------------------------------
 // Gate 7 (verification metadata / structured facts, 2026-07-31). Mirrors
-// admin/config.py's CONFIDENCE_TIERS / VERIFIABLE_FIELDS / CAPITAL_CITIES
+// admin/config.py's CONFIDENCE_TIERS / VERIFIABLE_FIELDS / DRIVE_TIME_ORIGINS
 // exactly (SCHEMA.md "one contract" rule).
 // ---------------------------------------------------------------------------
 
@@ -127,17 +127,34 @@ export interface Verification {
   date: Date | string;
 }
 
-// State capital CBDs — drive-time reference origins (user sign-off 2026-07-31,
-// "from nearest capital").
-export const CAPITAL_CITIES: Record<(typeof STATES)[number], { name: string; latitude: number; longitude: number }> = {
-  VIC: { name: "Melbourne", latitude: -37.8136, longitude: 144.9631 },
-  NSW: { name: "Sydney", latitude: -33.8688, longitude: 151.2093 },
-  QLD: { name: "Brisbane", latitude: -27.4698, longitude: 153.0251 },
-  SA: { name: "Adelaide", latitude: -34.9285, longitude: 138.6007 },
-  WA: { name: "Perth", latitude: -31.9523, longitude: 115.8613 },
-  TAS: { name: "Hobart", latitude: -42.8826, longitude: 147.3257 },
-  NT: { name: "Darwin", latitude: -12.4637, longitude: 130.8444 },
-  ACT: { name: "Canberra", latitude: -35.2809, longitude: 149.13 },
+// Drive-time reference origins, per country. Mirrors admin/config.py's
+// DRIVE_TIME_ORIGINS exactly — see that file for why US uses major metros
+// where AU uses state capitals.
+export interface DriveTimeOrigin {
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
+export const DRIVE_TIME_ORIGINS: Record<string, readonly DriveTimeOrigin[]> = {
+  AU: [
+    { name: "Melbourne", latitude: -37.8136, longitude: 144.9631 },
+    { name: "Sydney", latitude: -33.8688, longitude: 151.2093 },
+    { name: "Brisbane", latitude: -27.4698, longitude: 153.0251 },
+    { name: "Adelaide", latitude: -34.9285, longitude: 138.6007 },
+    { name: "Perth", latitude: -31.9523, longitude: 115.8613 },
+    { name: "Hobart", latitude: -42.8826, longitude: 147.3257 },
+    { name: "Darwin", latitude: -12.4637, longitude: 130.8444 },
+    { name: "Canberra", latitude: -35.2809, longitude: 149.13 },
+  ],
+  US: [
+    { name: "Miami", latitude: 25.7617, longitude: -80.1918 },
+    { name: "Tampa", latitude: 27.9506, longitude: -82.4572 },
+    { name: "Orlando", latitude: 28.5383, longitude: -81.3792 },
+    { name: "Jacksonville", latitude: 30.3322, longitude: -81.6557 },
+    { name: "Tallahassee", latitude: 30.4383, longitude: -84.2807 },
+    { name: "Gainesville", latitude: 29.6516, longitude: -82.3248 },
+  ],
 };
 
 export interface DriveTime {
@@ -254,6 +271,14 @@ export type Country = (typeof COUNTRIES)[number];
 export const COUNTRY_NAMES: Record<Country, string> = {
   AU: "Australia",
   US: "United States",
+};
+
+/** The country's name as it reads after a preposition: "in Australia", but "in
+ *  the United States". COUNTRY_NAMES is the label form, correct on its own in a
+ *  list or a breadcrumb and wrong the moment a sentence is built around it. */
+export const COUNTRY_NAME_IN_PHRASE: Record<Country, string> = {
+  AU: "Australia",
+  US: "the United States",
 };
 
 export const SUBDIVISIONS: Record<Country, readonly string[]> = {
@@ -374,6 +399,24 @@ export function subdivisionSlug(country: Country, code: string): string {
   return slugify(SUBDIVISION_NAMES[country][code] ?? code);
 }
 
+/** Display name for a subdivision, scoped by country. `STATE_NAMES` is the AU
+ *  table alone: indexing it with a US code yields `undefined`, which renders as
+ *  an empty breadcrumb or a JSON-LD field with no value — invisible in a build
+ *  that still passes. Every display path goes through here instead. An unknown
+ *  code falls back to itself: wrong but legible, which is the failure mode you
+ *  can actually see. */
+export function subdivisionName(country: Country, code: string): string {
+  return SUBDIVISION_NAMES[country]?.[code] ?? code;
+}
+
+/** Key for a subdivision's entry in forewords.json. Country-qualified because
+ *  the bare code is not unique across countries: AU's WA and US's WA would
+ *  otherwise share one foreword, and whichever was written first would silently
+ *  describe the other. Mirrors admin/config.py's foreword_key. */
+export function forewordKey(country: Country, code: string): string {
+  return `${country}:${code}`;
+}
+
 export function worldRegionForCountry(country: Country): WorldRegion | undefined {
   return WORLD_REGIONS.find((r) => r.countries.includes(country));
 }
@@ -435,8 +478,33 @@ export function nearestByDistance<T>(
 
 // Distance display: one decimal place under 10 km, whole km at/above —
 // shared by the Nearby block and the near-me distance-slot span.
-export function formatDistanceKm(distanceKm: number): string {
+/** Which measurement system a country's readers actually use. Storage stays
+ *  metric everywhere — °C and km are what the schema holds and what the
+ *  validators check. This governs display only: "39°C" tells a Floridian
+ *  nothing, and converting at the point of storage would mean two spellings of
+ *  one fact, which is the drift rule 4 exists to prevent. */
+export const COUNTRY_UNITS: Record<Country, "metric" | "imperial"> = {
+  AU: "metric",
+  US: "imperial",
+};
+
+export const KM_PER_MILE = 1.609344;
+
+export function formatDistanceKm(
+  distanceKm: number,
+  country: Country = DEFAULT_COUNTRY,
+): string {
+  if (COUNTRY_UNITS[country] === "imperial") {
+    const miles = distanceKm / KM_PER_MILE;
+    return miles < 10 ? `${miles.toFixed(1)} miles` : `${Math.round(miles)} miles`;
+  }
   return distanceKm < 10 ? `${distanceKm.toFixed(1)} km` : `${Math.round(distanceKm)} km`;
+}
+
+/** Celsius to Fahrenheit, rounded — a bathing temperature is not a precise
+ *  figure and a decimal would imply it were. */
+export function toFahrenheit(celsius: number): number {
+  return Math.round((celsius * 9) / 5 + 32);
 }
 
 // Amenity keys are snake_case (SCHEMA.md §1); URL path segments use kebab-case.
@@ -475,14 +543,42 @@ export function videoEmbedUrl(url: string): string {
 // range derived from every dollar amount in the string; the full text
 // stays on the venue page's appendix. Returns null when no $ amount is
 // found so callers can fall back to the raw string.
-export function priceRange(cost: string): string | null {
-  const amounts = Array.from(cost.matchAll(/\$\s?(\d[\d,]*(?:\.\d{1,2})?)/g), (m) =>
+/** One money formatter for the whole site. There were six, and they disagreed:
+ *  "$65", "$65 AUD", "US$65" for the same figure depending on which component
+ *  rendered it, with AUD as the silent default in five of them and one ternary
+ *  that returned "$" either way.
+ *
+ *  A currency is left bare when it is the currency of the page's own country —
+ *  an Australian reading an Australian page wants "$65", not "$65 AUD" — and
+ *  marked with its code otherwise. Which country is "home" is the page's, not
+ *  Australia's: on a US page it is USD that goes bare.
+ */
+export function formatMoney(
+  amount: number,
+  currency: string | undefined,
+  viewerCountry: Country = DEFAULT_COUNTRY,
+): string {
+  const code = currency ?? COUNTRY_CURRENCY[viewerCountry];
+  const figure = amount % 1 === 0 ? amount.toLocaleString("en-AU") : amount.toFixed(2);
+  const suffix = code === COUNTRY_CURRENCY[viewerCountry] ? "" : ` ${code}`;
+  return `$${figure}${suffix}`;
+}
+
+export function priceRange(
+  cost: string,
+  currency?: string,
+  viewerCountry: Country = DEFAULT_COUNTRY,
+): string | null {
+  // Accepts a bare "$", and the "US$"/"A$" prefixes a cost string may carry
+  // once two currencies are in play — the bare-dollar-only pattern found no
+  // amounts at all in "US$45", and silently returned null.
+  const amounts = Array.from(cost.matchAll(/(?:US|A|AU)?\$\s?(\d[\d,]*(?:\.\d{1,2})?)/gi), (m) =>
     Number(m[1].replace(/,/g, "")),
   ).filter((n) => Number.isFinite(n));
   if (amounts.length === 0) return null;
   const min = Math.min(...amounts);
   const max = Math.max(...amounts);
-  const fmt = (n: number) => `$${n % 1 === 0 ? n.toLocaleString("en-AU") : n.toFixed(2)}`;
+  const fmt = (n: number) => formatMoney(n, currency, viewerCountry);
   if (min === max) return /\bfrom\b/i.test(cost) ? `from ${fmt(min)}` : fmt(min);
   return `${fmt(min)}–${fmt(max)}`;
 }
@@ -502,21 +598,57 @@ interface TemperatureRange {
   cold_plunge_display?: string | null;
 }
 
-function formatTempRange(min?: number | null, max?: number | null): string | null {
+function formatTempRange(
+  min?: number | null,
+  max?: number | null,
+  country: Country = DEFAULT_COUNTRY,
+): string | null {
   if (min == null || max == null) return null;
+  if (COUNTRY_UNITS[country] === "imperial") {
+    const lo = toFahrenheit(min);
+    const hi = toFahrenheit(max);
+    return lo === hi ? `${lo}°F` : `${lo}–${hi}°F`;
+  }
   return min === max ? `${min}°C` : `${min}–${max}°C`;
 }
 
-export function saunaTemperatureLine(t: TemperatureRange): string | null {
-  return t.sauna_display ?? formatTempRange(t.sauna_min_c, t.sauna_max_c);
+// `*_display` is a hand-written string for venues with several heat sources at
+// materially different temperatures. It is prose in the venue's own country,
+// so it is passed through untouched rather than parsed and converted — there
+// is no safe way to rewrite a sentence's units without rewriting the sentence.
+export function saunaTemperatureLine(
+  t: TemperatureRange,
+  country: Country = DEFAULT_COUNTRY,
+): string | null {
+  return t.sauna_display ?? formatTempRange(t.sauna_min_c, t.sauna_max_c, country);
 }
 
-export function coldPlungeTemperatureLine(t: TemperatureRange): string | null {
-  return t.cold_plunge_display ?? formatTempRange(t.cold_plunge_min_c, t.cold_plunge_max_c);
+export function coldPlungeTemperatureLine(
+  t: TemperatureRange,
+  country: Country = DEFAULT_COUNTRY,
+): string | null {
+  return t.cold_plunge_display ?? formatTempRange(t.cold_plunge_min_c, t.cold_plunge_max_c, country);
 }
 
 export const SITE_NAME = "Where We Bathe";
-export const SITE_TAGLINE = "A field guide to Australian saunas, hot pools and bathhouses.";
+// Country-neutral since 2026-09-15 (Gate 16). This one constant reaches the
+// homepage meta description, the Organization and WebSite JSON-LD and the
+// footer, so naming a country here named it in four places at once — and named
+// the wrong one on every US page. Country framing belongs on the country pages,
+// which is where the /places/ tree already puts it.
+export const SITE_TAGLINE = "A field guide to saunas, hot pools and bathhouses.";
+
+/** BCP 47 tag per country, for <html lang> and og:locale. A page that belongs
+ *  to no country keeps the house voice's en-AU. */
+export const COUNTRY_LOCALE: Record<Country, string> = {
+  AU: "en-AU",
+  US: "en-US",
+};
+
+export const OG_LOCALE: Record<Country, string> = {
+  AU: "en_AU",
+  US: "en_US",
+};
 
 // Footer contact/social links (2026-07-27 addition, DESIGN.md §5d).
 export const SITE_CONTACT_EMAIL = "sebastian@wherewebathe.com";
@@ -543,22 +675,3 @@ export const CLAIM_API_BASE_URL = "https://bathers-admin.fly.dev";
 // The Astro build has no .env loader of its own (TRD.md §2 — no runtime
 // backend for the public site), so this lives here as a plain constant.
 export const GOATCOUNTER_SITE = "bathers";
-
-// Geographic bounds for coordinate validation (US expansion 2026)
-export const GEO_BOUNDS = {
-  AU: { lat: { min: -44.0, max: -9.0 }, lng: { min: 112.0, max: 154.0 } },
-  US: { lat: { min: 24.0, max: 71.0 }, lng: { min: -125.0, max: -66.0 } },
-} as const;
-
-// Promo campaign configuration (September 2026 campaign)
-export const PROMO_EXPIRY_DATE = "2026-09-30";
-
-// Currency formatting utility
-export function formatPrice(amount: number, currency: 'AUD' | 'USD' | string): string {
-  const symbols: Record<string, string> = {
-    AUD: '$',
-    USD: 'US$',
-  };
-  const symbol = symbols[currency] || '$';
-  return `${symbol}${amount} ${currency}`;
-}

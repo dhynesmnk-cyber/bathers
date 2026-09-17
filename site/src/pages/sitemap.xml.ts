@@ -9,6 +9,7 @@ import {
   AMENITY_KEYS,
   CATEGORIES,
   CROSS_CUTTING_FACILITY_FILTERS,
+  DEFAULT_COUNTRY,
   FACILITY_KEYS,
   POOL_NATIONAL_FILTERS,
   POOL_TYPES,
@@ -53,6 +54,29 @@ export const GET: APIRoute = async ({ site }) => {
 
     for (const country of regionCountries) {
       entries.push({ path: placePath(country) });
+
+      // Country-wide feature filters (Gate 16) — every country but the default
+      // one, whose equivalents are the top-level /magnesium-pool/ family added
+      // below. Mirrors the same conditions [state]/index.astro generates on.
+      if (country !== DEFAULT_COUNTRY) {
+        const inCountry = venues.filter((v) => v.data.country === country);
+        for (const amenityKey of AMENITY_KEYS) {
+          if (inCountry.some((v) => v.data.amenities[amenityKey])) {
+            entries.push({ path: placePath(country, amenityUrlSlug(amenityKey)) });
+          }
+        }
+        for (const poolType of POOL_TYPES) {
+          if (poolType.slug !== "other" && inCountry.some((v) => poolType.match(v.data.facilities))) {
+            entries.push({ path: placePath(country, poolType.slug) });
+          }
+        }
+        for (const f of CROSS_CUTTING_FACILITY_FILTERS) {
+          if (inCountry.some((v) => v.data.facilities?.[f.key])) {
+            entries.push({ path: placePath(country, f.slug) });
+          }
+        }
+      }
+
       for (const code of Object.keys(SUBDIVISION_NAMES[country])) {
         const inState = venues.filter(
           (v) => v.data.country === country && v.data.state_province === code,
@@ -121,14 +145,18 @@ export const GET: APIRoute = async ({ site }) => {
   for (const p of HEAD_TO_HEAD) {
     if (venueIds.has(p.a) && venueIds.has(p.b)) entries.push({ path: comparePath(p.slug) });
   }
+  const regionKey = (r: { country: string; subdivision: string; slug: string }) =>
+    `${r.country}:${r.subdivision}:${r.slug}`;
   const regionCounts = new Map<string, number>();
   for (const v of venues) {
     const r = regionForCity(v.data.country, v.data.state_province, v.data.city);
-    if (r) regionCounts.set(r.slug, (regionCounts.get(r.slug) ?? 0) + 1);
+    if (r) regionCounts.set(regionKey(r), (regionCounts.get(regionKey(r)) ?? 0) + 1);
   }
   // Area pages sit under their subdivision now, not at /region/<slug>/.
   for (const r of REGIONS) {
-    if ((regionCounts.get(r.slug) ?? 0) >= 2) entries.push({ path: placePath("AU", r.state, r.slug) });
+    if ((regionCounts.get(regionKey(r)) ?? 0) >= 2) {
+      entries.push({ path: placePath(r.country, r.subdivision, r.slug) });
+    }
   }
 
   const urls = entries

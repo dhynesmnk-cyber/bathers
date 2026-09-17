@@ -138,6 +138,19 @@ jobs:
           python3 -m admin.pipeline.validate_places
           python3 -m admin.pipeline.validate_places --self-test
 
+      - name: Locale (check 31)
+        run: |
+          python3 -m admin.pipeline.validate_locale
+          python3 -m admin.pipeline.validate_locale --self-test
+
+      - name: Discoverability (checks 8, 9, 11)
+        run: |
+          python3 -m admin.pipeline.validate_discoverability
+          python3 -m admin.pipeline.validate_discoverability --self-test
+
+      - name: Search Console demand feed (check 32)
+        run: python3 -m admin.pipeline.gsc --self-test
+
       # --- Check 3: derived-data freshness -------------------------------
       # Rebuilds into the working tree and asserts nothing moved. This is the
       # check that catches a published venue edited without a rebuild — and, as
@@ -161,6 +174,8 @@ jobs:
 #                crawler is not yet written.
 #   Check 6    — register lint: advisory by design ("warnings, not failures — a
 #                human judges them"), so it has no exit code to gate on.
-#   Checks 8-11 — Gate 6's noindex/national-route/region/abbreviation greps: they
-#                live in the /validate prose, not yet in a module with an exit
-#                code. Folding them in is the obvious next tightening.
+#   (Checks 8-11 were Gate 6 prose greps and ran nowhere. All four were
+#    mechanised on 2026-09-16 and now run here: 10 inside validate_places,
+#    and 8, 9 and 11 as validate_discoverability. They were not idle risks —
+#    check 10 had been failing the whole time, with seven published venues in
+#    no region and on no area page, and nothing went red because nothing ran.)

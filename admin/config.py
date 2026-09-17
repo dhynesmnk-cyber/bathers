@@ -97,6 +97,7 @@ IMAGES_DIR = TEMP_DATA_DIR / "images"
 FAILED_DIR = TEMP_DATA_DIR / "failed"
 PLACES_DIR = TEMP_DATA_DIR / "places"
 GOATCOUNTER_CACHE_DIR = TEMP_DATA_DIR / "goatcounter"
+GSC_CACHE_DIR = TEMP_DATA_DIR / "gsc"
 BLOG_IMAGES_TEMP_DIR = TEMP_DATA_DIR / "blog_images"
 GEOCODE_CACHE_PATH = TEMP_DATA_DIR / "geocode_cache.json"  # 2026-07-22 — see geocode.py
 DRIVETIME_CACHE_PATH = TEMP_DATA_DIR / "drivetime_cache.json"  # Gate 7 — see drivetime.py
@@ -172,6 +173,17 @@ GEOCODER_USER_AGENT = _ENV.get("GEOCODER_USER_AGENT", "")
 GOOGLE_PLACES_API_KEY = _ENV.get("GOOGLE_PLACES_API_KEY", "")
 GOATCOUNTER_API_TOKEN = _ENV.get("GOATCOUNTER_API_TOKEN", "")
 GOATCOUNTER_SITE = _ENV.get("GOATCOUNTER_SITE", "")
+
+# Google Search Console demand feed (Gate 15, 2026-09-17). OAuth2 installed-app
+# credentials plus a long-lived refresh token; the access token is exchanged per
+# run and never stored. GSC_SITE_URL is the property exactly as Search Console
+# spells it — "sc-domain:wherewebathe.com" for a domain property, or the URL
+# prefix form with its trailing slash. Any empty value means the feed is simply
+# not configured, and the opportunity queue says so rather than guessing.
+GSC_CLIENT_ID = _ENV.get("GSC_CLIENT_ID", "")
+GSC_CLIENT_SECRET = _ENV.get("GSC_CLIENT_SECRET", "")
+GSC_REFRESH_TOKEN = _ENV.get("GSC_REFRESH_TOKEN", "")
+GSC_SITE_URL = _ENV.get("GSC_SITE_URL", "")
 
 # Claim-listing form/payment flow (2026-07-25, TRD.md §8 exception).
 STRIPE_SECRET_KEY = _ENV.get("STRIPE_SECRET_KEY", "")
@@ -256,6 +268,12 @@ SUBDIVISIONS = {
 }
 
 COUNTRY_CURRENCY = {"AU": "AUD", "US": "USD"}
+
+# BCP 47 tag per country (Gate 16). Mirrors site/src/config.ts's COUNTRY_LOCALE.
+# Drives the locale block the Architect and Gatekeeper branch on, and <html lang>
+# on the site side. Country-neutral surfaces keep en-AU — the house voice belongs
+# to no one country, per CLAUDE.md rule 7.
+COUNTRY_LOCALE = {"AU": "en-AU", "US": "en-US"}
 
 # Coordinate envelopes, used to catch a geocoder returning a plausible-looking
 # point on the wrong continent. Generous by design: these reject a mistake, not
@@ -397,6 +415,21 @@ def subdivision_slug(country: str, code: str) -> str:
     return slugify(SUBDIVISION_NAMES[country].get(code, code))
 
 
+def subdivision_name(country: str, code: str) -> str:
+    """Display name for a subdivision, scoped by country. Mirrors
+    site/src/config.ts's subdivisionName exactly. STATE_NAMES is the AU table
+    alone, so indexing it with a US code raises KeyError here and yields
+    undefined on the TS side; both are avoided by going through this."""
+    return SUBDIVISION_NAMES.get(country, {}).get(code, code)
+
+
+def foreword_key(country: str, code: str) -> str:
+    """Key for a subdivision's entry in forewords.json. Country-qualified: the
+    bare code is not unique across countries, so AU's WA and US's WA would
+    otherwise share one foreword. Mirrors site/src/config.ts's forewordKey."""
+    return f"{country}:{code}"
+
+
 def world_region_for_country(country: str):
     for region in WORLD_REGIONS:
         if country in region["countries"]:
@@ -416,17 +449,6 @@ def place_path(country: str, subdivision: str | None = None, leaf: str | None = 
         if leaf:
             parts.append(leaf)
     return "/".join(parts) + "/"
-
-STATE_NAMES = {
-    "VIC": "Victoria",
-    "NSW": "New South Wales",
-    "QLD": "Queensland",
-    "SA": "South Australia",
-    "WA": "Western Australia",
-    "TAS": "Tasmania",
-    "NT": "Northern Territory",
-    "ACT": "Australian Capital Territory",
-}
 
 AMENITY_FULL_NAMES = {
     "magnesium_pool": "magnesium pool",
@@ -493,7 +515,7 @@ SESSION_GENDER_LABELS = {
 
 # ---------------------------------------------------------------------------
 # Gate 7 (verification metadata / structured facts, 2026-07-31). Mirrors
-# site/src/config.ts's CONFIDENCE_TIERS / VERIFIABLE_FIELDS / CAPITAL_CITIES
+# site/src/config.ts's CONFIDENCE_TIERS / VERIFIABLE_FIELDS / DRIVE_TIME_ORIGINS
 # exactly (SCHEMA.md "one contract" rule — same two-mirrors posture as the
 # amenity/facility/dress-code constants above).
 # ---------------------------------------------------------------------------
@@ -549,18 +571,42 @@ VERIFIABLE_FIELD_LABELS = {
     "minimum_age": "Minimum age",
 }
 
-# State capital CBDs — drive-time reference origins (Gate 7, user sign-off
-# 2026-07-31: "from nearest capital"). Also usable as a display anchor.
-CAPITAL_CITIES = {
-    "VIC": {"name": "Melbourne", "latitude": -37.8136, "longitude": 144.9631},
-    "NSW": {"name": "Sydney", "latitude": -33.8688, "longitude": 151.2093},
-    "QLD": {"name": "Brisbane", "latitude": -27.4698, "longitude": 153.0251},
-    "SA": {"name": "Adelaide", "latitude": -34.9285, "longitude": 138.6007},
-    "WA": {"name": "Perth", "latitude": -31.9523, "longitude": 115.8613},
-    "TAS": {"name": "Hobart", "latitude": -42.8826, "longitude": 147.3257},
-    "NT": {"name": "Darwin", "latitude": -12.4637, "longitude": 130.8444},
-    "ACT": {"name": "Canberra", "latitude": -35.2809, "longitude": 149.1300},
+# Drive-time reference origins, per country (Gate 7 user sign-off 2026-07-31;
+# country-keyed 2026-09-15 for Gate 16). A venue is only ever measured against
+# origins in its own country — ranking a Miami venue against Australian
+# capitals produced "45 min from Darwin", and OSRM then routed across an ocean.
+#
+# AU uses the eight state/territory capital CBDs, unchanged: "from nearest
+# capital" was the signed-off rule, and in Australia the capital IS the
+# population centre of its state.
+#
+# US uses major metros rather than state capitals, because there the two come
+# apart: Florida's capital is Tallahassee, but almost nobody drives to a
+# Florida spring from Tallahassee. "2 hr from Orlando" is the useful sentence;
+# "6 hr from Tallahassee" is a true one nobody asked for. Seeded with Florida's
+# metros — other states get theirs as they gain venues, the same way
+# SUBDIVISION_BBOX does.
+DRIVE_TIME_ORIGINS = {
+    "AU": [
+        {"name": "Melbourne", "latitude": -37.8136, "longitude": 144.9631},
+        {"name": "Sydney", "latitude": -33.8688, "longitude": 151.2093},
+        {"name": "Brisbane", "latitude": -27.4698, "longitude": 153.0251},
+        {"name": "Adelaide", "latitude": -34.9285, "longitude": 138.6007},
+        {"name": "Perth", "latitude": -31.9523, "longitude": 115.8613},
+        {"name": "Hobart", "latitude": -42.8826, "longitude": 147.3257},
+        {"name": "Darwin", "latitude": -12.4637, "longitude": 130.8444},
+        {"name": "Canberra", "latitude": -35.2809, "longitude": 149.1300},
+    ],
+    "US": [
+        {"name": "Miami", "latitude": 25.7617, "longitude": -80.1918},
+        {"name": "Tampa", "latitude": 27.9506, "longitude": -82.4572},
+        {"name": "Orlando", "latitude": 28.5383, "longitude": -81.3792},
+        {"name": "Jacksonville", "latitude": 30.3322, "longitude": -81.6557},
+        {"name": "Tallahassee", "latitude": 30.4383, "longitude": -84.2807},
+        {"name": "Gainesville", "latitude": 29.6516, "longitude": -82.3248},
+    ],
 }
+
 
 # Rough per-state bounding boxes (lat_min, lat_max, lng_min, lng_max) — the
 # quality guard on auto-geocoded coordinates (Gate 7 validator). Deliberately
@@ -571,7 +617,8 @@ CAPITAL_CITIES = {
 # would silently bbox-check a Seattle venue against Western Australia. Countries
 # with no boxes yet simply skip the check (see validate_facts), which is the
 # same "absence is not a failure" posture the rest of that module takes; US
-# boxes get hand-authored when the first US venue is harvested, not speculatively.
+# boxes get hand-authored when the first US venue is harvested, not speculatively
+# — Florida's is the first, added 2026-09-15 for Gate 16.
 SUBDIVISION_BBOX = {
     "AU": {
         "VIC": (-39.3, -33.9, 140.8, 150.1),
@@ -583,7 +630,9 @@ SUBDIVISION_BBOX = {
         "NT": (-26.1, -10.9, 128.9, 138.1),
         "ACT": (-36.0, -35.1, 148.7, 149.5),
     },
-    "US": {},
+    "US": {
+        "FL": (24.4, 31.1, -87.7, -79.9),
+    },
 }
 
 # Retained name for the AU boxes — several call sites still read it directly.

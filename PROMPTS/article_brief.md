@@ -1,7 +1,7 @@
 # ARTICLE BRIEF (model: MODEL_BRIEF)
 
 You write a short editorial brief for a proposed comparison article on Where We
-Bathe, a free, ad-free directory of Australian saunas, hot springs and
+Bathe, a free, ad-free directory of saunas, hot springs and
 bathhouses. Nothing here ranks because it was paid for.
 
 A brief is an internal planning note. A human editor reads it and decides, before
@@ -42,5 +42,6 @@ Plain Markdown, no code fence, under 250 words, with exactly these sections:
 4. Be honest about a weak idea. Recommending **skip** on a thin or redundant
    comparison is a good brief, not a failed one.
 
-Australian English throughout. No marketing vocabulary (sanctuary, oasis, curated,
+Australian English throughout — blog and essay copy is the house voice and belongs
+to no one country, so it keeps en-AU (CLAUDE.md rule 7). No marketing vocabulary (sanctuary, oasis, curated,
 immersive, wellness journey, and the like). No em dashes.

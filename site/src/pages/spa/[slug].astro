@@ -9,12 +9,12 @@ import {
   AMENITY_KEYS,
   AMENITY_NOTATION,
   CATEGORY_LABELS,
+  COUNTRY_CURRENCY,
   COUNTRY_NAMES,
   DRESS_CODE_LABELS,
   FACILITY_KEYS,
   FACILITY_LABELS,
   SESSION_GENDER_LABELS,
-  STATE_NAMES,
   VERIFIABLE_FIELDS,
   VERIFIABLE_FIELD_LABELS,
   categoryUrlSlug,
@@ -24,6 +24,7 @@ import {
   placePath,
   priceRange,
   saunaTemperatureLine,
+  subdivisionName,
   type GeoPoint,
   worldRegionForCountry,
 } from "../../config";
@@ -43,11 +44,16 @@ export async function getStaticPaths() {
     // this venue has no coordinate of its own to measure from; otherwise
     // shows whatever's available even below 3 (thin neighbour pools, e.g.
     // Tasmania today, are expected as the directory grows nationally).
+    //
+    // Same country only (Gate 16). "Nearest 3" has no distance cap, which is
+    // fine within one country and absurd across two: with coverage still thin,
+    // a Melbourne venue's nearest neighbour was a Florida one, 15,578 km away,
+    // listed under a heading that says Nearby.
     const origin = venueCoords(venue);
     const nearby = origin
       ? nearestByDistance(
           origin,
-          venues.filter((v) => v.id !== venue.id),
+          venues.filter((v) => v.id !== venue.id && v.data.country === venue.data.country),
           3,
           venueCoords,
         )
@@ -98,8 +104,8 @@ const confirmedPhrase =
 
 // Temperature appendix line (2026-07-26) — prefer the Architect's display
 // string, fall back to the structured min/max range; null when neither is set.
-const saunaLine = data.temperatures ? saunaTemperatureLine(data.temperatures) : null;
-const coldPlungeLine = data.temperatures ? coldPlungeTemperatureLine(data.temperatures) : null;
+const saunaLine = data.temperatures ? saunaTemperatureLine(data.temperatures, country) : null;
+const coldPlungeLine = data.temperatures ? coldPlungeTemperatureLine(data.temperatures, country) : null;
 const temperatureLine = [saunaLine && `Sauna ${saunaLine}`, coldPlungeLine && `Cold plunge ${coldPlungeLine}`]
   .filter(Boolean)
   .join(". ");
@@ -123,7 +129,7 @@ const localBusinessLd: Record<string, unknown> = {
     "@type": "PostalAddress",
     streetAddress: data.address,
     addressLocality: data.city,
-    addressRegion: STATE_NAMES[stateProvince],
+    addressRegion: subdivisionName(country, stateProvince),
     addressCountry: data.country || "AU",
   },
 };
@@ -132,9 +138,21 @@ if (data.latitude != null && data.longitude != null) {
   localBusinessLd.geo = { "@type": "GeoCoordinates", latitude: data.latitude, longitude: data.longitude };
 }
 if (data.cost) {
-  const range = priceRange(data.cost);
-  if (range) localBusinessLd.priceRange = range;
+  const range = priceRange(data.cost, data.currency, country);
+  if (range) {
+    localBusinessLd.priceRange = range;
+    // priceRange is a bare "$39–$59" string. Without a currency beside it that
+    // is ambiguous the moment the directory holds two, and a crawler has no
+    // way to tell an Australian forty dollars from an American one.
+    localBusinessLd.priceCurrency = data.currency ?? COUNTRY_CURRENCY[country];
+  }
 }
+// The subdivision a venue actually serves — a reader in Florida is not served
+// by a venue in Victoria, and areaServed is how that is said in schema.org.
+localBusinessLd.areaServed = {
+  "@type": "AdministrativeArea",
+  name: subdivisionName(country, stateProvince),
+};
 // amenityFeature (Gate 11, 2026-07-31) — the same amenity/facility booleans
 // shown on the page (Features.astro), made machine-readable. Generic
 // LocalBusiness type retained deliberately (TRD.md §2, 2026-07-31): these
@@ -165,7 +183,7 @@ const breadcrumbLd = {
     { "@type": "ListItem", position: 2, name: "Places", item: new URL("/places/", Astro.site).href },
     { "@type": "ListItem", position: 3, name: worldRegionForCountry(country)!.name, item: new URL(`/places/${worldRegionForCountry(country)!.slug}/`, Astro.site).href },
     { "@type": "ListItem", position: 4, name: COUNTRY_NAMES[country], item: new URL(placePath(country), Astro.site).href },
-    { "@type": "ListItem", position: 5, name: STATE_NAMES[stateProvince], item: new URL(placePath(country, stateProvince), Astro.site).href },
+    { "@type": "ListItem", position: 5, name: subdivisionName(country, stateProvince), item: new URL(placePath(country, stateProvince), Astro.site).href },
     { "@type": "ListItem", position: 6, name: data.name, item: new URL(`/spa/${venue.id}/`, Astro.site).href },
   ],
 };
@@ -183,7 +201,13 @@ const faqLd = data.faq && data.faq.length > 0
   : null;
 ---
 
-<BaseLayout title={`${data.name} — Where We Bathe`} description={data.summary} image={data.image ?? `/og/${venue.id}.png`} imageAlt={`${data.name}, ${data.city}`}>
+<BaseLayout
+  title={`${data.name} — Where We Bathe`}
+  description={data.summary}
+  image={data.image ?? `/og/${venue.id}.png`}
+  imageAlt={`${data.name}, ${data.city}`}
+  country={country}
+>
   <script type="application/ld+json" set:html={JSON.stringify(localBusinessLd)} />
   <script type="application/ld+json" set:html={JSON.stringify(breadcrumbLd)} />
   {faqLd && <script type="application/ld+json" set:html={JSON.stringify(faqLd)} />}
@@ -246,7 +270,7 @@ const faqLd = data.faq && data.faq.length > 0
               <li class="py-3" style="border-top: 1px solid color-mix(in srgb, var(--ink-faded) 25%, transparent);">
                 <a href={`/spa/${item.id}/`} class="font-display text-xl font-light text-[var(--ink)]">{item.data.name}</a>
                 <span class="ml-2" style="color: var(--ink-faded);">
-                  {item.data.city}, {STATE_NAMES[nearbyStateProvince]} — {formatDistanceKm(distanceKm)}
+                  {item.data.city}, {subdivisionName(item.data.country, nearbyStateProvince)} — {formatDistanceKm(distanceKm, country)}
                 </span>
               </li>
             );
@@ -279,7 +303,7 @@ const faqLd = data.faq && data.faq.length > 0
           </p>
         )}
         <p class="mt-4">
-          <a href={placePath(country, stateProvince)}>More bathhouses in {STATE_NAMES[stateProvince]}</a>
+          <a href={placePath(country, stateProvince)}>More bathhouses in {subdivisionName(country, stateProvince)}</a>
         </p>
         <p class="mt-4">
           <a href={`/category/${categoryUrlSlug(data.category)}/`}>More {CATEGORY_LABELS[data.category].toLowerCase()} venues</a>

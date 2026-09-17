@@ -21,9 +21,11 @@ from admin.config import (
     CATEGORY_KEYS,
     CATEGORY_LABELS,
     FOREWORDS_JSON_PATH,
+    DEFAULT_COUNTRY,
     MODEL_ARCHITECT,
     PUBLISHED_DIR,
-    STATE_NAMES,
+    foreword_key,
+    subdivision_name,
 )
 from admin.pipeline import agents
 from admin.pipeline.data_store import iter_published
@@ -50,13 +52,23 @@ def save_forewords(data: dict[str, Any], path: Path = FOREWORDS_JSON_PATH) -> No
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def _venues_by_state(published_dir: Path = PUBLISHED_DIR) -> dict[str, list[dict[str, Any]]]:
-    by_state: dict[str, list[dict[str, Any]]] = {}
+def _venues_by_state(
+    published_dir: Path = PUBLISHED_DIR,
+) -> dict[tuple[str, str], list[dict[str, Any]]]:
+    """Buckets published venues by (country, subdivision).
+
+    `state_province` since 2026-09-08 (was `state`). This line was missed by
+    that migration, and because ensure_forewords() runs inside approve(),
+    publishing ANY venue raised KeyError from then until 2026-09-10.
+
+    Country joined the key on 2026-09-15 (Gate 16): bucketing by the bare code
+    would file a Washington venue under Western Australia's foreword, which
+    reads plausibly and is entirely wrong.
+    """
+    by_state: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for slug, data in iter_published(published_dir):
-        # `state_province` since 2026-09-08 (was `state`). This line was missed by
-        # that migration, and because ensure_forewords() runs inside approve(),
-        # publishing ANY venue raised KeyError from then until 2026-09-10.
-        by_state.setdefault(data["state_province"], []).append({"slug": slug, **data})
+        key = (data.get("country", DEFAULT_COUNTRY), data["state_province"])
+        by_state.setdefault(key, []).append({"slug": slug, **data})
     return by_state
 
 
@@ -77,11 +89,16 @@ def _validate_foreword(text: str) -> str:
 
 
 def _generate_one(
-    state: str | None, amenity_key: str | None, venues: list[dict[str, Any]], log: LogFn, category_key: str | None = None
+    state: tuple[str, str] | None,
+    amenity_key: str | None,
+    venues: list[dict[str, Any]],
+    log: LogFn,
+    category_key: str | None = None,
 ) -> str:
     system = agents.load_prompt("foreword.md")
     payload = {
-        "state": STATE_NAMES[state] if state else None,
+        "state": subdivision_name(*state) if state else None,
+        "country": state[0] if state else None,
         "amenity": AMENITY_FULL_NAMES[amenity_key] if amenity_key else None,
         "category": CATEGORY_LABELS[category_key] if category_key else None,
         "venues": [{"name": v["name"], "city": v["city"]} for v in venues],
@@ -101,31 +118,32 @@ def _generate_one(
 def ensure_forewords(published_dir: Path = PUBLISHED_DIR, log: LogFn = _default_log) -> list[str]:
     """Generate and persist forewords for any state / state+amenity combo
     that now has >=1 published venue but no entry yet. Returns the list of
-    newly-written keys (e.g. "VIC", "VIC/magnesium_pool"). Never touches an
+    newly-written keys (e.g. "AU:VIC", "AU:VIC/magnesium_pool"). Never touches an
     existing entry — a human may have hand-edited it."""
     data = load_forewords()
     by_state = _venues_by_state(published_dir)
     new_keys: list[str] = []
 
     for state, venues in by_state.items():
-        state_entry = data.setdefault(state, {})
+        key = foreword_key(*state)
+        state_entry = data.setdefault(key, {})
         if "state" not in state_entry:
             try:
                 state_entry["state"] = _generate_one(state, None, venues, log)
-                new_keys.append(state)
+                new_keys.append(key)
             except (agents.AgentError, agents.MalformedOutput) as exc:
-                log(f"foreword for {state} failed: {exc}", "error")
+                log(f"foreword for {key} failed: {exc}", "error")
 
         amenities_entry = state_entry.setdefault("amenities", {})
-        for key in AMENITY_KEYS:
-            matching = [v for v in venues if v["amenities"].get(key)]
-            if not matching or key in amenities_entry:
+        for amenity in AMENITY_KEYS:
+            matching = [v for v in venues if v["amenities"].get(amenity)]
+            if not matching or amenity in amenities_entry:
                 continue
             try:
-                amenities_entry[key] = _generate_one(state, key, matching, log)
-                new_keys.append(f"{state}/{key}")
+                amenities_entry[amenity] = _generate_one(state, amenity, matching, log)
+                new_keys.append(f"{key}/{amenity}")
             except (agents.AgentError, agents.MalformedOutput) as exc:
-                log(f"foreword for {state}/{key} failed: {exc}", "error")
+                log(f"foreword for {key}/{amenity} failed: {exc}", "error")
 
     categories_entry = data.setdefault("categories", {})
     by_category = _venues_by_category(published_dir)

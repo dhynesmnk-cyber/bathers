@@ -1,22 +1,22 @@
 {
-  "ACT": {
+  "AU:ACT": {
     "amenities": {
       "cold_plunge": "Cold plunge pools work by brief exposure to cold water, typically prompting a sharp cardiovascular response and the kind of alertness that lingers well after you've dried off. In the ACT, Hale Gym & Day Spa in Barton is currently the one listed venue offering this amenity. The territory's compact size means the list is short, but it covers the option available to Canberrans seeking this particular facility.",
       "traditional_sauna": "One venue in the ACT currently lists a traditional sauna: Hale Gym & Day Spa in Barton. Traditional saunas work by heating the air in an enclosed room, typically using a wood or electric stove and stones that can be doused with water to produce bursts of steam. The ACT's small size means the list here is short, but it will be updated as the directory grows."
     },
     "state": "The ACT's bathhouse and day spa offering is small by any national comparison, with Barton's Hale Gym & Day Spa currently the sole listed venue for the territory. Canberra's inland climate, with its sharp winters and dry summers, gives water-based bathing a particular appeal here even if the infrastructure remains modest."
   },
-  "NSW": {
+  "AU:NSW": {
     "amenities": {},
     "amenity_meta_descriptions": {},
     "meta_description": "Australian bathhouses and hot springs in New South Wales: an artesian bore bath in Pilliga, fed by the Great Artesian Basin.",
     "state": "New South Wales holds one of the country's more unusual public bathing spots in the Pilliga, where artesian water drawn from the Great Artesian Basin surfaces warm and mineral-rich. That geological accident has made Pilliga Bore Bath a place people drive considerable distances to reach."
   },
-  "NT": {
+  "AU:NT": {
     "amenities": {},
     "state": "Bitter Springs in Mataranka sits within the thermal spring country south of Katherine, where warm groundwater surfaces year-round in a landscape that makes bathing feel less like a leisure activity and more like a geographical fact. The Northern Territory's bathhouse and thermal listing is short, shaped by remoteness and climate rather than any shortage of interest."
   },
-  "QLD": {
+  "AU:QLD": {
     "amenities": {
       "cold_plunge": "Queensland's single listed cold plunge venue sits at the far western edge of the state, in Cunnamulla, where the artesian basin shapes what's on offer. Cold plunge pools work by brief immersion in water typically below 15°C, a contrast to heat exposure that many bathers seek for circulation and recovery. With only one venue currently on this page, the list may grow as more Queensland operators document the amenity.",
       "traditional_sauna": "Queensland's heat and humidity make a traditional sauna a more deliberate choice than in cooler climates, one people seek out for the specific, dry intensity that ambient conditions don't provide. A traditional sauna works by raising air temperature well above what the body can sustain, prompting sweating as a response rather than a side effect. Cunnamulla Hot Springs, in the state's south-west, is currently the only Queensland venue listed here with this amenity."
@@ -25,7 +25,7 @@
     "meta_description": "Bathhouses and hot springs in Queensland: an artesian bore bath at Eulo, drawing on the Great Artesian Basin under the state's interior.",
     "state": "Queensland's entry in this directory is brief: one venue, in Eulo, drawing on the Great Artesian Basin that underlies much of the state's interior. That basin is one of the largest and deepest freshwater aquifer systems on earth, and the mineralised waters it produces have made outback Queensland a quiet destination for this kind of bathing for well over a century."
   },
-  "SA": {
+  "AU:SA": {
     "amenities": {
       "cold_plunge": "South Australia's cold plunge options are sparse, with a single listed venue in Torrensville representing the category statewide. A cold plunge pool is a small, chilled body of water used between heat sessions to drive circulation and aid muscle recovery, a practice common in Nordic and Japanese bathing traditions. The relative scarcity here reflects how recently contrast bathing has taken hold in Australian cities outside Melbourne and Sydney.",
       "infrared_sauna": "South Australia's listed venues with infrared sauna include Onsen Sauna, Contrast & Recovery Lounge in Torrensville. Infrared saunas heat the body directly using radiant panels rather than warming the surrounding air, which means they typically operate at lower ambient temperatures than traditional steam or dry-heat saunas while still producing a significant sweat response. One venue appears in this state for the amenity at present.",
@@ -33,7 +33,7 @@
     },
     "state": "South Australia's bathing scene is compact, with Onsen Sauna, Contrast & Recovery Lounge in Torrensville currently the sole listed venue for the state. That concentration makes it straightforward to survey what's on offer here, even as the broader Australian bathhouse and thermal bathing sector continues to grow."
   },
-  "TAS": {
+  "AU:TAS": {
     "amenities": {
       "cold_plunge": "Tasmania's cool climate makes cold plunge facilities a natural fit, with water temperatures in such pools typically kept well below 15°C to prompt the circulatory response the practice is known for. Two venues currently list this amenity in the state: Nova Holistic Spa in Hobart and Waldheim Alpine Spa at Cradle Mountain.",
       "infrared_sauna": "Tasmania's cool climate makes the dry warmth of an infrared sauna a particular draw: these cabins use radiant heat rather than steam, warming the body directly at lower ambient temperatures than a conventional sauna. One venue currently carries this listing in the state, Nova Holistic Spa in Hobart.",
@@ -49,7 +49,7 @@
     "meta_description": "Bathhouses and spas across Tasmania, from Hobart's city suburbs to Cradle Mountain's alpine edge — five venues spanning saunas, plunges and mineral pools.",
     "state": "Tasmania's bathhouse and spa directory is compact by mainland standards, spanning from Hobart's city suburbs through to Cradle Mountain's alpine edge. The five venues listed here spread across the island's distinct climates and landscapes, from East Tinderbox on the Derwent estuary to the highland wilderness around Waldheim. That geographic spread shapes what each place can offer in practical terms, even before stepping inside."
   },
-  "VIC": {
+  "AU:VIC": {
     "amenities": {
       "cold_plunge": "Cold plunging pairs deliberate discomfort with the warmth that follows, and Victoria's bathhouse culture has taken to the combination with some seriousness. The venues listed here span the Bellarine and Mornington coasts, the mineral spring country around Hepburn Springs, and a cluster of inner-Melbourne suburbs from Collingwood to Essendon. A cold plunge is typically an unheated or chilled pool used in contrast with hot water or steam, with the thermal shift rather than either temperature alone being the point.",
       "infrared_sauna": "Infrared saunas heat the body directly through light rather than warming the surrounding air, which means they typically operate at lower ambient temperatures than traditional steam or dry saunas while still producing a sustained sweat. Victoria has a reasonable spread of venues offering them, from Mornington Peninsula to the inner suburbs of Melbourne, including City Cave Braybrook, Pond Bathhouse, Sóma Bathhouse, and others listed here.",
@@ -67,7 +67,7 @@
     "meta_description": "Bathhouses and hot springs across Victoria, from the mineral spring country around Hepburn Springs to a growing cluster of bathhouses in inner Melbourne.",
     "state": "Victoria's bathhouse culture draws on something genuinely old: the mineral spring country around Hepburn Springs and Daylesford has been drawing people to its waters since the nineteenth century, and venues like Hepburn Bathhouse & Spa and The Mineral Spa sit within that longer tradition. The state's listings now extend well beyond the central highlands, from coastal spots at Torquay, Sorrento, Warrnambool, and Metung to a growing cluster of urban bathhouses across Melbourne's inner suburbs."
   },
-  "WA": {
+  "AU:WA": {
     "amenities": {
       "cold_plunge": "Western Australia's bathhouse scene is still finding its feet, and cold plunge pools are among the amenities beginning to appear as venues open across the state. Cold plunge pools use cool to cold water, typically well below 20°C, and are generally paired with heat sources as part of contrast therapy, a practice with roots in Scandinavian and Central European bathing traditions. Merse Wellness in Osborne Park is currently the sole listed venue in WA offering this amenity.",
       "infrared_sauna": "Western Australia's infrared sauna options are currently slim, with Merse Wellness in Osborne Park holding the listing for the state. Infrared saunas heat the body through radiant light rather than warming the surrounding air, typically running at lower ambient temperatures than traditional steam or dry saunas. This page will grow as further venues are confirmed.",

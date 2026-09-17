@@ -7,6 +7,7 @@ import BaseLayout from "../../../../layouts/BaseLayout.astro";
 import VenueEntry from "../../../../components/VenueEntry.astro";
 import {
   COUNTRY_NAMES,
+  COUNTRY_NAME_IN_PHRASE,
   COUNTRY_SLUGS,
   SUBDIVISION_NAMES,
   WORLD_REGIONS,
@@ -32,6 +33,7 @@ export async function getStaticPaths() {
 
 const { region, country, venues } = Astro.props;
 const name = COUNTRY_NAMES[country as Country];
+const inName = COUNTRY_NAME_IN_PHRASE[country as Country];
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
 const codes = Object.keys(SUBDIVISION_NAMES[country as Country])
@@ -44,8 +46,9 @@ const sorted = [...venues].sort((a: any, b: any) => a.data.name.localeCompare(b.
 ---
 
 <BaseLayout
-  title={`Bathhouses & Hot Springs in ${name} — ${venues.length} ${plural(venues.length, "venue", "venues")}`}
-  description={`Every bathhouse, sauna and hot spring we have written up in ${name} — ${venues.length} ${plural(venues.length, "venue", "venues")} across ${codes.length} ${codes.length === 1 ? "state" : "states"}, no sponsored listings.`}
+  country={country as Country}
+  title={`Bathhouses & Hot Springs in ${inName} — ${venues.length} ${plural(venues.length, "venue", "venues")}`}
+  description={`Every bathhouse, sauna and hot spring we have written up in ${inName} — ${venues.length} ${plural(venues.length, "venue", "venues")} across ${codes.length} ${codes.length === 1 ? "state" : "states"}, no sponsored listings.`}
   canonicalPath={placePath(country as Country)}
 >
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
@@ -57,7 +60,7 @@ const sorted = [...venues].sort((a: any, b: any) => a.data.name.localeCompare(b.
 
     <header class="mb-12">
       <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
-        Bathing in {name}
+        Bathing in {inName}
       </h1>
       <p class="mt-6 max-w-[65ch]">
         {venues.length} {plural(venues.length, "venue", "venues")} across {codes.length}

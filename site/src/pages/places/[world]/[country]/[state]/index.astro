@@ -1,9 +1,20 @@
 ---
-// Subdivision page (2026-09-08) — the state/province tier, and the direct
-// replacement for the old flat /<code>/ route (301'd in netlify.toml). Carries
-// the venues, plus the two kinds of page that live one level below it: areas
-// (the region taxonomy) and amenity/facility/pool filters. Those two share the
-// leaf slot, which is safe because /validate asserts the slug sets are disjoint.
+// Two kinds of page share this slot, discriminated by `kind` — the same
+// pattern [scope]/index.astro and [leaf].astro already use where Astro cannot
+// register two sibling dynamic routes at one depth:
+//
+//   - "subdivision" (2026-09-08) — the state/province tier, and the direct
+//     replacement for the old flat /<code>/ route (301'd in netlify.toml).
+//     Carries the venues, plus the areas and filters that live one level below.
+//   - "filter" (2026-09-15, Gate 16) — a country-wide feature list, e.g.
+//     /places/north-america/united-states/magnesium-pool/. Australia's
+//     equivalents keep their short top-level slugs (/magnesium-pool/), which is
+//     what is already indexed against them; every other country's live here.
+//
+// Subdivision slugs are full place names and filter slugs are features, so the
+// two sets cannot collide in practice — /validate asserts it anyway, at this
+// level and at the leaf level below, because "cannot in practice" is exactly
+// the assumption that silently drops a page when it stops being true.
 import { getCollection } from "astro:content";
 import BaseLayout from "../../../../../layouts/BaseLayout.astro";
 import VenueEntry from "../../../../../components/VenueEntry.astro";
@@ -11,12 +22,15 @@ import {
   AMENITY_KEYS,
   AMENITY_NOTATION,
   COUNTRY_NAMES,
+  COUNTRY_NAME_IN_PHRASE,
+  DEFAULT_COUNTRY,
   COUNTRY_SLUGS,
   CROSS_CUTTING_FACILITY_FILTERS,
   POOL_TYPES,
   SUBDIVISION_NAMES,
   WORLD_REGIONS,
   amenityUrlSlug,
+  forewordKey,
   placePath,
   subdivisionSlug,
   type Country,
@@ -43,17 +57,55 @@ export async function getStaticPaths() {
             country: COUNTRY_SLUGS[country],
             state: subdivisionSlug(country, code),
           },
-          props: { region, country, code, venues: matching },
+          props: { region, country, code, kind: "subdivision" as const, venues: matching },
         });
       }
     }
   }
+  // Country-wide feature filters, for every country but the default one, whose
+  // equivalents already exist at the top level.
+  for (const region of WORLD_REGIONS) {
+    for (const country of region.countries) {
+      if (country === DEFAULT_COUNTRY) continue;
+      const inCountry = venues.filter((v) => v.data.country === country);
+      if (inCountry.length === 0) continue;
+      const base = { world: region.slug, country: COUNTRY_SLUGS[country] };
+      const shared = { region, country, kind: "filter" as const };
+
+      for (const key of AMENITY_KEYS) {
+        const matching = inCountry.filter((v) => v.data.amenities?.[key]);
+        if (matching.length === 0) continue;
+        paths.push({
+          params: { ...base, state: amenityUrlSlug(key) },
+          props: { ...shared, label: AMENITY_NOTATION[key].full, glossaryKey: key, venues: matching },
+        });
+      }
+      for (const poolType of POOL_TYPES) {
+        if (poolType.slug === "other") continue;
+        const matching = inCountry.filter((v) => poolType.match(v.data.facilities));
+        if (matching.length === 0) continue;
+        paths.push({
+          params: { ...base, state: poolType.slug },
+          props: { ...shared, label: poolType.label, venues: matching },
+        });
+      }
+      for (const f of CROSS_CUTTING_FACILITY_FILTERS) {
+        const matching = inCountry.filter((v) => v.data.facilities?.[f.key]);
+        if (matching.length === 0) continue;
+        paths.push({
+          params: { ...base, state: f.slug },
+          props: { ...shared, label: f.label, glossaryKey: f.key, venues: matching },
+        });
+      }
+    }
+  }
+
   return paths;
 }
 
-const { region, country, code, venues } = Astro.props;
-const countryName = COUNTRY_NAMES[country as Country];
-const stateName = SUBDIVISION_NAMES[country as Country][code];
+const { region, country, code, kind = "subdivision", label, glossaryKey, venues } = Astro.props;
+const countryName = COUNTRY_NAME_IN_PHRASE[country as Country];
+const stateName = kind === "subdivision" ? SUBDIVISION_NAMES[country as Country][code] : "";
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 const noun = plural(venues.length, "venue", "venues");
 
@@ -75,19 +127,40 @@ for (const v of venues as any[]) {
   const r = regionForCity(v.data.country, v.data.state_province, v.data.city);
   if (r) areaCounts.set(r.slug, (areaCounts.get(r.slug) ?? 0) + 1);
 }
-const areas = REGIONS.filter((r) => (areaCounts.get(r.slug) ?? 0) >= 2);
+// Scoped to this page's own country and subdivision: region slugs are unique
+// only within one, so filtering on the count alone would let another
+// subdivision's area appear here if the two ever shared a slug.
+const areas =
+  kind === "subdivision"
+    ? REGIONS.filter(
+        (r) => r.country === country && r.subdivision === code && (areaCounts.get(r.slug) ?? 0) >= 2,
+      )
+    : [];
 
 const sorted = [...venues].sort((a: any, b: any) => a.data.name.localeCompare(b.data.name));
 const path = (leaf?: string) => placePath(country as Country, code, leaf);
+const plural2 = (n: number, one: string, many: string) => (n === 1 ? one : many);
+const listNoun = plural2(venues.length, "venue", "venues");
+
+const pageTitle =
+  kind === "subdivision"
+    ? `Bathhouses & Hot Springs in ${stateName} — ${venues.length} ${noun}`
+    : `${label} in ${countryName} — ${venues.length} ${listNoun}`;
+const pageDescription =
+  kind === "subdivision"
+    ? FOREWORDS[forewordKey(country as Country, code)]?.meta_description ||
+      `Find bathhouses, hot springs and saunas in ${stateName} — ${venues.length} ${noun}, no sponsored listings.`
+    : `${label} at ${venues.length} bathhouses and hot springs across ${countryName}, compared side by side.`;
+const pageCanonical =
+  kind === "subdivision" ? path() : `${placePath(country as Country)}${Astro.params.state}/`;
+const heading = kind === "subdivision" ? `Bathhouses of ${stateName}` : `${label} in ${countryName}`;
 ---
 
 <BaseLayout
-  title={`Bathhouses & Hot Springs in ${stateName} — ${venues.length} ${noun}`}
-  description={
-    FOREWORDS[code]?.meta_description ||
-    `Find bathhouses, hot springs and saunas in ${stateName} — ${venues.length} ${noun}, no sponsored listings.`
-  }
-  canonicalPath={path()}
+  country={country as Country}
+  title={pageTitle}
+  description={pageDescription}
+  canonicalPath={pageCanonical}
 >
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
     <nav class="mono mb-8 text-[var(--ink-faded)]">
@@ -100,9 +173,16 @@ const path = (leaf?: string) => placePath(country as Country, code, leaf);
 
     <header class="mb-12">
       <h1 class="font-display font-light" style="font-size: clamp(2.5rem, 6vw, 4.5rem);">
-        Bathhouses of {stateName}
+        {heading}
       </h1>
-      <p class="mt-6 max-w-[65ch]">{venues.length} {noun}.</p>
+      <p class="mt-6 max-w-[65ch]">{venues.length} {kind === "subdivision" ? noun : listNoun}.</p>
+      {
+        kind === "filter" && glossaryKey && (
+          <p class="mono mt-4">
+            <a href={`/glossary/${String(glossaryKey).replace(/_/g, "-")}/`}>What is this?</a>
+          </p>
+        )
+      }
 
       {
         areas.length > 0 && (

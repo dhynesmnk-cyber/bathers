@@ -18,7 +18,7 @@ from typing import Any
 
 from admin.config import (
     AMENITY_KEYS,
-    CAPITAL_CITIES,
+    DRIVE_TIME_ORIGINS,
     DEFAULT_COUNTRY,
     FACILITY_KEYS,
     PUBLISHED_DIR,
@@ -30,12 +30,14 @@ from admin.pipeline.verification import populated_verifiable_fields
 
 Venue = tuple[str, dict[str, Any]]
 
-CAPITAL_NAMES = {c["name"] for c in CAPITAL_CITIES.values()}
+# Every declared origin name, across countries. The per-venue check below
+# narrows to the venue's own country — this set is only the fast reject.
+ORIGIN_NAMES = {o["name"] for origins in DRIVE_TIME_ORIGINS.values() for o in origins}
 # Plausibility windows — deliberately wide (catch a wrong-units or wrong-field
 # error, not a legitimate outlier). Distinct from the zod data-entry bounds.
 SAUNA_PLAUSIBLE = (30, 130)
 PLUNGE_PLAUSIBLE = (-2, 20)
-DRIVE_MINUTES_MAX = 3000  # ~50 h — no AU venue is further from a capital
+DRIVE_MINUTES_MAX = 3000  # ~50 h — no venue is further from an origin in its own country
 
 
 def _cost_amounts(cost: str | None) -> list[float]:
@@ -75,8 +77,18 @@ def check_drive_time_sanity(venues: list[Venue]) -> list[str]:
         dt = fm.get("drive_time")
         if not dt:
             continue
-        if dt.get("from") not in CAPITAL_NAMES:
-            out.append(f"{slug}: drive_time.from '{dt.get('from')}' is not a known capital")
+        country = fm.get("country", DEFAULT_COUNTRY)
+        own_origins = {o["name"] for o in DRIVE_TIME_ORIGINS.get(country, [])}
+        origin = dt.get("from")
+        if origin not in ORIGIN_NAMES:
+            out.append(f"{slug}: drive_time.from '{origin}' is not a known origin")
+        elif origin not in own_origins:
+            # The name is real, just not in this venue's country — which is
+            # exactly the failure the AU-only origin list used to produce
+            # silently, and the one worth naming loudly.
+            out.append(
+                f"{slug}: drive_time.from '{origin}' is not an origin in {country}"
+            )
         minutes, km = dt.get("minutes"), dt.get("km")
         if not isinstance(minutes, int) or not (0 <= minutes <= DRIVE_MINUTES_MAX):
             out.append(f"{slug}: drive_time.minutes={minutes} implausible")

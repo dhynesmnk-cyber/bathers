@@ -25,7 +25,7 @@ from dataclasses import asdict, dataclass
 
 import httpx
 
-from admin.config import GOOGLE_PLACES_API_KEY, PLACES_DIR
+from admin.config import COUNTRY_NAMES, DEFAULT_COUNTRY, GOOGLE_PLACES_API_KEY, PLACES_DIR
 
 SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
 PHOTO_MEDIA_URL = "https://places.googleapis.com/v1/{photo_name}/media"
@@ -122,11 +122,18 @@ def _review_snippets(place: dict) -> list[str] | None:
     return snippets or None
 
 
-def check_listing(name: str, suburb: str | None, state: str | None) -> PlacesResult:
+def check_listing(
+    name: str, suburb: str | None, state: str | None, country: str = DEFAULT_COUNTRY
+) -> PlacesResult:
     if not GOOGLE_PLACES_API_KEY:
         return PlacesResult(skipped=True, found=False)
 
-    query = " ".join(part for part in (name, suburb, state, "Australia") if part)
+    # Country named explicitly (Gate 16, was hardcoded "Australia"): the
+    # subdivision code alone does not disambiguate — "WA" reads as Western
+    # Australia or Washington depending on nothing Places can see.
+    query = " ".join(
+        part for part in (name, suburb, state, COUNTRY_NAMES.get(country, country)) if part
+    )
     try:
         places, _ = search_text(query)
     except (httpx.HTTPError, ValueError) as exc:

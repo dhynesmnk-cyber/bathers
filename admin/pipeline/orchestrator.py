@@ -14,7 +14,7 @@ from dataclasses import asdict, dataclass
 from typing import Iterator
 from urllib.parse import urlsplit
 
-from admin.config import AMENITY_KEYS, FAILED_DIR, MODEL_ARCHITECT, MODEL_GATEKEEPER, MODEL_HARVESTER, PUBLISHED_DIR, ROOT, STAGING_DIR
+from admin.config import AMENITY_KEYS, COUNTRY_LOCALE, DEFAULT_COUNTRY, FAILED_DIR, MODEL_ARCHITECT, MODEL_GATEKEEPER, MODEL_HARVESTER, PUBLISHED_DIR, ROOT, STAGING_DIR
 from admin import schema
 from admin.pipeline import agents, drivetime, geocode, harvest, images, outreach_store, places, staging, verification
 from admin.pipeline.staging import render_mdx, split_frontmatter
@@ -161,7 +161,9 @@ def _finalize_frontmatter(gate_fm: dict, harvester_data: dict, coords: tuple[flo
     # time is OSRM-computed from the just-resolved coordinates; verification
     # marks every populated verifiable field `published_by_venue` from this
     # harvest's source URL (Gate 8 outreach upgrades individual fields later).
-    dt = drivetime.drive_time(final.get("latitude"), final.get("longitude"))
+    dt = drivetime.drive_time(
+        final.get("latitude"), final.get("longitude"), final.get("country", DEFAULT_COUNTRY)
+    )
     if dt:
         final["drive_time"] = dt
     block = verification.build_verification(
@@ -305,12 +307,19 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False, allow_existing_
     coords = None
     address = harvester_data.get("address")
     if address:
-        coords = geocode.geocode_address(address, log=log)
+        coords = geocode.geocode_address(
+            address, harvester_data.get("country", DEFAULT_COUNTRY), log=log
+        )
         if coords:
             log(f"geocoded address → {coords[0]:.4f}, {coords[1]:.4f}")
         yield from drain()
 
-    places_result = places.check_listing(name, harvester_data.get("city"), harvester_data.get("state_province"))
+    places_result = places.check_listing(
+        name,
+        harvester_data.get("city"),
+        harvester_data.get("state_province"),
+        harvester_data.get("country", DEFAULT_COUNTRY),
+    )
     # Google's Place ID is stable across harvest runs even when the Harvester
     # extracts a different display name (and therefore a different slug) for
     # the same physical venue — key temp_data storage on it when available so
@@ -338,7 +347,17 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False, allow_existing_
         else ""
     )
 
-    architect_input = json.dumps(harvester_data, indent=2) + places_block
+    # Locale, named explicitly rather than left for the agent to infer from the
+    # `country` field buried in the JSON (Gate 16). Both the Architect and the
+    # Gatekeeper branch on it, and an agent that misses it produces an entry
+    # that reads plausibly in the wrong English.
+    venue_country = harvester_data.get("country", DEFAULT_COUNTRY)
+    locale_block = (
+        f"\n\n---\nLocale: {COUNTRY_LOCALE.get(venue_country, 'en-AU')} "
+        f"(country {venue_country}) — apply this variant only, never a blend."
+    )
+
+    architect_input = json.dumps(harvester_data, indent=2) + places_block + locale_block
     try:
         (architect_fm, architect_body), _usage = agents.call_agent(
             model=MODEL_ARCHITECT,
@@ -364,6 +383,7 @@ def run_harvest_pipeline(url: str, use_playwright: bool = False, allow_existing_
     gatekeeper_input = (
         f"{architect_mdx}\n\n---\nHarvester JSON (for the fact audit):\n{json.dumps(harvester_data, indent=2)}"
         + places_block
+        + locale_block
     )
     try:
         (gate_fm, gate_body), _usage = agents.call_agent(

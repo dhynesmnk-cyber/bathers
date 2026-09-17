@@ -22,7 +22,7 @@ from typing import Callable
 
 import httpx
 
-from admin.config import CAPITAL_CITIES, DRIVETIME_CACHE_PATH
+from admin.config import DEFAULT_COUNTRY, DRIVETIME_CACHE_PATH, DRIVE_TIME_ORIGINS
 
 OSRM_URL = "https://router.project-osrm.org/route/v1/driving"
 MIN_INTERVAL_SECONDS = 1.0  # be a polite guest on the shared demo instance
@@ -84,15 +84,31 @@ def _osrm_route(from_lat: float, from_lon: float, to_lat: float, to_lon: float) 
     return (round(route["duration"] / 60), round(route["distance"] / 1000, 1))
 
 
-def drive_time(latitude: float | None, longitude: float | None, log: LogFn | None = None) -> dict | None:
-    """Drive-time from a venue to its nearest capital by road.
+def drive_time(
+    latitude: float | None,
+    longitude: float | None,
+    country: str = DEFAULT_COUNTRY,
+    log: LogFn | None = None,
+) -> dict | None:
+    """Drive-time from a venue to its nearest reference origin by road.
 
     Returns `{"from": "Melbourne", "minutes": 100, "km": 111.4}` or None (no
-    coordinates, or every OSRM request failed). "Nearest" is resolved by
-    querying the two closest capitals by straight-line distance and keeping
-    the shorter drive — so a near-border venue is timed from whichever capital
-    is genuinely closer by road, not merely as-the-crow-flies."""
+    coordinates, no origins declared for the country, or every OSRM request
+    failed). "Nearest" is resolved by querying the two closest origins by
+    straight-line distance and keeping the shorter drive — so a near-border
+    venue is timed from whichever is genuinely closer by road, not merely
+    as-the-crow-flies.
+
+    Origins are scoped to the venue's own country (Gate 16). Before that every
+    venue was ranked against the Australian capitals, so a Florida venue would
+    have been measured to Darwin and OSRM asked to drive there."""
     if latitude is None or longitude is None:
+        return None
+
+    origins = DRIVE_TIME_ORIGINS.get(country, [])
+    if not origins:
+        if log:
+            log(f"drive-time: no origins declared for country {country}", "warn")
         return None
 
     key = _cache_key(latitude, longitude)
@@ -101,17 +117,17 @@ def drive_time(latitude: float | None, longitude: float | None, log: LogFn | Non
         return cache[key]
 
     ranked = sorted(
-        CAPITAL_CITIES.values(),
+        origins,
         key=lambda c: _haversine_km(latitude, longitude, c["latitude"], c["longitude"]),
     )
     best: dict | None = None
-    for capital in ranked[:2]:
-        route = _osrm_route(latitude, longitude, capital["latitude"], capital["longitude"])
+    for origin in ranked[:2]:
+        route = _osrm_route(latitude, longitude, origin["latitude"], origin["longitude"])
         if route is None:
             continue
         minutes, km = route
         if best is None or minutes < best["minutes"]:
-            best = {"from": capital["name"], "minutes": minutes, "km": km}
+            best = {"from": origin["name"], "minutes": minutes, "km": km}
 
     if best is None and log:
         log(f"drive-time: OSRM unreachable for {latitude:.4f},{longitude:.4f}", "warn")

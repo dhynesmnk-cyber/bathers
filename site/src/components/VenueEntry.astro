@@ -1,6 +1,7 @@
 ---
 import Features from "./Features.astro";
 import type { AMENITY_KEYS, FACILITY_KEYS } from "../config";
+import { DEFAULT_COUNTRY, formatMoney } from "../config";
 
 interface Props {
   name: string;
@@ -42,23 +43,17 @@ const {
 // Use city if available, fallback to suburb for legacy AU venues
 const displayCity = city || suburb || '';
 
-// Format location string based on country
+// "Collingwood, VIC", and "High Springs, FL, US" once the venue is outside the
+// default country — the same rule comparisons.ts and headtohead.ts already use,
+// so one venue reads the same wherever it is listed. A list can mix countries
+// (search, near-me), so the country cannot be left to the page around it.
 const formatLocation = () => {
-  if (country === 'AU') {
-    return `${displayCity}, ${state_province}`;
-  } else if (country === 'US') {
-    return `${displayCity}, ${state_province}`;
-  }
-  return `${displayCity}, ${state_province}, ${country}`;
+  const suffix = country && country !== DEFAULT_COUNTRY ? `, ${country}` : "";
+  return `${displayCity}, ${state_province}${suffix}`;
 };
 
-// Format price with currency
-const formatPrice = () => {
-  if (!price?.adult_drop_in || !currency) return null;
-  
-  const currencySymbol = currency === 'USD' ? 'US$' : '$';
-  return `${currencySymbol}${price.adult_drop_in} ${currency}`;
-};
+const formatPrice = () =>
+  price?.adult_drop_in != null ? formatMoney(price.adult_drop_in, currency, country) : null;
 
 const locationString = formatLocation();
 const priceString = formatPrice();
@@ -80,14 +75,14 @@ const priceString = formatPrice();
         loading="lazy"
       />
     )}
-    <div class="flex flex-col gap-1">
-      <h3 data-reveal-lines class="font-display text-3xl font-light text-[var(--ink)]">{name}</h3>
-      {country !== 'AU' && (
-        <span class="inline-block px-2 py-0.5 text-xs font-medium bg-[var(--accent)] text-white rounded-full self-start">
-          {country === 'US' ? 'USA' : country}
-        </span>
-      )}
-    </div>
+    {/* The pill badge that used to sit here was never rendered — no non-AU
+        venue existed — and broke three DESIGN.md hard rules the moment one did:
+        rounded-full, text-white, and bg-[var(--accent)] against a token that
+        does not exist, which is why it rendered unfilled. global.css's
+        .claim-cta comment records the same three being removed once before.
+        The country belongs in the location line below, where it reads as a
+        place rather than a label. */}
+    <h3 data-reveal-lines class="font-display text-3xl font-light text-[var(--ink)]">{name}</h3>
   </a>
   <div class="mt-1 mono text-[var(--ink-faded)]">
     {locationString}

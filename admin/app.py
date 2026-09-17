@@ -26,6 +26,7 @@ from admin.config import (
     OUTREACH_CHANNELS,
     OUTREACH_FOLLOW_UP_DAYS,
     OUTREACH_STATE_LABELS,
+    COUNTRY_CURRENCY,
     COUNTRY_NAMES,
     DEFAULT_COUNTRY,
     SUBDIVISIONS,
@@ -235,6 +236,7 @@ def index(request: Request):
             "states": STATES,
             "country_names": COUNTRY_NAMES,
             "subdivisions": SUBDIVISIONS,
+            "country_currency": COUNTRY_CURRENCY,
             "default_country": DEFAULT_COUNTRY,
             "categories": CATEGORY_LABELS,
             "dress_codes": DRESS_CODE_LABELS,
@@ -628,6 +630,7 @@ def api_deploy(body: DeployBody):
 class DiscoverBody(BaseModel):
     region: str
     keywords: list[str] | None = None
+    country: str = DEFAULT_COUNTRY
 
 
 @app.post("/api/discover")
@@ -635,7 +638,7 @@ def api_discover(body: DiscoverBody):
     if not places.GOOGLE_PLACES_API_KEY:
         raise HTTPException(400, "GOOGLE_PLACES_API_KEY is not set — discovery is unavailable")
     try:
-        candidates = discovery.discover_venues(body.region, body.keywords)
+        candidates = discovery.discover_venues(body.region, body.keywords, body.country)
     except httpx.HTTPError as exc:
         raise HTTPException(502, f"Places API error — {exc}") from exc
     return [asdict(c) for c in candidates]
