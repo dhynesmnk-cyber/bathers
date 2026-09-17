@@ -97,6 +97,7 @@ IMAGES_DIR = TEMP_DATA_DIR / "images"
 FAILED_DIR = TEMP_DATA_DIR / "failed"
 PLACES_DIR = TEMP_DATA_DIR / "places"
 GOATCOUNTER_CACHE_DIR = TEMP_DATA_DIR / "goatcounter"
+GSC_CACHE_DIR = TEMP_DATA_DIR / "gsc"
 BLOG_IMAGES_TEMP_DIR = TEMP_DATA_DIR / "blog_images"
 GEOCODE_CACHE_PATH = TEMP_DATA_DIR / "geocode_cache.json"  # 2026-07-22 — see geocode.py
 DRIVETIME_CACHE_PATH = TEMP_DATA_DIR / "drivetime_cache.json"  # Gate 7 — see drivetime.py
@@ -172,6 +173,17 @@ GEOCODER_USER_AGENT = _ENV.get("GEOCODER_USER_AGENT", "")
 GOOGLE_PLACES_API_KEY = _ENV.get("GOOGLE_PLACES_API_KEY", "")
 GOATCOUNTER_API_TOKEN = _ENV.get("GOATCOUNTER_API_TOKEN", "")
 GOATCOUNTER_SITE = _ENV.get("GOATCOUNTER_SITE", "")
+
+# Google Search Console demand feed (Gate 15, 2026-09-17). OAuth2 installed-app
+# credentials plus a long-lived refresh token; the access token is exchanged per
+# run and never stored. GSC_SITE_URL is the property exactly as Search Console
+# spells it — "sc-domain:wherewebathe.com" for a domain property, or the URL
+# prefix form with its trailing slash. Any empty value means the feed is simply
+# not configured, and the opportunity queue says so rather than guessing.
+GSC_CLIENT_ID = _ENV.get("GSC_CLIENT_ID", "")
+GSC_CLIENT_SECRET = _ENV.get("GSC_CLIENT_SECRET", "")
+GSC_REFRESH_TOKEN = _ENV.get("GSC_REFRESH_TOKEN", "")
+GSC_SITE_URL = _ENV.get("GSC_SITE_URL", "")
 
 # Claim-listing form/payment flow (2026-07-25, TRD.md §8 exception).
 STRIPE_SECRET_KEY = _ENV.get("STRIPE_SECRET_KEY", "")

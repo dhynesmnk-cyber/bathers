@@ -50,14 +50,26 @@ async function loadOpportunities() {
   for (const o of writable) {
     const li = document.createElement("li");
     li.className = "queue-item opp-item";
+    // A Search Console row is a search intent with no comparison behind it. It
+    // has no query_key, so it gets no Write button: offering one would post
+    // query_key=null and is exactly the auto-creation this feed must never do.
+    // Demand surfaces an intent for a human to brief; the brief gate governs.
+    const isDemand = o.source === "gsc";
+    const meta = isDemand
+      ? `${o.demand.impressions} impressions · ${o.demand.clicks} clicks · avg position ${o.demand.avg_position} · no comparison yet`
+      : `${o.populated}/${o.total} figures${o.venue_count ? ` · ${o.venue_count} venues` : ""}${
+          o.demand ? ` · ${o.demand.impressions} impressions` : ""
+        }`;
     li.innerHTML = `
       <div class="opp-head">
-        <span class="queue-title">${escapeHtml(o.title || o.query_key)}</span>
+        <span class="queue-title">${escapeHtml(o.title || o.query_key || "")}</span>
       </div>
-      <div class="mono opp-meta">${o.populated}/${o.total} figures${o.venue_count ? ` · ${o.venue_count} venues` : ""}</div>
+      <div class="mono opp-meta">${escapeHtml(meta)}</div>
       <div class="opp-actions"></div>`;
     const actions = li.querySelector(".opp-actions");
-    addBtn(actions, "Write article", "btn-thermal btn-xs", () => writeArticle(o.query_key, o.title));
+    if (!isDemand) {
+      addBtn(actions, "Write article", "btn-thermal btn-xs", () => writeArticle(o.query_key, o.title));
+    }
     ul.appendChild(li);
   }
 }

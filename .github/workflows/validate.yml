@@ -148,6 +148,9 @@ jobs:
           python3 -m admin.pipeline.validate_discoverability
           python3 -m admin.pipeline.validate_discoverability --self-test
 
+      - name: Search Console demand feed (check 32)
+        run: python3 -m admin.pipeline.gsc --self-test
+
       # --- Check 3: derived-data freshness -------------------------------
       # Rebuilds into the working tree and asserts nothing moved. This is the
       # check that catches a published venue edited without a rebuild — and, as
