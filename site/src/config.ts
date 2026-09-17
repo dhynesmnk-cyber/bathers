@@ -636,7 +636,7 @@ export const SITE_NAME = "Where We Bathe";
 // footer, so naming a country here named it in four places at once — and named
 // the wrong one on every US page. Country framing belongs on the country pages,
 // which is where the /places/ tree already puts it.
-export const SITE_TAGLINE = "A field guide to saunas, hot pools and bathhouses.";
+export const SITE_TAGLINE = "A field guide to mineral springs, bathhouses and saunas.";
 
 /** BCP 47 tag per country, for <html lang> and og:locale. A page that belongs
  *  to no country keeps the house voice's en-AU. */

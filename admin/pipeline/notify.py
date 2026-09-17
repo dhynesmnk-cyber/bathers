@@ -6,6 +6,7 @@ from __future__ import annotations
 import html
 import logging
 import smtplib
+import sys
 from email.message import EmailMessage
 from email.utils import formatdate, make_msgid, parseaddr
 from typing import Any
@@ -31,6 +32,14 @@ from admin.pipeline.claims_store import ClaimRequest
 # for a legal reason (see send_outreach_email's docstring), so it is the worst
 # candidate for silently existing in only one of them.
 OUTREACH_OPT_OUT = 'If you would rather I did not write again, reply with "no thanks" and I won\'t.'
+
+# The sender's physical postal address (2026-09-17, owner-supplied). Here for
+# the same reason and with the same twin problem as the line above: CAN-SPAM
+# requires a valid physical postal address on commercial mail, and it is a
+# requirement the message either carries or does not. The address is the
+# operator's real one, not a mail drop, and it is Australian because the sender
+# is — CAN-SPAM asks for a valid address, not a US one.
+OUTREACH_POSTAL_ADDRESS = "Where We Bathe, 2/13 Kinsale St, Reservoir VIC 3073, Australia"
 
 PLAN_LABELS = {"one_off": "one-off $25 processing fee", "subscription": "$5/month unlimited-changes subscription"}
 
@@ -223,10 +232,12 @@ def send_outreach_email(
     Written as Australia's Spam Act when only Australian venues existed; from
     Gate 16 (2026-09-15) this also reaches US operators, where CAN-SPAM asks for
     the same opt-out and additionally for a physical postal address on
-    commercial mail. The line above satisfies the opt-out half in both
-    jurisdictions. **The postal-address requirement is not met and is the
-    owner's call** — it needs a real address, which is not something this file
-    can invent.
+    commercial mail. The opt-out line satisfies the first half in both
+    jurisdictions; `OUTREACH_POSTAL_ADDRESS` (owner-supplied 2026-09-17)
+    satisfies the second. Both go in every send, to AU and US operators alike —
+    the address is no burden on an Australian recipient, and branching the
+    footer by country would mean the US requirement lived in the path taken
+    least often.
     """
     site = SITE_URL or "https://wherewebathe.com"
     greeting = f"Hello {operator_name}," if operator_name.strip() else "Hello,"
@@ -259,6 +270,8 @@ details costs nothing and your listing does not change if you ignore it.
 Thanks,
 Where We Bathe
 {site}
+
+{OUTREACH_POSTAL_ADDRESS}
 """
 
     recorded_html = "".join(f"<li>{html.escape(line)}</li>" for line in lines) or "<li>(we hold no detail beyond the basics)</li>"
@@ -277,6 +290,7 @@ and the page will say so.</p>
 details costs nothing and your listing does not change if you ignore it.</p>
 <p>{html.escape(OUTREACH_OPT_OUT)}</p>
 <p>Thanks,<br />Where We Bathe<br /><a href="{site}">{site}</a></p>
+<p>{html.escape(OUTREACH_POSTAL_ADDRESS)}</p>
 """
     return _send(operator_email, f"{venue_name} — the details we publish about you", body_text, body_html)
 
@@ -410,8 +424,58 @@ def send_outreach_preview(to_addr: str, slug: str) -> bool:
     )
 
 
+# --- twin check (2026-09-17) ---------------------------------------------
+def _self_test() -> int:
+    """Both compliance lines must appear in both bodies.
+
+    The plain-text and HTML outreach bodies are hand-maintained twins, and the
+    opt-out and the postal address are the two sentences in them that exist for
+    a legal reason rather than an editorial one. Nothing else notices if an edit
+    drops one from a single twin: the email still sends, still reads fine, and
+    is non-compliant only in whichever body that recipient's client renders.
+    Asserting it costs one render with SMTP never touched.
+    """
+    problems: list[str] = []
+    captured: dict[str, str] = {}
+
+    def fake_send(to_addr: str, subject: str, body_text: str, body_html: str | None = None) -> bool:
+        captured["text"] = body_text
+        captured["html"] = body_html or ""
+        return True
+
+    global _send
+    real_send, _send = _send, fake_send
+    try:
+        send_outreach_email(
+            slug="sample-venue",
+            venue_name="Sample Venue",
+            operator_email="operator@example.com",
+            operator_name="Sam",
+            fields=["cost"],
+            frontmatter={"cost": "$40"},
+        )
+    finally:
+        _send = real_send
+
+    for line, label in ((OUTREACH_OPT_OUT, "opt-out"), (OUTREACH_POSTAL_ADDRESS, "postal address")):
+        for twin in ("text", "html"):
+            # The HTML twin escapes its text, so compare against the escaped
+            # form there — otherwise an apostrophe alone would fail this.
+            needle = line if twin == "text" else html.escape(line)
+            ok = needle in captured.get(twin, "")
+            print(f"  {'ok  ' if ok else 'FAIL'} the {label} line is in the {twin} body")
+            if not ok:
+                problems.append(f"{label}/{twin}")
+
+    print(f"outreach email self-test: {len(problems)} problem(s)")
+    return 1 if problems else 0
+
+
 def main() -> None:
     import argparse
+
+    if "--self-test" in sys.argv:
+        raise SystemExit(_self_test())
 
     parser = argparse.ArgumentParser(description="Check the SMTP configuration, and optionally send a test.")
     parser.add_argument("--to", help="send a test message to this address")

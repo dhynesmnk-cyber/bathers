@@ -44,6 +44,31 @@ const presentAmenities = AMENITY_KEYS.filter((key) => venues.some((v) => v.data.
 // above") so it drops out of the chooser; it stays a results filter chip below.
 const presentPoolNational = POOL_NATIONAL_FILTERS.filter((f) => venues.some((v) => v.data.facilities?.[f.key]));
 
+// Springs entry (2026-09-17, owner decision) — springs are the directory's
+// centre of gravity, and until now they were one link among three in the
+// pool-setting column and one icon among five in the feature grid. This gives
+// them their own way in, at the head of the chooser. Both routes already
+// exist; this promotes them rather than adding a page. Present-only like
+// everything else here, so the block disappears entirely rather than linking a
+// page that was never built.
+const springsRoutes = [
+  ...POOL_NATIONAL_FILTERS.filter(
+    (f) => f.key === "natural_spring" && venues.some((v) => v.data.facilities?.[f.key]),
+  ).map((f) => ({ href: `/${f.slug}/`, label: f.label })),
+  ...(venues.some((v) => v.data.amenities?.magnesium_pool)
+    ? [{ href: `/${amenityUrlSlug("magnesium_pool")}/`, label: "Magnesium pools" }]
+    : []),
+];
+
+// Springs come out of the pool-setting column when they have their own block
+// above it, or the same link renders twice within 90px and reads as a bug
+// rather than as emphasis. When no spring venue is published the block is
+// empty and the column carries the full list again, unchanged.
+const springsPromoted = springsRoutes.length > 0;
+const poolSettingsBelowSprings = presentPoolNational.filter(
+  (f) => !(springsPromoted && f.key === "natural_spring"),
+);
+
 // 2026-07-26 — the map is gone (DESIGN.md §5, UX.md §2.1). Every venue still
 // renders server-side into the results area so it degrades to real markup,
 // but stays hidden until the amenity filter and/or near-me lookup below
@@ -55,7 +80,6 @@ const allVenues = venues.map((v) => ({
   city: v.data.city,
   state_province: v.data.state_province,
   country: v.data.country,
-  city: v.data.city,
   state_province: v.data.state_province,
   country: v.data.country || 'AU',
   summary: v.data.summary,
@@ -71,7 +95,7 @@ const allVenues = venues.map((v) => ({
 ---
 
 <BaseLayout
-  title={`${SITE_NAME} — saunas, hot pools and bathhouses`}
+  title={`${SITE_NAME} — mineral springs, bathhouses and saunas`}
   description={SITE_TAGLINE}
 >
   <main class="mx-auto max-w-3xl px-6 py-16 md:py-24">
@@ -81,35 +105,18 @@ const allVenues = venues.map((v) => ({
       <p class="mono mt-4"><a href="/blog/">Blog</a></p>
     </header>
 
-    <section class="rise-in reading-spine mb-24" style="animation-delay: 90ms;">
-      <p>
-        There is a particular kind of quiet that arrives with heat: the first
-        minutes in a sauna, a magnesium pool at 39 degrees, the sharp clarity
-        of a cold plunge straight after. Where We Bathe is a free directory of the
-        venues built around that ritual — saunas, hot pools, cold plunges —
-        researched properly, then set out plainly: how hot, how cold, and for
-        how long.
-      </p>
-      <p>
-        There are no ads here and no sponsored listings. Nothing ranks
-        because a venue paid for it. Search by name or suburb, tell us where
-        you are, or browse by place or by the feature you are after — a
-        proper sweat, magnesium water, a cold shock — and choose by vibes.
-      </p>
-    </section>
-
-    <section class="rise-in chooser mb-24" style="animation-delay: 180ms; position: relative;" aria-labelledby="chooser-heading">
+    <section class="rise-in chooser mb-24" style="animation-delay: 90ms; position: relative;" aria-labelledby="chooser-heading">
       <MarginAnimal name="capybara" />
       <div class="mono mb-6 flex items-center gap-4 text-[var(--ink-faded)]">
         <span id="chooser-heading">START HERE</span>
         <span class="draw-line h-px flex-1" style="background: color-mix(in srgb, var(--ink-faded) 25%, transparent);"></span>
       </div>
       <p class="reading-spine mb-10">
-        Search by name or suburb, tell us where you are, or browse below —
-        start with a place if you know where you're headed, or a pool setting
-        if you know what kind of soak you're after: indoor, outdoor, a
-        natural spring, or something else. Picking either filters the
-        results below.
+        Search by name or suburb, or tell us where you are. Otherwise browse
+        below. There are three ways in, and they answer different questions: a
+        setting if you know what kind of water you want, a place if you know
+        where you're headed, a feature if you're after one particular thing.
+        Any of them fills the results at the foot of the page.
       </p>
 
       <div class="finder-row">
@@ -139,7 +146,36 @@ const allVenues = venues.map((v) => ({
         </div>
       </div>
 
+      {springsRoutes.length > 0 && (
+        <div class="springs-entry">
+          <span class="mono chooser-group-label">Springs</span>
+          <p class="springs-note reading-spine">
+            Water that comes up hot on its own, and the pools built to hold it.
+            This is where the directory started.
+          </p>
+          <ul class="springs-links">
+            {springsRoutes.map((route) => (
+              <li>
+                <a class="mono chooser-state-link" href={route.href}>{route.label}</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div class="chooser-groups">
+        <div class="chooser-group">
+          <span class="mono chooser-group-label">By pool setting</span>
+          <ul class="chooser-states">
+            {poolSettingsBelowSprings.map((f) => (
+              <li>
+                <a class="mono chooser-state-link" href={`/${f.slug}/`}>
+                  {f.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
         <div class="chooser-group">
           <span class="mono chooser-group-label">By place</span>
           {byCountry.map(({ country, subdivisions }) => (
@@ -162,18 +198,6 @@ const allVenues = venues.map((v) => ({
           ))}
           <a class="mono chooser-state-link" href="/places/">All places</a>
         </div>
-        <div class="chooser-group">
-          <span class="mono chooser-group-label">By pool setting</span>
-          <ul class="chooser-states">
-            {presentPoolNational.map((f) => (
-              <li>
-                <a class="mono chooser-state-link" href={`/${f.slug}/`}>
-                  {f.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
       </div>
 
       <div class="mono mt-12 mb-6 chooser-secondary-label">Browse by feature</div>
@@ -187,6 +211,20 @@ const allVenues = venues.map((v) => ({
           </li>
         ))}
       </ul>
+    </section>
+
+    <section class="rise-in reading-spine mb-24" style="animation-delay: 180ms;">
+      <p>
+        Hot water comes out of the ground in more places than most people
+        expect. Where We Bathe is a free directory of the venues built around
+        it: mineral springs, the bathhouses that pipe them indoors, and the
+        saunas and cold plunges that grew up alongside. Researched properly,
+        then set out plainly. How hot, how cold, and for how long.
+      </p>
+      <p>
+        Nothing here ranks because a venue paid for it. Read the entries, then
+        choose by vibes.
+      </p>
     </section>
 
     <section class="rise-in" style="animation-delay: 270ms; position: relative;" aria-labelledby="results-heading">
@@ -645,6 +683,29 @@ const allVenues = venues.map((v) => ({
 
   .near-me-message[data-tone="error"] {
     color: var(--oxide);
+  }
+
+  /* Springs entry (2026-09-17). Promoted above the browse columns, and marked
+     out by space alone: no card, no border, no fill (DESIGN.md §5). It takes
+     no rule of its own because .finder-row already closes with one directly
+     above it, and two hairlines 2.5rem apart read as a mistake rather than a
+     hierarchy. */
+  .springs-entry {
+    margin-bottom: 3rem;
+  }
+
+  .springs-note {
+    margin: 0 0 1rem;
+    color: var(--ink-faded);
+  }
+
+  .springs-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 2rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
   }
 
   .chooser-groups {
